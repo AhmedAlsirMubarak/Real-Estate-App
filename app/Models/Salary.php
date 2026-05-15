@@ -1,0 +1,63 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class Salary extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'employee_id',
+        'period_month',
+        'period_year',
+        'base_salary',
+        'bonuses',
+        'deductions',
+        'net_paid',
+        'paid_at',
+        'status',
+        'notes',
+        'paid_by',
+    ];
+
+    protected $casts = [
+        'paid_at'    => 'date',
+        'base_salary'=> 'decimal:2',
+        'bonuses'    => 'decimal:2',
+        'deductions' => 'decimal:2',
+        'net_paid'   => 'decimal:2',
+    ];
+
+    public function employee()
+    {
+        return $this->belongsTo(User::class, 'employee_id');
+    }
+
+    public function paidBy()
+    {
+        return $this->belongsTo(User::class, 'paid_by');
+    }
+
+    public function statusLabel(): string
+    {
+        $isAr = app()->getLocale() === 'ar';
+        return match ($this->status) {
+            'draft'   => $isAr ? 'مسودة'   : 'Draft',
+            'pending' => $isAr ? 'بانتظار الدفع' : 'Pending',
+            'paid'    => $isAr ? 'مدفوع'   : 'Paid',
+            default   => $this->status,
+        };
+    }
+
+    public function periodLabel(): string
+    {
+        $monthNames = app()->getLocale() === 'ar'
+            ? ['', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+            : ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        return ($monthNames[$this->period_month] ?? '') . ' ' . $this->period_year;
+    }
+}

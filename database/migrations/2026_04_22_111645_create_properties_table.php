@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('properties', function (Blueprint $table) {
+            $table->id();
+            $table->string('code')->unique();
+            $table->string('name');
+            $table->enum('type', ['apartment_building', 'villa', 'farm', 'chalet'])->default('apartment_building');
+            $table->enum('purpose', ['rent', 'sale', 'both'])->default('rent');
+            $table->string('address');
+            $table->string('city')->nullable();
+            $table->text('description')->nullable();
+            $table->foreignId('owner_id')->nullable()->constrained('owners')->nullOnDelete();
+            $table->foreignId('employee_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedInteger('floors')->nullable();
+            $table->decimal('total_area', 10, 2)->nullable();
+            $table->unsignedInteger('bedrooms')->nullable();
+            $table->unsignedInteger('bathrooms')->nullable();
+            $table->enum('status', ['active', 'sold', 'under_maintenance', 'archived'])->default('active');
+            $table->timestamps();
+
+            $table->index(['type', 'purpose', 'status']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('properties');
+    }
+};
