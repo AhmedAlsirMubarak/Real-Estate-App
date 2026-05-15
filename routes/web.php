@@ -60,6 +60,16 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::get('reports', [Manager\ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/properties/{property}', [Manager\ReportController::class, 'propertyReport'])->name('reports.property');
 
+    // Scheduled reports (HOA + Building Mgmt) — period_months + custom cadence
+    Route::get('scheduled-reports', [Manager\ScheduledReportController::class, 'index'])->name('scheduled-reports.index');
+    Route::get('scheduled-reports/create', [Manager\ScheduledReportController::class, 'create'])->name('scheduled-reports.create');
+    Route::post('scheduled-reports', [Manager\ScheduledReportController::class, 'store'])->name('scheduled-reports.store');
+    Route::get('scheduled-reports/{scheduledReport}/edit', [Manager\ScheduledReportController::class, 'edit'])->name('scheduled-reports.edit');
+    Route::patch('scheduled-reports/{scheduledReport}', [Manager\ScheduledReportController::class, 'update'])->name('scheduled-reports.update');
+    Route::delete('scheduled-reports/{scheduledReport}', [Manager\ScheduledReportController::class, 'destroy'])->name('scheduled-reports.destroy');
+    Route::post('scheduled-reports/{scheduledReport}/run', [Manager\ScheduledReportController::class, 'runNow'])->name('scheduled-reports.run');
+    Route::get('scheduled-reports/runs/{run}/download', [Manager\ScheduledReportController::class, 'download'])->name('scheduled-reports.download');
+
     Route::get('expenses', [Manager\ExpenseController::class, 'index'])->name('expenses.index');
     Route::get('expenses/create', [Manager\ExpenseController::class, 'create'])->name('expenses.create');
     Route::post('expenses', [Manager\ExpenseController::class, 'store'])->name('expenses.store');

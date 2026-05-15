@@ -52,6 +52,17 @@
                 </div>
 
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('القسم', 'Section') }} <span class="text-red-500">*</span></label>
+                    @php $oldSection = old('section', request('section', 'management')); @endphp
+                    <select name="section" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                        <option value="management" @selected($oldSection==='management')>{{ $tr('إدارة المباني', 'Building Management') }}</option>
+                        <option value="hoa" @selected($oldSection==='hoa')>{{ $tr('جمعية الملاك', 'Owners Association') }}</option>
+                        <option value="external" @selected($oldSection==='external')>{{ $tr('عقار خارجي', 'External Property') }}</option>
+                    </select>
+                    @error('section') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('العنوان (عربي)', 'Address (Arabic)') }} <span class="text-red-500">*</span></label>
                     <input type="text" name="address_ar" value="{{ old('address_ar') }}" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                     @error('address_ar') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror

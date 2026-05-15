@@ -56,6 +56,39 @@
         [dir="rtl"] #sidebar { border-left: 1px solid rgba(255,255,255,0.12); border-right: none; }
         [dir="ltr"] #sidebar { border-right: 1px solid rgba(255,255,255,0.12); border-left: none; }
 
+        /* Sidebar nav scrollbar — thin, theme-matched, fade-in on hover */
+        #sidebar nav {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148, 163, 184, 0.0) transparent;
+            scrollbar-gutter: stable;
+            transition: scrollbar-color 0.3s ease;
+            scroll-behavior: smooth;
+            overscroll-behavior: contain;
+        }
+        #sidebar:hover nav,
+        #sidebar nav:focus-within {
+            scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+        }
+        #sidebar nav::-webkit-scrollbar {
+            width: 6px;
+        }
+        #sidebar nav::-webkit-scrollbar-track {
+            background: transparent;
+            margin: 8px 0;
+        }
+        #sidebar nav::-webkit-scrollbar-thumb {
+            background: transparent;
+            border-radius: 999px;
+            transition: background-color 0.25s ease;
+        }
+        #sidebar:hover nav::-webkit-scrollbar-thumb,
+        #sidebar nav:focus-within::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.55), rgba(148, 163, 184, 0.45));
+        }
+        #sidebar nav::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.85), rgba(148, 163, 184, 0.7));
+        }
+
         header {
             background: rgba(255,255,255,0.78) !important;
             backdrop-filter: blur(12px);
@@ -158,23 +191,14 @@
                 @php $user = auth()->user(); @endphp
 
                 @if($user->hasRole('manager'))
+                    {{-- ===== GENERAL ===== --}}
                     <div class="px-3 mb-2">
-                        <p class="text-xs text-blue-200/70 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('الإدارة', 'Management') }}</p>
+                        <p class="text-xs text-blue-200/70 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('عام', 'General') }}</p>
                     </div>
                     <a href="{{ route('manager.dashboard') }}"
                        class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.dashboard') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                         <span class="text-sm font-medium">{{ $tr('لوحة التحكم', 'Dashboard') }}</span>
-                    </a>
-                    <a href="{{ route('manager.properties.index') }}"
-                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.properties.*') || request()->routeIs('manager.units.*') ? 'active' : '' }}">
-                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                        <span class="text-sm font-medium">{{ $tr('العقارات', 'Properties') }}</span>
-                    </a>
-                    <a href="{{ route('manager.tenants.index') }}"
-                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.tenants.*') ? 'active' : '' }}">
-                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                        <span class="text-sm font-medium">{{ $tr('المستأجرين', 'Tenants') }}</span>
                     </a>
                     <a href="{{ route('manager.employees.index') }}"
                        class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.employees.*') ? 'active' : '' }}">
@@ -186,39 +210,10 @@
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-4.356-2.957M17 20H7m10 0v-2c0-.653-.084-1.286-.244-1.89M7 20H2v-2a3 3 0 014.356-2.957M7 20v-2c0-.653.084-1.286.244-1.89m0 0a5.002 5.002 0 019.512 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 2v6m3-3h-6"/></svg>
                         <span class="text-sm font-medium">{{ $tr('إدارة المستخدمين', 'User Management') }}</span>
                     </a>
-                    <a href="{{ route('manager.reports.index') }}"
-                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.reports.*') ? 'active' : '' }}">
-                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        <span class="text-sm font-medium">{{ $tr('التقارير', 'Reports') }}</span>
-                    </a>
-                    <a href="{{ route('manager.expenses.index') }}"
-                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.expenses.*') ? 'active' : '' }}">
-                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                        <span class="text-sm font-medium">{{ $tr('المصروفات', 'Expenses') }}</span>
-                    </a>
                     <a href="{{ route('manager.salaries.index') }}"
                        class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.salaries.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         <span class="text-sm font-medium">{{ $tr('الرواتب', 'Salaries') }}</span>
-                    </a>
-
-                    <div class="px-3 mt-4 mb-2">
-                        <p class="text-xs text-blue-200/70 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('جمعية الملاك', 'Owners Association') }}</p>
-                    </div>
-                    <a href="{{ route('manager.associations.index') }}"
-                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.associations.*') ? 'active' : '' }}">
-                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                        <span class="text-sm font-medium">{{ $tr('الجمعيات', 'Associations') }}</span>
-                    </a>
-                    <a href="{{ route('manager.dues.index') }}"
-                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.dues.*') ? 'active' : '' }}">
-                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-                        <span class="text-sm font-medium">{{ $tr('المستحقات', 'Dues') }}</span>
-                    </a>
-                    <a href="{{ route('manager.meetings.index') }}"
-                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.meetings.*') ? 'active' : '' }}">
-                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        <span class="text-sm font-medium">{{ $tr('الاجتماعات', 'Meetings') }}</span>
                     </a>
                     <a href="{{ route('manager.contacts.index') }}"
                        class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.contacts.*') ? 'active' : '' }}">
@@ -230,6 +225,76 @@
                             <span class="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">{{ $unread > 9 ? '9+' : $unread }}</span>
                             @endif
                         </span>
+                    </a>
+
+                    {{-- ===== SECTION 1: OWNERS ASSOCIATION (HOA) ===== --}}
+                    <div class="px-3 mt-4 mb-2">
+                        <p class="text-xs text-yellow-400 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('١. جمعية الملاك', '1. Owners Association') }}</p>
+                    </div>
+                    <a href="{{ route('manager.associations.index') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.associations.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('الجمعيات', 'Associations') }}</span>
+                    </a>
+                    <a href="{{ route('manager.dues.index') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.dues.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('الاشتراكات', 'Subscriptions') }}</span>
+                    </a>
+                    <a href="{{ route('manager.expenses.index') }}?section=hoa"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.expenses.*') && request('section') === 'hoa' ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('منصرفات الجمعية', 'HOA Expenses') }}</span>
+                    </a>
+                    <a href="{{ route('manager.meetings.index') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.meetings.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('الاجتماعات', 'Meetings') }}</span>
+                    </a>
+                    <a href="{{ route('manager.scheduled-reports.index') }}?section=hoa"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.scheduled-reports.*') && request('section') === 'hoa' ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('تقارير الجمعية', 'HOA Reports') }}</span>
+                    </a>
+
+                    {{-- ===== SECTION 2: BUILDING MANAGEMENT ===== --}}
+                    <div class="px-3 mt-4 mb-2">
+                        <p class="text-xs text-yellow-400 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('٢. إدارة المباني', '2. Building Management') }}</p>
+                    </div>
+                    <a href="{{ route('manager.properties.index') }}?section=management"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.properties.*') && request('section') === 'management' ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('المباني والوحدات', 'Buildings & Units') }}</span>
+                    </a>
+                    <a href="{{ route('manager.tenants.index') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.tenants.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('المستأجرين', 'Tenants') }}</span>
+                    </a>
+                    <a href="{{ route('manager.expenses.index') }}?section=management"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.expenses.*') && (request('section') === 'management' || ! request('section')) ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('المصروفات', 'Expenses') }}</span>
+                    </a>
+                    <a href="{{ route('manager.reports.index') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.reports.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('تقارير المباني', 'Property Reports') }}</span>
+                    </a>
+                    <a href="{{ route('manager.scheduled-reports.index') }}?section=management"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.scheduled-reports.*') && request('section') === 'management' ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('تقارير مجدولة', 'Scheduled Reports') }}</span>
+                    </a>
+
+                    {{-- ===== SECTION 3: EXTERNAL PROPERTIES ===== --}}
+                    <div class="px-3 mt-4 mb-2">
+                        <p class="text-xs text-yellow-400 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('٣. العقارات الخارجية', '3. External Properties') }}</p>
+                    </div>
+                    <a href="{{ route('manager.properties.index') }}?section=external"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.properties.*') && request('section') === 'external' ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('العقارات الخارجية', 'External Properties') }}</span>
                     </a>
                 @endif
 

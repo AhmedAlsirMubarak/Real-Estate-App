@@ -15,6 +15,7 @@ class PropertyController extends Controller
         $search       = $request->input('search');
         $typeFilter   = $request->input('type');
         $purposeFilter = $request->input('purpose');
+        $section      = $request->input('section');
 
         $properties = Property::with(['employee', 'owner.user', 'units'])
             ->when($search, fn($q) => $q->where(function ($q) use ($search) {
@@ -31,11 +32,12 @@ class PropertyController extends Controller
             }))
             ->when($typeFilter, fn($q) => $q->where('type', $typeFilter))
             ->when($purposeFilter, fn($q) => $q->where('purpose', $purposeFilter))
+            ->when($section, fn($q) => $q->where('section', $section))
             ->latest()
             ->paginate(10)
             ->appends($request->query());
 
-        return view('manager.properties.index', compact('properties', 'search'));
+        return view('manager.properties.index', compact('properties', 'search', 'section'));
     }
 
     public function create()
@@ -129,6 +131,7 @@ class PropertyController extends Controller
             'name_en'     => 'nullable|string|max:255',
             'type'        => 'required|in:apartment_building,villa,farm,chalet',
             'purpose'     => 'required|in:rent,sale,both',
+            'section'     => 'required|in:hoa,management,external',
             'address_ar'  => 'required|string|max:500',
             'address_en'  => 'nullable|string|max:500',
             'city_ar'     => 'nullable|string|max:100',

@@ -4,6 +4,7 @@
         $tr = fn (string $ar, string $en) => $isAr ? $ar : $en;
         $typeValue = old('type', $property->type);
         $purposeValue = old('purpose', $property->purpose);
+        $sectionValue = old('section', $property->section ?? 'management');
         $statusValue = old('status', $property->status);
         $ownerValue = old('owner_id', $property->owner_id);
         $employeeValue = old('employee_id', $property->employee_id);
@@ -55,6 +56,15 @@
                         <option value="sale" @selected($purposeValue === 'sale')>{{ $tr('بيع', 'Sale') }}</option>
                         <option value="both" @selected($purposeValue === 'both')>{{ $tr('إيجار وبيع', 'Rent & Sale') }}</option>
                     </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('القسم', 'Section') }} <span class="text-red-500">*</span></label>
+                    <select name="section" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                        <option value="management" @selected($sectionValue === 'management')>{{ $tr('إدارة المباني', 'Building Management') }}</option>
+                        <option value="hoa" @selected($sectionValue === 'hoa')>{{ $tr('جمعية الملاك', 'Owners Association') }}</option>
+                        <option value="external" @selected($sectionValue === 'external')>{{ $tr('عقار خارجي', 'External Property') }}</option>
+                    </select>
+                    @error('section') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('العنوان (عربي)', 'Address (Arabic)') }}</label>

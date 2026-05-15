@@ -17,13 +17,50 @@ class RentalContract extends Model
         'monthly_rent',
         'deposit',
         'status',
+        'owner_approval_required',
+        'owner_approval_status',
+        'owner_approval_at',
+        'approved_by_owner_id',
+        'owner_approval_notes',
         'notes',
     ];
 
     protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'start_date'              => 'date',
+        'end_date'                => 'date',
+        'owner_approval_required' => 'boolean',
+        'owner_approval_at'       => 'datetime',
     ];
+
+    public function approvingOwner()
+    {
+        return $this->belongsTo(Owner::class, 'approved_by_owner_id');
+    }
+
+    public function needsOwnerApproval(): bool
+    {
+        return $this->owner_approval_required
+            && $this->owner_approval_status !== 'approved';
+    }
+
+    public function ownerApprovalStatusLabel(): string
+    {
+        if (app()->getLocale() === 'en') {
+            return match ($this->owner_approval_status) {
+                'pending'  => 'Awaiting owner approval',
+                'approved' => 'Approved by owner',
+                'rejected' => 'Rejected by owner',
+                default    => $this->owner_approval_required ? 'Awaiting owner approval' : '—',
+            };
+        }
+
+        return match ($this->owner_approval_status) {
+            'pending'  => 'بانتظار موافقة المالك',
+            'approved' => 'تمت موافقة المالك',
+            'rejected' => 'مرفوض من المالك',
+            default    => $this->owner_approval_required ? 'بانتظار موافقة المالك' : '—',
+        };
+    }
 
     public function unit()
     {

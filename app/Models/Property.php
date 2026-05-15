@@ -17,6 +17,7 @@ class Property extends Model
         'name_en',
         'type',
         'purpose',
+        'section',
         'address',
         'address_ar',
         'address_en',
@@ -80,6 +81,45 @@ class Property extends Model
     public function isCompanyOwned(): bool
     {
         return $this->owner_id === null;
+    }
+
+    public function isHoa(): bool
+    {
+        return $this->section === 'hoa';
+    }
+
+    public function isManagement(): bool
+    {
+        return $this->section === 'management';
+    }
+
+    public function isExternal(): bool
+    {
+        return $this->section === 'external';
+    }
+
+    public function sectionLabel(): string
+    {
+        if (app()->getLocale() === 'en') {
+            return match ($this->section) {
+                'hoa' => 'Owners Association',
+                'management' => 'Building Management',
+                'external' => 'External Property',
+                default => $this->section,
+            };
+        }
+
+        return match ($this->section) {
+            'hoa'        => 'جمعية الملاك',
+            'management' => 'إدارة المباني',
+            'external'   => 'عقار خارجي',
+            default      => $this->section,
+        };
+    }
+
+    public function scopeSection($query, string $section)
+    {
+        return $query->where('section', $section);
     }
 
     public function hasFloors(): bool
