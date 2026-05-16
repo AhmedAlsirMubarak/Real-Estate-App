@@ -77,7 +77,7 @@ class PropertyController extends Controller
             default     => $query->latest(),
         };
 
-        $properties = $query->withCount([
+        $properties = $query->with(['images' => fn($q) => $q->orderByDesc('is_primary')->orderBy('sort_order')])->withCount([
             'units',
             'units as available_units_count' => fn($q) => $q->where('status', 'available'),
         ])->paginate(12)->withQueryString();
@@ -104,6 +104,7 @@ class PropertyController extends Controller
     {
         abort_if($property->status !== 'active', 404);
 
+        $property->load('images');
         $property->loadCount([
             'units',
             'units as available_units_count' => fn($q) => $q->where('status', 'available'),

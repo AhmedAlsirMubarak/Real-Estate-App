@@ -22,7 +22,7 @@
     <div class="max-w-3xl mx-auto">
         <a href="{{ route('manager.properties.show', $property) }}" class="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-block">← {{ $tr('رجوع', 'Back') }}</a>
 
-        <form method="POST" action="{{ route('manager.properties.update', $property) }}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+        <form method="POST" action="{{ route('manager.properties.update', $property) }}" enctype="multipart/form-data" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
             @csrf @method('PATCH')
 
             <h2 class="text-lg font-bold text-gray-800 mb-2">{{ $tr('تعديل', 'Edit') }} {{ $property->name }}</h2>
@@ -139,10 +139,103 @@
                 <textarea name="description_en" rows="3" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">{{ $descriptionEnValue }}</textarea>
             </div>
 
+            {{-- Upload new images --}}
+            <div class="border-t border-gray-100 pt-4"
+                 x-data="{
+                     previews: [],
+                     sizeErrors: [],
+                     pick(e) {
+                         this.previews = [];
+                         this.sizeErrors = [];
+                         const max = 2 * 1024 * 1024;
+                         Array.from(e.target.files).forEach(f => {
+                             if (f.size > max) {
+                                 this.sizeErrors.push(f.name);
+                                 return;
+                             }
+                             const r = new FileReader();
+                             r.onload = ev => this.previews.push(ev.target.result);
+                             r.readAsDataURL(f);
+                         });
+                     }
+                 }">
+                <label class="block text-sm font-medium text-gray-700 mb-2">{{ $tr('إضافة صور جديدة', 'Add New Images') }}</label>
+                <label :class="sizeErrors.length ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-gray-50 hover:border-blue-400'"
+                       class="flex items-center gap-2 cursor-pointer border border-dashed rounded-lg px-4 py-3 text-sm text-gray-500 transition w-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0" :class="sizeErrors.length ? 'text-red-500' : 'text-blue-500'"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+                    <span x-text="previews.length ? `${previews.length} {{ $tr('صورة محددة', 'image(s) selected') }}` : '{{ $tr('اختر صوراً…', 'Choose images…') }}'"></span>
+                    <input type="file" name="images[]" multiple accept="image/jpeg,image/png,image/webp" class="hidden" @change="pick($event)">
+                </label>
+                {{-- Client-side size errors --}}
+                <template x-if="sizeErrors.length > 0">
+                    <div class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 space-y-1">
+                        <p class="text-red-600 text-xs font-semibold">{{ $tr('الملفات التالية تتجاوز الحد الأقصى (2 ميجا):', 'The following files exceed the 2 MB limit:') }}</p>
+                        <template x-for="name in sizeErrors" :key="name">
+                            <p class="text-red-500 text-xs flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 flex-shrink-0"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
+                                <span x-text="name"></span>
+                            </p>
+                        </template>
+                    </div>
+                </template>
+                {{-- Server-side validation errors --}}
+                @php $imgErrors = collect($errors->getMessages())->filter(fn($m,$k) => str_starts_with($k,'images.'))->flatten(); @endphp
+                @if($imgErrors->isNotEmpty())
+                <div class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 space-y-1">
+                    @foreach($imgErrors as $msg)
+                    <p class="text-red-500 text-xs flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 flex-shrink-0"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
+                        {{ $msg }}
+                    </p>
+                    @endforeach
+                </div>
+                @endif
+                <p class="text-xs text-gray-400 mt-1">{{ $tr('JPG، PNG، WebP — حد أقصى 2 ميجا للصورة', 'JPG, PNG, WebP — max 2 MB each') }}</p>
+                {{-- Preview grid --}}
+                <div x-show="previews.length > 0" x-transition class="mt-3 grid grid-cols-4 sm:grid-cols-6 gap-2">
+                    <template x-for="(src, i) in previews" :key="i">
+                        <div class="relative rounded-lg overflow-hidden border border-gray-200 aspect-square">
+                            <img :src="src" class="w-full h-full object-cover">
+                        </div>
+                    </template>
+                </div>
+            </div>
+
             <div class="flex gap-2 pt-2">
                 <button class="bg-blue-900 hover:bg-blue-800 text-white px-5 py-2 rounded-lg text-sm font-medium">{{ $tr('حفظ التعديلات', 'Save Changes') }}</button>
                 <a href="{{ route('manager.properties.show', $property) }}" class="bg-gray-100 text-gray-700 px-5 py-2 rounded-lg text-sm">{{ $tr('إلغاء', 'Cancel') }}</a>
             </div>
         </form>
+
+        {{-- Existing images gallery --}}
+        @if($property->images->isNotEmpty())
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-5">
+            <div class="px-4 py-3 border-b border-gray-100">
+                <h3 class="font-bold text-gray-800 text-sm">{{ $tr('الصور الحالية', 'Current Images') }} ({{ $property->images->count() }})</h3>
+            </div>
+            <div class="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                @foreach($property->images as $image)
+                <div class="relative group rounded-xl overflow-hidden border-2 {{ $image->is_primary ? 'border-blue-500' : 'border-gray-200' }} bg-gray-50">
+                    <img src="{{ $image->url() }}" alt="" class="w-full h-28 object-cover">
+                    @if($image->is_primary)
+                    <span class="absolute top-1.5 start-1.5 bg-blue-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-md">{{ $tr('رئيسية', 'Primary') }}</span>
+                    @endif
+                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                        @if(!$image->is_primary)
+                        <form method="POST" action="{{ route('manager.properties.images.primary', [$property, $image]) }}">
+                            @csrf @method('PATCH')
+                            <button class="bg-white text-blue-700 rounded-lg px-2 py-1 text-xs font-bold hover:bg-blue-50">{{ $tr('رئيسية', 'Primary') }}</button>
+                        </form>
+                        @endif
+                        <form method="POST" action="{{ route('manager.properties.images.destroy', [$property, $image]) }}" onsubmit="return confirm('{{ $tr('حذف الصورة؟', 'Delete image?') }}')">
+                            @csrf @method('DELETE')
+                            <button class="bg-white text-red-600 rounded-lg px-2 py-1 text-xs font-bold hover:bg-red-50">{{ $tr('حذف', 'Delete') }}</button>
+                        </form>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
     </div>
 </x-app-layout>

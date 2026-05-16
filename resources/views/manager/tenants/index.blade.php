@@ -12,10 +12,22 @@
     <div class="py-4">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
             <h2 class="text-xl font-bold text-gray-800">{{ $tr('قائمة المستأجرين', 'Tenants List') }}</h2>
-            <a href="{{ route('manager.tenants.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                {{ $tr('إضافة مستأجر', 'Add Tenant') }}
-            </a>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('manager.tenants.export') }}"
+                   class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    {{ $tr('تصدير Excel', 'Export Excel') }}
+                </a>
+                <a href="{{ route('manager.tenants.import.form') }}"
+                   class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    {{ $tr('استيراد Excel', 'Import Excel') }}
+                </a>
+                <a href="{{ route('manager.tenants.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    {{ $tr('إضافة مستأجر', 'Add Tenant') }}
+                </a>
+            </div>
         </div>
 
         <form method="GET" action="{{ route('manager.tenants.index') }}" class="mb-4 flex flex-wrap gap-3">
@@ -43,7 +55,7 @@
                     <tbody class="divide-y divide-gray-50">
                         @forelse($tenants as $tenant)
                         @php
-                            $contract = $tenant->activeContract ?? $tenant->contracts->first();
+                            $contract = $tenant->activeContract ?? $tenant->rentalContracts->first();
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 font-medium">{{ $displayName($tenant->user->name ?? null, $tr('مستأجر', 'Tenant')) }}</td>

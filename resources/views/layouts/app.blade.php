@@ -226,6 +226,11 @@
                             @endif
                         </span>
                     </a>
+                       <a href="{{ route('manager.customers.index') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.customers.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('العملاء والطلبات', 'Customers') }}</span>
+                    </a>
 
                     {{-- ===== SECTION 1: OWNERS ASSOCIATION (HOA) ===== --}}
                     <div class="px-3 mt-4 mb-2">
@@ -271,6 +276,7 @@
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                         <span class="text-sm font-medium">{{ $tr('المستأجرين', 'Tenants') }}</span>
                     </a>
+                 
                     <a href="{{ route('manager.expenses.index') }}?section=management"
                        class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.expenses.*') && (request('section') === 'management' || ! request('section')) ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
@@ -473,17 +479,17 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                             </svg>
                             @if($bellCount > 0)
-                            <span class="absolute -top-0.5 -left-0.5 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold leading-none">
+                            <span class="absolute -top-0.5 {{ $isAr ? '-left-0.5' : '-right-0.5' }} bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold leading-none">
                                 {{ $bellCount > 9 ? '9+' : $bellCount }}
                             </span>
                             @endif
                         </button>
 
                         <div x-show="open" x-transition
-                             class="absolute left-0 mt-2 w-64 sm:w-72 bg-white rounded-xl shadow-xl border border-slate-100 z-50 py-2">
-                            <p class="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">{{ $isAr ? 'الإشعارات' : 'Notifications' }}</p>
+                             class="absolute {{ $isAr ? 'left-0' : 'right-0' }} mt-2 w-72 bg-white rounded-xl shadow-xl border border-slate-100 z-50 py-2">
+                            <p class="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 {{ $isAr ? 'text-right' : 'text-left' }}">{{ $isAr ? 'الإشعارات' : 'Notifications' }}</p>
                             @forelse($bellItems as $item)
-                            <a href="{{ $item['url'] }}" class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition">
+                            <a href="{{ $item['url'] }}" class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition {{ $isAr ? 'flex-row-reverse text-right' : '' }}">
                                 <span class="w-2 h-2 rounded-full {{ $item['color'] }} flex-shrink-0"></span>
                                 <span class="text-sm text-slate-700">{{ $item['label'] }}</span>
                             </a>

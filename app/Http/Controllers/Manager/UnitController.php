@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\Property;
 use App\Models\Unit;
+use App\Models\UnitImage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class UnitController extends Controller
 {
@@ -25,8 +27,49 @@ class UnitController extends Controller
             ->with('success', 'تم إضافة الوحدة بنجاح');
     }
 
+    public function storeImage(Request $request, Property $property, Unit $unit)
+    {
+        $request->validate(['images' => 'required', 'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048']);
+
+        $isFirst = $unit->images()->count() === 0;
+        foreach ($request->file('images') as $i => $file) {
+            $path = $this->storeUploadedFile($file, 'units/' . $unit->id);
+            if (!$path) continue;
+            $unit->images()->create([
+                'path'       => $path,
+                'is_primary' => $isFirst && $i === 0,
+                'sort_order' => $unit->images()->count(),
+            ]);
+        }
+
+        return back()->with('success', 'تم رفع الصور بنجاح');
+    }
+
+    public function destroyImage(Property $property, Unit $unit, UnitImage $image)
+    {
+        Storage::disk('public')->delete($image->path);
+        $wasPrimary = $image->is_primary;
+        $image->delete();
+
+        if ($wasPrimary) {
+            $next = $unit->images()->first();
+            $next?->update(['is_primary' => true]);
+        }
+
+        return back()->with('success', 'تم حذف الصورة');
+    }
+
+    public function setPrimaryImage(Property $property, Unit $unit, UnitImage $image)
+    {
+        $unit->images()->update(['is_primary' => false]);
+        $image->update(['is_primary' => true]);
+
+        return back()->with('success', 'تم تعيين الصورة الرئيسية');
+    }
+
     public function edit(Property $property, Unit $unit)
     {
+        $unit->load('images');
         return view('manager.units.edit', compact('property', 'unit'));
     }
 
@@ -66,5 +109,21 @@ class UnitController extends Controller
         }
 
         return $request->validate($rules);
+    }
+
+    private function storeUploadedFile(\Illuminate\Http\UploadedFile $file, string $directory): string|false
+    {
+        $tmpPath = $file->getPathname();
+        if (!file_exists($tmpPath)) {
+            return false;
+        }
+        $ext      = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $filename = sha1(uniqid('', true) . microtime()) . '.' . $ext;
+        try {
+            $stored = Storage::disk('public')->putFileAs($directory, $tmpPath, $filename);
+        } catch (\Throwable) {
+            return false;
+        }
+        return $stored ?: false;
     }
 }

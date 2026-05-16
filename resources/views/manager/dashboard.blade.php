@@ -1,9 +1,9 @@
-<x-app-layout>
+﻿<x-app-layout>
     @php
         $isAr = app()->getLocale() === 'ar';
         $tr = fn (string $ar, string $en) => $isAr ? $ar : $en;
-        $numLocale = $isAr ? 'ar-SA' : 'en-US';
-        $currency = $isAr ? 'ر.س' : 'SAR';
+        $numLocale = $isAr ? 'ar-OM' : 'en-US';
+        $currency = $isAr ? 'ر.ع' : 'OMR';
         $unitsChartLabels = [$tr('مؤجرة', 'Rented'), $tr('متاحة', 'Available')];
         $revenueDatasetLabel = $tr('الإيرادات', 'Revenue');
         $displayName = function (?string $name, string $fallback = 'User') use ($isAr) {

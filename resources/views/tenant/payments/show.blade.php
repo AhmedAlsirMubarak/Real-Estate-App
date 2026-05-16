@@ -1,8 +1,8 @@
-<x-app-layout>
+﻿<x-app-layout>
     @php
         $isAr = app()->getLocale() === 'ar';
         $tr = fn (string $ar, string $en) => $isAr ? $ar : $en;
-        $currency = $isAr ? 'ر.س' : 'SAR';
+        $currency = $isAr ? 'ر.ع' : 'OMR';
         $months = $isAr
             ? ['', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
             : ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];

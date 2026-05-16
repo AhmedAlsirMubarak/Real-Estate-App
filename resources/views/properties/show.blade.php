@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
@@ -130,7 +130,7 @@
 @php
     $isAr = app()->getLocale() === 'ar';
     $tr = fn (string $ar, string $en) => $isAr ? $ar : $en;
-    $currency = $isAr ? 'ريال' : 'SAR';
+    $currency = $isAr ? 'ريال' : 'OMR';
 @endphp
 
 {{-- NAVBAR --}}
@@ -160,37 +160,17 @@
 </nav>
 
 @php
-    $typeImageMap = [
-        'apartment_building' => [
-            'https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1600&q=80',
-            'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
-            'https://images.unsplash.com/photo-1448630360428-65456885c650?auto=format&fit=crop&w=1200&q=80',
-        ],
-        'villa' => [
-            'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1600&q=80',
-            'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
-            'https://images.unsplash.com/photo-1605146769289-440113cc3d00?auto=format&fit=crop&w=1200&q=80',
-        ],
-        'farm' => [
-            'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=80',
-            'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1200&q=80',
-            'https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=1200&q=80',
-        ],
-        'chalet' => [
-            'https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&w=1600&q=80',
-            'https://images.unsplash.com/photo-1472220625704-91e1462799b2?auto=format&fit=crop&w=1200&q=80',
-            'https://images.unsplash.com/photo-1544984243-ec57ea16fe25?auto=format&fit=crop&w=1200&q=80',
-        ],
-    ];
-
-    $pool = $typeImageMap[$property->type] ?? $typeImageMap['apartment_building'];
-    $heroImage = $pool[$property->id % count($pool)];
-    $thumbImageOne = $pool[($property->id + 1) % count($pool)];
-    $thumbImageTwo = $pool[($property->id + 2) % count($pool)];
+    $allImages  = $property->images;
+    $heroImage  = $allImages->firstWhere('is_primary', true) ?? $allImages->first();
+    $heroUrl    = $heroImage?->url();
+    $galleryImages = $allImages->take(3);
+    $thumbOne   = $galleryImages->get(1) ?? $galleryImages->get(0);
+    $thumbTwo   = $galleryImages->get(2) ?? $galleryImages->get(0);
+    $noImage    = $allImages->isEmpty();
 @endphp
 
 {{-- HERO HEADER --}}
-<div class="hero-bg py-10 sm:py-14" style="background-image: linear-gradient(125deg, rgba(9,24,44,.9) 0%, rgba(20,58,102,.78) 56%, rgba(33,92,137,.76) 100%), url('{{ $heroImage }}');">
+<div class="hero-bg py-10 sm:py-14" style="background-image: linear-gradient(125deg, rgba(9,24,44,.9) 0%, rgba(20,58,102,.78) 56%, rgba(33,92,137,.76) 100%){{ $heroUrl ? ', url(\'' . $heroUrl . '\')' : '' }};">
     <div class="max-w-7xl mx-auto px-4 sm:px-6">
         {{-- Breadcrumb --}}
         <div class="flex items-center gap-2 text-white/50 text-sm mb-6">
@@ -231,23 +211,33 @@
 
             {{-- Price Box --}}
             <div class="price-box rounded-2xl p-5">
+                @if(!$noImage)
                 <div class="hero-gallery">
-                    <img src="{{ $thumbImageOne }}" loading="lazy" alt="{{ $property->name }}" class="hero-main-image">
+                    @if($thumbOne)
+                    <img src="{{ $thumbOne->url() }}" loading="lazy" alt="{{ $property->name }}" class="hero-main-image">
+                    @else
+                    <div class="hero-main-image rounded-xl" style="background:rgba(255,255,255,.1);"></div>
+                    @endif
                     <div class="hero-side">
-                        <img src="{{ $thumbImageTwo }}" loading="lazy" alt="{{ $property->name }}">
+                        @if($thumbTwo)
+                        <img src="{{ $thumbTwo->url() }}" loading="lazy" alt="{{ $property->name }}">
+                        @else
+                        <div class="rounded-xl" style="background:rgba(255,255,255,.1);height:100%;"></div>
+                        @endif
                         <div class="hero-mini-meta">
                             {{ $property->typeLabel() }}
                             <div class="text-white/70 mt-0.5">#{{ $property->code }}</div>
                         </div>
                     </div>
                 </div>
+                @endif
 
                 @if($minRentPrice)
                 <div class="mb-4">
                     <p class="text-white/50 text-xs mb-1">{{ $tr('الإيجار يبدأ من', 'Rent starts from') }}</p>
-                    <p class="text-2xl font-black text-white">{{ number_format($minRentPrice) }} <span class="text-sm font-normal text-white/60">{{ $tr('ريال/سنة', 'SAR/year') }}</span></p>
+                    <p class="text-2xl font-black text-white">{{ number_format($minRentPrice) }} <span class="text-sm font-normal text-white/60">{{ $tr('ريال/سنة', 'OMR/year') }}</span></p>
                     @if($maxRentPrice && $maxRentPrice !== $minRentPrice)
-                    <p class="text-white/50 text-xs mt-0.5">{{ $tr('حتى', 'Up to') }} {{ number_format($maxRentPrice) }} {{ $tr('ريال/سنة', 'SAR/year') }}</p>
+                    <p class="text-white/50 text-xs mt-0.5">{{ $tr('حتى', 'Up to') }} {{ number_format($maxRentPrice) }} {{ $tr('ريال/سنة', 'OMR/year') }}</p>
                     @endif
                 </div>
                 @endif
@@ -412,7 +402,11 @@
             {{-- Property details card --}}
             <div class="bg-white rounded-2xl border shadow-sm overflow-hidden" style="border-color:var(--border);">
                 <div class="detail-cover">
-                    <img src="{{ $thumbImageTwo }}" loading="lazy" alt="{{ $property->name }}">
+                    @if($heroUrl)
+                    <img src="{{ $heroUrl }}" loading="lazy" alt="{{ $property->name }}">
+                    @else
+                    <div class="w-full h-full" style="background: linear-gradient(135deg, #0f2444 0%, #1a3a6b 100%);"></div>
+                    @endif
                     <span class="detail-chip">{{ $property->purposeLabel() }}</span>
                 </div>
                 <div class="px-5 py-4 border-b" style="border-color:var(--border); background:var(--bg-section);">

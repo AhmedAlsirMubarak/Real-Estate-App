@@ -2,11 +2,17 @@
 
 namespace App\Http\Controllers\Manager;
 
+use App\Exports\PropertyExport;
+use App\Exports\PropertyTemplateExport;
 use App\Http\Controllers\Controller;
+use App\Imports\PropertyImport;
 use App\Models\Owner;
 use App\Models\Property;
+use App\Models\PropertyImage;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class PropertyController extends Controller
 {
@@ -69,8 +75,50 @@ class PropertyController extends Controller
             ]);
         }
 
-        return redirect()->route('manager.properties.index')
+        $this->saveImages($request, $property);
+
+        return redirect()->route('manager.properties.edit', $property)
             ->with('success', 'تم إضافة العقار بنجاح');
+    }
+
+    public function storeImage(Request $request, Property $property)
+    {
+        $request->validate(['images' => 'required', 'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048']);
+
+        $isFirst = $property->images()->count() === 0;
+        foreach ($request->file('images') as $i => $file) {
+            $path = $this->storeUploadedFile($file, 'properties/' . $property->id);
+            if (!$path) continue;
+            $property->images()->create([
+                'path'       => $path,
+                'is_primary' => $isFirst && $i === 0,
+                'sort_order' => $property->images()->count(),
+            ]);
+        }
+
+        return back()->with('success', 'تم رفع الصور بنجاح');
+    }
+
+    public function destroyImage(Property $property, PropertyImage $image)
+    {
+        Storage::disk('public')->delete($image->path);
+        $wasPrimary = $image->is_primary;
+        $image->delete();
+
+        if ($wasPrimary) {
+            $next = $property->images()->first();
+            $next?->update(['is_primary' => true]);
+        }
+
+        return back()->with('success', 'تم حذف الصورة');
+    }
+
+    public function setPrimaryImage(Property $property, PropertyImage $image)
+    {
+        $property->images()->update(['is_primary' => false]);
+        $image->update(['is_primary' => true]);
+
+        return back()->with('success', 'تم تعيين الصورة الرئيسية');
     }
 
     public function show(Property $property)
@@ -81,6 +129,7 @@ class PropertyController extends Controller
             'units.activeRentalContract.tenant.user',
             'units.activeSaleContract.buyer.user',
             'units.maintenanceRequests',
+            'images',
             'expenses' => fn($q) => $q->latest('expense_date')->limit(10),
         ]);
         $employees = User::role('employee')->get();
@@ -89,6 +138,7 @@ class PropertyController extends Controller
 
     public function edit(Property $property)
     {
+        $property->load('images');
         $employees = User::role('employee')->get();
         $owners    = Owner::with('user')->get();
         return view('manager.properties.edit', compact('property', 'employees', 'owners'));
@@ -100,8 +150,103 @@ class PropertyController extends Controller
         $validated = $this->mergeLocalizedPropertyData($validated);
         $property->update($validated);
 
-        return redirect()->route('manager.properties.index')
-            ->with('success', 'تم تحديث العقار بنجاح');
+        $this->saveImages($request, $property);
+
+        return back()->with('success', 'تم تحديث العقار بنجاح');
+    }
+
+    private function saveImages(Request $request, Property $property): void
+    {
+        if (!$request->hasFile('images')) {
+            return;
+        }
+
+        $request->validate(['images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048']);
+
+        $isFirst = $property->images()->count() === 0;
+        foreach ($request->file('images') as $i => $file) {
+            $path = $this->storeUploadedFile($file, 'properties/' . $property->id);
+            if (!$path) continue;
+            $property->images()->create([
+                'path'       => $path,
+                'is_primary' => $isFirst && $i === 0,
+                'sort_order' => $property->images()->count(),
+            ]);
+        }
+    }
+
+    private function storeUploadedFile(\Illuminate\Http\UploadedFile $file, string $directory): string|false
+    {
+        $tmpPath = $file->getPathname();
+        if (!file_exists($tmpPath)) {
+            return false;
+        }
+        $ext      = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        $filename = sha1(uniqid('', true) . microtime()) . '.' . $ext;
+        try {
+            $stored = Storage::disk('public')->putFileAs($directory, $tmpPath, $filename);
+        } catch (\Throwable) {
+            return false;
+        }
+        return $stored ?: false;
+    }
+
+    public function importForm()
+    {
+        return view('manager.properties.import');
+    }
+
+    public function downloadTemplate()
+    {
+        $spreadsheet = (new PropertyTemplateExport())->build();
+        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, 'properties-import-template.xlsx', [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="properties-import-template.xlsx"',
+        ]);
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:10240',
+        ], [
+            'file.required' => 'Please select a file to upload.',
+            'file.mimes'    => 'Only Excel files (.xlsx, .xls) are accepted.',
+            'file.max'      => 'The file must not exceed 10 MB.',
+        ]);
+
+        try {
+            $importer = new PropertyImport($request->file('file')->getPathname());
+            $importer->run();
+        } catch (\Throwable $e) {
+            return back()->withErrors([
+                'file' => 'Could not read the file. Make sure it is a valid Excel or CSV file.',
+            ]);
+        }
+
+        return back()->with('import_results', [
+            'imported'  => $importer->imported,
+            'errors'    => $importer->rowErrors,
+            'warnings'  => $importer->warnings,
+        ]);
+    }
+
+    public function export()
+    {
+        $spreadsheet = (new PropertyExport())->build();
+        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $filename    = 'properties-' . now()->format('Y-m-d') . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     public function destroy(Property $property)

@@ -60,6 +60,17 @@ class Unit extends Model
         return $this->hasMany(MaintenanceRequest::class);
     }
 
+    public function images()
+    {
+        return $this->hasMany(UnitImage::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function primaryImage(): ?UnitImage
+    {
+        $loaded = $this->relationLoaded('images') ? $this->images : $this->images()->get();
+        return $loaded->firstWhere('is_primary', true) ?? $loaded->first();
+    }
+
     public function isRented(): bool
     {
         return $this->status === 'rented';

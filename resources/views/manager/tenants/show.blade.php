@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     <x-slot name="title">{{ $tenant->user->name ?? 'المستأجر' }}</x-slot>
     <div class="py-4">
         <div class="flex items-center gap-3 mb-6">
@@ -32,8 +32,8 @@
                     <div class="flex justify-between"><dt class="text-gray-500 text-sm">الوحدة</dt><dd class="font-medium">{{ $c->unit->unit_number ?? '-' }}</dd></div>
                     <div class="flex justify-between"><dt class="text-gray-500 text-sm">تاريخ البدء</dt><dd class="font-medium">{{ $c->start_date ? $c->start_date->format('Y/m/d') : '-' }}</dd></div>
                     <div class="flex justify-between"><dt class="text-gray-500 text-sm">تاريخ الانتهاء</dt><dd class="font-medium">{{ $c->end_date ? $c->end_date->format('Y/m/d') : '-' }}</dd></div>
-                    <div class="flex justify-between"><dt class="text-gray-500 text-sm">الإيجار الشهري</dt><dd class="font-bold text-blue-700">{{ number_format($c->monthly_rent) }} ر.س</dd></div>
-                    <div class="flex justify-between"><dt class="text-gray-500 text-sm">مبلغ التأمين</dt><dd class="font-medium">{{ number_format($c->deposit ?? 0) }} ر.س</dd></div>
+                    <div class="flex justify-between"><dt class="text-gray-500 text-sm">الإيجار الشهري</dt><dd class="font-bold text-blue-700">{{ number_format($c->monthly_rent) }} ر.ع</dd></div>
+                    <div class="flex justify-between"><dt class="text-gray-500 text-sm">مبلغ التأمين</dt><dd class="font-medium">{{ number_format($c->deposit ?? 0) }} ر.ع</dd></div>
                 </dl>
                 @else
                 <p class="text-gray-400 text-center py-4">لا يوجد عقد نشط</p>
@@ -97,7 +97,7 @@
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 font-medium">{{ $pay->month }}/{{ $pay->year }}</td>
-                            <td class="px-4 py-3">{{ number_format($pay->amount) }} ر.س</td>
+                            <td class="px-4 py-3">{{ number_format($pay->amount) }} ر.ع</td>
                             <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-medium {{ $pc2[$pay->status] ?? 'bg-gray-100 text-gray-700' }}">{{ $pl2[$pay->status] ?? $pay->status }}</span></td>
                             <td class="px-4 py-3 text-gray-600">{{ $pay->paid_at ? $pay->paid_at->format('Y/m/d') : '-' }}</td>
                         </tr>

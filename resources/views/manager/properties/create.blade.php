@@ -8,7 +8,7 @@
     <div class="max-w-3xl mx-auto">
         <a href="{{ route('manager.properties.index') }}" class="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-block">← {{ $tr('رجوع', 'Back') }}</a>
 
-        <form method="POST" action="{{ route('manager.properties.store') }}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+        <form method="POST" action="{{ route('manager.properties.store') }}" enctype="multipart/form-data" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
             @csrf
 
             <h2 class="text-lg font-bold text-gray-800 mb-2">{{ $tr('إضافة عقار جديد', 'Create New Property') }}</h2>
@@ -148,6 +148,69 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('سعر البيع (للوحدة الواحدة)', 'Sale price (single unit)') }}</label>
                         <input type="number" step="0.01" name="sale_price" value="{{ old('sale_price') }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                     </div>
+                </div>
+            </div>
+
+            {{-- Images --}}
+            <div class="border-t border-gray-100 pt-4"
+                 x-data="{
+                     previews: [],
+                     sizeErrors: [],
+                     pick(e) {
+                         this.previews = [];
+                         this.sizeErrors = [];
+                         const max = 2 * 1024 * 1024;
+                         Array.from(e.target.files).forEach(f => {
+                             if (f.size > max) {
+                                 this.sizeErrors.push(f.name);
+                                 return;
+                             }
+                             const r = new FileReader();
+                             r.onload = ev => this.previews.push(ev.target.result);
+                             r.readAsDataURL(f);
+                         });
+                     }
+                 }">
+                <label class="block text-sm font-medium text-gray-700 mb-2">{{ $tr('صور العقار (اختياري)', 'Property Images (optional)') }}</label>
+                <label :class="sizeErrors.length ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-gray-50 hover:border-blue-400'"
+                       class="flex items-center gap-2 cursor-pointer border border-dashed rounded-lg px-4 py-3 text-sm text-gray-500 transition w-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0" :class="sizeErrors.length ? 'text-red-500' : 'text-blue-500'"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+                    <span x-text="previews.length ? `${previews.length} {{ $tr('صورة محددة', 'image(s) selected') }}` : '{{ $tr('اختر صوراً للعقار…', 'Choose property images…') }}'"></span>
+                    <input type="file" name="images[]" multiple accept="image/jpeg,image/png,image/webp" class="hidden" @change="pick($event)">
+                </label>
+                {{-- Client-side size errors --}}
+                <template x-if="sizeErrors.length > 0">
+                    <div class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 space-y-1">
+                        <p class="text-red-600 text-xs font-semibold">{{ $tr('الملفات التالية تتجاوز الحد الأقصى (2 ميجا):', 'The following files exceed the 2 MB limit:') }}</p>
+                        <template x-for="name in sizeErrors" :key="name">
+                            <p class="text-red-500 text-xs flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 flex-shrink-0"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
+                                <span x-text="name"></span>
+                            </p>
+                        </template>
+                    </div>
+                </template>
+                {{-- Server-side validation errors --}}
+                @php $imgErrors = collect($errors->getMessages())->filter(fn($m,$k) => str_starts_with($k,'images.'))->flatten(); @endphp
+                @if($imgErrors->isNotEmpty())
+                <div class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 space-y-1">
+                    @foreach($imgErrors as $msg)
+                    <p class="text-red-500 text-xs flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 flex-shrink-0"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
+                        {{ $msg }}
+                    </p>
+                    @endforeach
+                </div>
+                @endif
+                <p class="text-xs text-gray-400 mt-1">{{ $tr('JPG، PNG، WebP — حد أقصى 2 ميجا للصورة. يمكن إضافة المزيد لاحقاً من صفحة التعديل.', 'JPG, PNG, WebP — max 2 MB each. More can be added later from the edit page.') }}</p>
+                {{-- Preview grid --}}
+                <div x-show="previews.length > 0" x-transition class="mt-3 grid grid-cols-4 sm:grid-cols-6 gap-2">
+                    <template x-for="(src, i) in previews" :key="i">
+                        <div class="relative rounded-lg overflow-hidden border border-gray-200 aspect-square">
+                            <img :src="src" class="w-full h-full object-cover">
+                            <div x-show="i === 0" class="absolute top-0.5 start-0.5 bg-blue-600 text-white text-[9px] font-bold px-1 rounded">{{ $tr('رئيسية', 'Main') }}</div>
+                        </div>
+                    </template>
                 </div>
             </div>
 

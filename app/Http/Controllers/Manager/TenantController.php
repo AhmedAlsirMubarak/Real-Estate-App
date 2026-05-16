@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Manager;
 
+use App\Exports\TenantExport;
+use App\Exports\TenantTemplateExport;
 use App\Http\Controllers\Controller;
+use App\Imports\TenantImport;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Unit;
@@ -10,13 +13,14 @@ use App\Models\RentalContract;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class TenantController extends Controller
 {
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $tenants = Tenant::with(['user', 'activeContract.unit.property'])
+        $tenants = Tenant::with(['user', 'activeContract.unit.property', 'rentalContracts.unit.property'])
             ->when($search, function ($query) use ($search) {
                 $query->whereHas('user', function ($userQuery) use ($search) {
                     $userQuery->where('name', 'like', "%{$search}%")
@@ -99,31 +103,142 @@ class TenantController extends Controller
 
     public function edit(Tenant $tenant)
     {
-        $tenant->load('user');
-        return view('manager.tenants.edit', compact('tenant'));
+        $tenant->load(['user', 'activeContract.unit.property']);
+
+        $availableUnits = Unit::where('status', 'available')
+            ->whereIn('listing_type', ['rent', 'both'])
+            ->with('property')
+            ->get();
+
+        // Always include the tenant's current unit even if status is rented
+        if ($tenant->activeContract?->unit) {
+            $currentUnit = $tenant->activeContract->unit->load('property');
+            if (!$availableUnits->contains('id', $currentUnit->id)) {
+                $availableUnits = $availableUnits->push($currentUnit);
+            }
+        }
+
+        return view('manager.tenants.edit', compact('tenant', 'availableUnits'));
     }
 
     public function update(Request $request, Tenant $tenant)
     {
         $validated = $request->validate([
-            'name_ar' => 'required|string|max:255',
-            'name_en' => 'required|string|max:255',
-            'phone' => 'nullable|string|max:20',
-            'national_id' => 'nullable|string|max:50',
+            'name_ar'           => 'required|string|max:255',
+            'name_en'           => 'required|string|max:255',
+            'email'             => 'required|email|unique:users,email,' . $tenant->user_id,
+            'phone'             => 'nullable|string|max:20',
+            'national_id'       => 'nullable|string|max:50',
             'emergency_contact' => 'nullable|string|max:255',
+            'password'          => 'nullable|string|min:8',
+            'unit_id'           => 'nullable|exists:units,id',
+            'start_date'        => 'nullable|required_with:unit_id|date',
+            'end_date'          => 'nullable|required_with:unit_id|date|after:start_date',
+            'monthly_rent'      => 'nullable|required_with:unit_id|numeric|min:0',
+            'deposit'           => 'nullable|numeric|min:0',
         ]);
 
-        $tenant->user->update(array_merge($this->buildUserNamePayload($validated), [
+        $userUpdate = array_merge($this->buildUserNamePayload($validated), [
+            'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
-        ]));
+        ]);
+        if (!empty($validated['password'])) {
+            $userUpdate['password'] = Hash::make($validated['password']);
+        }
+        $tenant->user->update($userUpdate);
+
         $tenant->update([
-            'national_id' => $validated['national_id'] ?? null,
-            'phone' => $validated['phone'] ?? null,
+            'national_id'       => $validated['national_id'] ?? null,
+            'phone'             => $validated['phone'] ?? null,
             'emergency_contact' => $validated['emergency_contact'] ?? null,
         ]);
 
+        if (!empty($validated['unit_id'])) {
+            $contract = $tenant->activeContract;
+            if ($contract) {
+                if ($contract->unit_id != $validated['unit_id']) {
+                    Unit::find($contract->unit_id)?->update(['status' => 'available']);
+                    Unit::find($validated['unit_id'])?->update(['status' => 'rented']);
+                }
+                $contract->update([
+                    'unit_id'      => $validated['unit_id'],
+                    'start_date'   => $validated['start_date'],
+                    'end_date'     => $validated['end_date'],
+                    'monthly_rent' => $validated['monthly_rent'],
+                    'deposit'      => $validated['deposit'] ?? $contract->deposit,
+                ]);
+            } else {
+                RentalContract::create([
+                    'unit_id'      => $validated['unit_id'],
+                    'tenant_id'    => $tenant->id,
+                    'start_date'   => $validated['start_date'],
+                    'end_date'     => $validated['end_date'],
+                    'monthly_rent' => $validated['monthly_rent'],
+                    'deposit'      => $validated['deposit'] ?? 0,
+                    'status'       => 'active',
+                ]);
+                Unit::find($validated['unit_id'])?->update(['status' => 'rented']);
+            }
+        }
+
         return redirect()->route('manager.tenants.show', $tenant)
-            ->with('success', 'تم تحديث بيانات المستأجر');
+            ->with('success', app()->getLocale() === 'en' ? 'Tenant updated successfully.' : 'تم تحديث بيانات المستأجر');
+    }
+
+    public function importForm()
+    {
+        return view('manager.tenants.import');
+    }
+
+    public function downloadTemplate()
+    {
+        $spreadsheet = (new TenantTemplateExport())->build();
+        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, 'tenants-import-template.xlsx', [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="tenants-import-template.xlsx"',
+        ]);
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:10240',
+        ], [
+            'file.required' => 'Please select a file to upload.',
+            'file.mimes'    => 'Only Excel files (.xlsx, .xls) are accepted.',
+            'file.max'      => 'The file must not exceed 10 MB.',
+        ]);
+
+        try {
+            $importer = new TenantImport($request->file('file')->getPathname());
+            $importer->run();
+        } catch (\Throwable $e) {
+            return back()->withErrors(['file' => 'Could not read the file. Make sure it is a valid Excel file.']);
+        }
+
+        return back()->with('import_results', [
+            'imported' => $importer->imported,
+            'errors'   => $importer->rowErrors,
+            'warnings' => $importer->warnings,
+        ]);
+    }
+
+    public function export()
+    {
+        $spreadsheet = (new TenantExport())->build();
+        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $filename    = 'tenants-' . now()->format('Y-m-d') . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     public function destroy(Tenant $tenant)

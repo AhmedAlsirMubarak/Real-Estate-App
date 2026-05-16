@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
     <meta charset="UTF-8">
@@ -74,6 +74,7 @@
             inset: 0;
             background: linear-gradient(to top, rgba(9,22,42,.68), rgba(9,22,42,.08));
             pointer-events: none;
+            z-index: 2;
         }
         .prop-card-photo {
             width: 100%;
@@ -121,7 +122,7 @@
     $propertiesPaginator = $properties;
     $isAr = app()->getLocale() === 'ar';
     $tr = fn (string $ar, string $en) => $isAr ? $ar : $en;
-    $currency = $isAr ? 'ريال' : 'SAR';
+    $currency = $isAr ? 'ريال' : 'OMR';
 @endphp
 
 {{-- NAVBAR --}}
@@ -246,7 +247,7 @@
 
                     {{-- Price Range --}}
                     <div class="mb-4">
-                        <label class="block text-xs font-semibold mb-2" style="color:var(--text-dark);">{{ $tr('نطاق السعر (ريال)', 'Price Range (SAR)') }}</label>
+                        <label class="block text-xs font-semibold mb-2" style="color:var(--text-dark);">{{ $tr('نطاق السعر (ريال)', 'Price Range (OMR)') }}</label>
                         <div class="grid grid-cols-2 gap-2">
                             <input type="number" name="min_price" value="{{ request('min_price') }}"
                                 placeholder="{{ $tr('من', 'Min') }}" min="0"
@@ -349,7 +350,7 @@
                     </div>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-xs font-semibold mb-2" style="color:var(--text-dark);">{{ $tr('نطاق السعر (ريال)', 'Price Range (SAR)') }}</label>
+                    <label class="block text-xs font-semibold mb-2" style="color:var(--text-dark);">{{ $tr('نطاق السعر (ريال)', 'Price Range (OMR)') }}</label>
                     <div class="grid grid-cols-2 gap-2">
                         <input type="number" name="min_price" value="{{ request('min_price') }}" placeholder="{{ $tr('من', 'Min') }}" min="0" class="filter-input w-full rounded-xl px-3 py-2 text-sm">
                         <input type="number" name="max_price" value="{{ request('max_price') }}" placeholder="{{ $tr('إلى', 'Max') }}" min="0" class="filter-input w-full rounded-xl px-3 py-2 text-sm">
@@ -438,36 +439,65 @@
                 <a href="{{ route('properties.show', $property) }}" class="prop-card rounded-2xl overflow-hidden block group">
                     {{-- Property image --}}
                     <div class="prop-card-img">
-                        @php
-                            $typeImageMap = [
-                                'apartment_building' => [
-                                    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
-                                    'https://images.unsplash.com/photo-1448630360428-65456885c650?auto=format&fit=crop&w=1200&q=80',
-                                    'https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1200&q=80',
-                                ],
-                                'villa' => [
-                                    'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80',
-                                    'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
-                                    'https://images.unsplash.com/photo-1605146769289-440113cc3d00?auto=format&fit=crop&w=1200&q=80',
-                                ],
-                                'farm' => [
-                                    'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80',
-                                    'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1200&q=80',
-                                    'https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&w=1200&q=80',
-                                ],
-                                'chalet' => [
-                                    'https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&w=1200&q=80',
-                                    'https://images.unsplash.com/photo-1472220625704-91e1462799b2?auto=format&fit=crop&w=1200&q=80',
-                                    'https://images.unsplash.com/photo-1544984243-ec57ea16fe25?auto=format&fit=crop&w=1200&q=80',
-                                ],
-                            ];
+                        @php $cardImages = $property->images; @endphp
 
-                            $pool = $typeImageMap[$property->type] ?? $typeImageMap['apartment_building'];
-                            $heroImage = $pool[$property->id % count($pool)];
-                        @endphp
-                        <img src="{{ $heroImage }}" loading="lazy" alt="{{ $property->name }}" class="prop-card-photo">
+                        {{-- Image carousel --}}
+                        @if($cardImages->isNotEmpty())
+                        <div x-data="{
+                                active: 0,
+                                count: {{ $cardImages->count() }},
+                                t: null,
+                                run()  { if(this.count < 2) return; this.t = setInterval(() => { this.active = (this.active + 1) % this.count; }, 3800); },
+                                stop() { clearInterval(this.t); },
+                                prev() { this.active = (this.active - 1 + this.count) % this.count; },
+                                next() { this.active = (this.active + 1) % this.count; }
+                             }"
+                             x-init="run()"
+                             @mouseenter="stop()" @mouseleave="run()"
+                             class="w-full h-full">
+
+                            @foreach($cardImages as $idx => $img)
+                            <img src="{{ $img->url() }}" loading="lazy" alt="{{ $property->name }}"
+                                 class="absolute inset-0 w-full h-full object-cover transition-all duration-500 group-hover:scale-105"
+                                 :class="{{ $idx }} === active ? 'opacity-100 z-[1]' : 'opacity-0 z-0'">
+                            @endforeach
+
+                            @if($cardImages->count() > 1)
+                            {{-- Prev arrow --}}
+                            <button @click.prevent.stop="prev()"
+                                    class="absolute {{ $isAr ? 'end-2' : 'start-2' }} top-1/2 -translate-y-1/2 z-[3] w-7 h-7 rounded-full bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-black/80">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="m15 19-7-7 7-7"/></svg>
+                            </button>
+                            {{-- Next arrow --}}
+                            <button @click.prevent.stop="next()"
+                                    class="absolute {{ $isAr ? 'start-2' : 'end-2' }} top-1/2 -translate-y-1/2 z-[3] w-7 h-7 rounded-full bg-black/55 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-black/80">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="m9 5 7 7-7 7"/></svg>
+                            </button>
+                            {{-- Dot indicators --}}
+                            <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-[3]">
+                                @foreach($cardImages as $idx => $img)
+                                <button @click.prevent.stop="active = {{ $idx }}"
+                                        class="rounded-full transition-all duration-300"
+                                        :class="{{ $idx }} === active ? 'w-3.5 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/80'">
+                                </button>
+                                @endforeach
+                            </div>
+                            {{-- Photo count badge --}}
+                            <div class="absolute top-2 {{ $isAr ? 'start-2' : 'end-2' }} z-[3] bg-black/50 text-white text-[10px] rounded-full px-2 py-0.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-3 h-3"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/></svg>
+                                <span x-text="`${active + 1} / {{ $cardImages->count() }}`"></span>
+                            </div>
+                            @endif
+
+                        </div>
+                        @else
+                        <div class="w-full h-full flex items-center justify-center" style="background: linear-gradient(135deg, #0f2444 0%, #1a3a6b 100%);">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-16 h-16 opacity-20 text-white"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M12 3.75h.008v.008H12V3.75z"/></svg>
+                        </div>
+                        @endif
+
                         {{-- Badges overlay --}}
-                        <div class="absolute top-3 start-3 flex gap-1.5 flex-wrap">
+                        <div class="absolute top-3 start-3 flex gap-1.5 flex-wrap z-[4]">
                             <span class="text-xs font-bold px-2.5 py-1 rounded-full
                                 {{ $property->purpose === 'rent' ? 'badge-rent' : ($property->purpose === 'sale' ? 'badge-sale' : 'badge-both') }}">
                                 {{ $property->purposeLabel() }}
@@ -477,14 +507,14 @@
                             </span>
                         </div>
                         @if($property->available_units_count > 0)
-                        <div class="absolute top-3 end-3">
+                        <div class="absolute top-3 end-3 z-[4]">
                             <span class="text-xs font-bold px-2.5 py-1 rounded-full badge-active">
                                 {{ $property->available_units_count }} {{ $tr('متاح', 'available') }}
                             </span>
                         </div>
                         @endif
                         @if($property->total_area)
-                        <span class="img-chip">{{ number_format($property->total_area) }} m²</span>
+                        <span class="img-chip" style="z-index:4">{{ number_format($property->total_area) }} m²</span>
                         @endif
                     </div>
 
@@ -534,7 +564,7 @@
                             <p class="text-xs" style="color:var(--text-muted);">
                                 {{ $tr('إيجار يبدأ من', 'Rent starts from') }}
                                 <span class="font-bold text-sm" style="color:var(--navy);">{{ number_format($minRent) }}</span>
-                                <span class="text-xs">{{ $tr('ريال/سنة', 'SAR/year') }}</span>
+                                <span class="text-xs">{{ $tr('ريال/سنة', 'OMR/year') }}</span>
                             </p>
                             @endif
                             @if($minSale)

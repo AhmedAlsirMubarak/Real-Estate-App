@@ -1,8 +1,8 @@
-<x-app-layout>
+﻿<x-app-layout>
     @php
         $isAr = app()->getLocale() === 'ar';
         $tr = fn (string $ar, string $en) => $isAr ? $ar : $en;
-        $currency = $isAr ? 'ر.س' : 'SAR';
+        $currency = $isAr ? 'ر.ع' : 'OMR';
     @endphp
     <x-slot name="title">{{ $tr('إضافة مستأجر جديد', 'Add New Tenant') }}</x-slot>
     <div class="py-4 max-w-3xl">

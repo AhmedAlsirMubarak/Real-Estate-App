@@ -11,7 +11,13 @@ use App\Http\Controllers\Tenant;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    $featured = \App\Models\Property::with(['images' => fn($q) => $q->where('is_primary', true)])
+        ->withCount('units')
+        ->where('status', 'active')
+        ->latest()
+        ->take(3)
+        ->get();
+    return view('welcome', compact('featured'));
 })->name('home');
 
 Route::get('/locale/{locale}', function (string $locale) {
@@ -43,15 +49,30 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')->group(function () {
     Route::get('/dashboard', [Manager\DashboardController::class, 'index'])->name('dashboard');
 
+    Route::get('properties/export', [Manager\PropertyController::class, 'export'])->name('properties.export');
+    Route::get('properties/import', [Manager\PropertyController::class, 'importForm'])->name('properties.import.form');
+    Route::post('properties/import', [Manager\PropertyController::class, 'import'])->name('properties.import');
+    Route::get('properties/import/template', [Manager\PropertyController::class, 'downloadTemplate'])->name('properties.import.template');
+
     Route::resource('properties', Manager\PropertyController::class);
     Route::patch('properties/{property}/transfer', [Manager\PropertyController::class, 'transfer'])->name('properties.transfer');
+    Route::post('properties/{property}/images', [Manager\PropertyController::class, 'storeImage'])->name('properties.images.store');
+    Route::delete('properties/{property}/images/{image}', [Manager\PropertyController::class, 'destroyImage'])->name('properties.images.destroy');
+    Route::patch('properties/{property}/images/{image}/primary', [Manager\PropertyController::class, 'setPrimaryImage'])->name('properties.images.primary');
 
     Route::get('properties/{property}/units/create', [Manager\UnitController::class, 'create'])->name('units.create');
     Route::post('properties/{property}/units', [Manager\UnitController::class, 'store'])->name('units.store');
     Route::get('properties/{property}/units/{unit}/edit', [Manager\UnitController::class, 'edit'])->name('units.edit');
     Route::patch('properties/{property}/units/{unit}', [Manager\UnitController::class, 'update'])->name('units.update');
     Route::delete('properties/{property}/units/{unit}', [Manager\UnitController::class, 'destroy'])->name('units.destroy');
+    Route::post('properties/{property}/units/{unit}/images', [Manager\UnitController::class, 'storeImage'])->name('units.images.store');
+    Route::delete('properties/{property}/units/{unit}/images/{image}', [Manager\UnitController::class, 'destroyImage'])->name('units.images.destroy');
+    Route::patch('properties/{property}/units/{unit}/images/{image}/primary', [Manager\UnitController::class, 'setPrimaryImage'])->name('units.images.primary');
 
+    Route::get('tenants/import', [Manager\TenantController::class, 'importForm'])->name('tenants.import.form');
+    Route::post('tenants/import', [Manager\TenantController::class, 'import'])->name('tenants.import');
+    Route::get('tenants/import/template', [Manager\TenantController::class, 'downloadTemplate'])->name('tenants.import.template');
+    Route::get('tenants/export', [Manager\TenantController::class, 'export'])->name('tenants.export');
     Route::resource('tenants', Manager\TenantController::class);
     Route::resource('employees', Manager\EmployeeController::class);
     Route::resource('users', Manager\UserController::class)->only(['index', 'create', 'store', 'edit', 'update']);
@@ -102,6 +123,9 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::get('contacts', [Manager\ContactController::class, 'index'])->name('contacts.index');
     Route::get('contacts/{contact}', [Manager\ContactController::class, 'show'])->name('contacts.show');
     Route::delete('contacts/{contact}', [Manager\ContactController::class, 'destroy'])->name('contacts.destroy');
+
+    // Customers (leads / requirements)
+    Route::resource('customers', Manager\CustomerController::class)->except(['show']);
 });
 
 // Employee routes

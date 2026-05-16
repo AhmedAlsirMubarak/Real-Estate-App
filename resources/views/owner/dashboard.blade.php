@@ -1,8 +1,8 @@
-<x-app-layout>
+﻿<x-app-layout>
     @php
         $isAr = app()->getLocale() === 'ar';
         $tr = fn (string $ar, string $en) => $isAr ? $ar : $en;
-        $currency = $isAr ? 'ر.س' : 'SAR';
+        $currency = $isAr ? 'ر.ع' : 'OMR';
         $displayName = function (?string $name, string $fallback = 'Owner') use ($isAr) {
             if ($name === null || $name === '') return $fallback;
             if ($isAr || ! preg_match('/\p{Arabic}/u', $name)) return $name;
@@ -179,7 +179,7 @@
             options: {
                 responsive: true,
                 plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString('{{ $isAr ? 'ar-SA' : 'en-US' }}') + ' {{ $currency }}' } } }
+                scales: { y: { beginAtZero: true, ticks: { callback: v => v.toLocaleString('{{ $isAr ? 'ar-OM' : 'en-US' }}') + ' {{ $currency }}' } } }
             }
         });
     </script>

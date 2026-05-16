@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Models\MaintenanceRequest;
+use App\Models\MaintenanceRequestImage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class MaintenanceController extends Controller
 {
@@ -44,19 +46,44 @@ class MaintenanceController extends Controller
         }
 
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
+            'title'       => 'required|string|max:255',
             'description' => 'required|string',
-            'priority' => 'required|in:low,medium,high,urgent',
+            'priority'    => 'required|in:low,medium,high,urgent',
+            'images'      => 'nullable|array|max:10',
+            'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
 
-        MaintenanceRequest::create([
-            'tenant_id' => $tenant->id,
-            'unit_id' => $activeContract->unit_id,
-            'title' => $validated['title'],
+        $maintenanceRequest = MaintenanceRequest::create([
+            'tenant_id'   => $tenant->id,
+            'unit_id'     => $activeContract->unit_id,
+            'title'       => $validated['title'],
             'description' => $validated['description'],
-            'priority' => $validated['priority'],
-            'status' => 'pending',
+            'priority'    => $validated['priority'],
+            'status'      => 'pending',
         ]);
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $tmpPath = $image->getPathname();
+                if (!$tmpPath || !file_exists($tmpPath)) {
+                    continue;
+                }
+                $ext      = strtolower($image->getClientOriginalExtension() ?: 'jpg');
+                $filename = sha1(uniqid('', true) . microtime()) . '.' . $ext;
+                try {
+                    $stored = Storage::disk('public')->putFileAs('maintenance-images', $tmpPath, $filename);
+                } catch (\Throwable) {
+                    continue;
+                }
+                if (!$stored) {
+                    continue;
+                }
+                MaintenanceRequestImage::create([
+                    'maintenance_request_id' => $maintenanceRequest->id,
+                    'path'                   => $stored,
+                ]);
+            }
+        }
 
         return redirect()->route('tenant.maintenance.index')
             ->with('success', 'تم تقديم طلب الصيانة بنجاح');
@@ -70,7 +97,7 @@ class MaintenanceController extends Controller
             abort(403);
         }
 
-        $maintenanceRequest->load(['unit.property', 'assignedEmployee']);
+        $maintenanceRequest->load(['unit.property', 'assignedEmployee', 'images']);
         return view('tenant.maintenance.show', compact('maintenanceRequest'));
     }
 

@@ -78,6 +78,17 @@ class Property extends Model
         return $this->hasMany(EmployeeCommission::class);
     }
 
+    public function images()
+    {
+        return $this->hasMany(PropertyImage::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function primaryImage(): ?PropertyImage
+    {
+        $loaded = $this->relationLoaded('images') ? $this->images : $this->images()->get();
+        return $loaded->firstWhere('is_primary', true) ?? $loaded->first();
+    }
+
     public function isCompanyOwned(): bool
     {
         return $this->owner_id === null;

@@ -46,6 +46,11 @@ class MaintenanceRequest extends Model
         return $this->belongsTo(User::class, 'assigned_employee_id');
     }
 
+    public function images()
+    {
+        return $this->hasMany(MaintenanceRequestImage::class);
+    }
+
     public function priorityLabel(): string
     {
         return match($this->priority) {

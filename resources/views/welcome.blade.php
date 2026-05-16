@@ -550,41 +550,32 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-7">
-            @php
-            $properties = [
-                ['ar_name'=>'برج ثروة 1',   'en_name'=>'Tharwa Tower 1', 'ar_loc'=>'حي العليا، الرياض',   'en_loc'=>'Al-Olaya, Riyadh',   'ar_type'=>'سكني',       'en_type'=>'Residential', 'ar_feature'=>'إطلالة بانورامية', 'en_feature'=>'Panoramic View', 'units'=>40, 'image'=>'https://images.unsplash.com/photo-1512918728675-ed5a9ecdebfd?auto=format&fit=crop&w=1200&q=80'],
-                ['ar_name'=>'عمارة النور',  'en_name'=>'Al-Nour Bldg',   'ar_loc'=>'حي المروج، الرياض',   'en_loc'=>'Al-Muruj, Riyadh',   'ar_type'=>'سكني تجاري', 'en_type'=>'Mixed Use',   'ar_feature'=>'وصول ذكي',        'en_feature'=>'Smart Access',   'units'=>24, 'image'=>'https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1200&q=80'],
-                ['ar_name'=>'مجمع الأمير', 'en_name'=>'Al-Amir Complex', 'ar_loc'=>'حي النخيل، جدة',      'en_loc'=>'Al-Nakheel, Jeddah', 'ar_type'=>'تجاري',      'en_type'=>'Commercial',  'ar_feature'=>'مركز أعمال',      'en_feature'=>'Business Hub',    'units'=>16, 'image'=>'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80'],
-            ];
-            @endphp
-
-            @foreach($properties as $p)
-            <div class="property-card rounded-2xl overflow-hidden fade-in">
+            @forelse($featured as $p)
+            @php $img = $p->images->first(); @endphp
+            <a href="{{ route('properties.show', $p) }}" class="property-card rounded-2xl overflow-hidden fade-in block">
                 <div class="property-media">
-                    <img src="{{ $p['image'] }}" loading="lazy" alt="{{ $p['en_name'] }}">
-                    <span class="property-pill">
-                        <span data-ar>{{ $p['ar_type'] }}</span>
-                        <span data-en class="hidden">{{ $p['en_type'] }}</span>
-                    </span>
-                    <span class="property-feature">
-                        <span data-ar>{{ $p['ar_feature'] }}</span>
-                        <span data-en class="hidden">{{ $p['en_feature'] }}</span>
-                    </span>
+                    @if($img)
+                    <img src="{{ $img->url() }}" loading="lazy" alt="{{ $p->name }}">
+                    @else
+                    <div class="w-full h-full" style="background:linear-gradient(135deg,#0f2444 0%,#1a3a6b 100%);display:flex;align-items:center;justify-content:center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" style="width:3rem;height:3rem;opacity:.2;color:#fff;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M12 3.75h.008v.008H12V3.75z"/></svg>
+                    </div>
+                    @endif
+                    <span class="property-pill">{{ $p->typeLabel() }}</span>
+                    <span class="property-feature">{{ $p->purposeLabel() }}</span>
                 </div>
                 <div class="p-5 sm:p-6">
-                    <h3 class="text-base sm:text-lg font-bold mb-1" style="color:var(--navy);">
-                        <span data-ar>{{ $p['ar_name'] }}</span>
-                        <span data-en class="hidden">{{ $p['en_name'] }}</span>
-                    </h3>
+                    <h3 class="text-base sm:text-lg font-bold mb-1" style="color:var(--navy);">{{ $p->name }}</h3>
+                    @if($p->city || $p->address)
                     <div class="flex items-center gap-2 text-sm mb-4" style="color:var(--text-muted);">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--gold);"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/></svg>
-                        <span data-ar>{{ $p['ar_loc'] }}</span>
-                        <span data-en class="hidden">{{ $p['en_loc'] }}</span>
+                        <span class="truncate">{{ implode('، ', array_filter([$p->city, $p->address])) }}</span>
                     </div>
+                    @endif
                     <div class="flex items-center justify-between pt-4 border-t" style="border-color:var(--border);">
                         <div class="flex items-center gap-2 text-sm" style="color:var(--text-muted);">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4" style="color:var(--navy-mid);"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25zM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25z"/></svg>
-                            {{ $p['units'] }} <span data-ar>وحدة</span><span data-en class="hidden">Units</span>
+                            {{ $p->units_count }} <span data-ar>وحدة</span><span data-en class="hidden">Units</span>
                         </div>
                         <span class="text-xs font-semibold px-3 py-1 rounded-full" style="background:#e8f5e9; color:#2e7d32;">
                             <span class="inline-block w-1.5 h-1.5 rounded-full bg-green-600 me-1 align-middle"></span>
@@ -592,8 +583,13 @@
                         </span>
                     </div>
                 </div>
+            </a>
+            @empty
+            <div class="col-span-3 text-center py-12" style="color:var(--text-muted);">
+                <span data-ar>لا توجد عقارات متاحة حالياً</span>
+                <span data-en class="hidden">No properties available yet</span>
             </div>
-            @endforeach
+            @endforelse
         </div>
 
         {{-- View All button --}}

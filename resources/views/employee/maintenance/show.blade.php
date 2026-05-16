@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     @php
         $isAr = app()->getLocale() === 'ar';
         $tr = fn (string $ar, string $en) => $isAr ? $ar : $en;
@@ -60,7 +60,7 @@
                 </div>
                 <div class="flex justify-between">
                     <dt class="text-gray-500">{{ $tr('تكلفة العامل', 'Worker Cost') }}</dt>
-                    <dd class="font-medium">{{ $maintenanceRequest->external_worker_cost ? number_format($maintenanceRequest->external_worker_cost, 2) : '0.00' }} {{ $isAr ? 'ر.س' : 'SAR' }}</dd>
+                    <dd class="font-medium">{{ $maintenanceRequest->external_worker_cost ? number_format($maintenanceRequest->external_worker_cost, 2) : '0.00' }} {{ $isAr ? 'ر.ع' : 'OMR' }}</dd>
                 </div>
                 @endif
             </dl>
@@ -103,7 +103,7 @@
                                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-right focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('تكلفة العامل', 'Worker Cost') }} ({{ $isAr ? 'ر.س' : 'SAR' }})</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('تكلفة العامل', 'Worker Cost') }} ({{ $isAr ? 'ر.ع' : 'OMR' }})</label>
                         <input type="number" step="0.01" min="0" name="external_worker_cost" value="{{ old('external_worker_cost', $maintenanceRequest->external_worker_cost) }}"
                                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-right focus:ring-2 focus:ring-blue-500">
                     </div>

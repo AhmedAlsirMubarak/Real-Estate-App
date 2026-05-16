@@ -12,7 +12,7 @@
     }
 
     $href = $normalizedPhone
-        ? 'https://wa.me/' . $normalizedPhone . '?text=' . rawurlencode($message)
+        ? 'https://api.whatsapp.com/send?phone=' . $normalizedPhone . '&text=' . rawurlencode($message)
         : null;
 
     $classes = match ($size) {
