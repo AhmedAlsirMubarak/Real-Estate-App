@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Accountant;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\RentalContract;
-use App\Models\Tenant;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -35,25 +34,36 @@ class PaymentController extends Controller
         ]);
 
         $activeContracts = RentalContract::where('status', 'active')->get();
+
+        // Load all contract IDs that already have a payment this month in one query
+        $alreadyPaid = Payment::where('year', $request->year)
+            ->where('month', $request->month)
+            ->whereIn('rental_contract_id', $activeContracts->pluck('id'))
+            ->pluck('rental_contract_id')
+            ->flip()
+            ->all();
+
         $created = 0;
+        $newPayments = [];
 
         foreach ($activeContracts as $contract) {
-            $exists = Payment::where('rental_contract_id', $contract->id)
-                ->where('year', $request->year)
-                ->where('month', $request->month)
-                ->exists();
+            if (isset($alreadyPaid[$contract->id])) continue;
 
-            if (!$exists) {
-                Payment::create([
-                    'rental_contract_id' => $contract->id,
-                    'tenant_id' => $contract->tenant_id,
-                    'amount' => $contract->monthly_rent,
-                    'month' => $request->month,
-                    'year' => $request->year,
-                    'status' => 'pending',
-                ]);
-                $created++;
-            }
+            $newPayments[] = [
+                'rental_contract_id' => $contract->id,
+                'tenant_id'          => $contract->tenant_id,
+                'amount'             => $contract->monthly_rent,
+                'month'              => $request->month,
+                'year'               => $request->year,
+                'status'             => 'pending',
+                'created_at'         => now(),
+                'updated_at'         => now(),
+            ];
+            $created++;
+        }
+
+        if ($newPayments) {
+            Payment::insert($newPayments);
         }
 
         return redirect()->route('accountant.payments.index')

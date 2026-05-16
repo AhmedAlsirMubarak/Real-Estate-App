@@ -52,14 +52,21 @@ class DashboardController extends Controller
                 ->sum('amount'),
         ];
 
-        $revenueChart = collect(range(5, 0))->map(function ($monthsAgo) {
+        // Single query for 6-month revenue chart instead of 6 separate SUM queries
+        $chartStart = now()->subMonths(5)->startOfMonth();
+        $rawRevenue = Payment::where('status', 'paid')
+            ->where('paid_at', '>=', $chartStart)
+            ->selectRaw('YEAR(paid_at) as yr, MONTH(paid_at) as mo, SUM(amount) as total')
+            ->groupByRaw('YEAR(paid_at), MONTH(paid_at)')
+            ->get()
+            ->keyBy(fn($r) => $r->yr . '-' . $r->mo);
+
+        $revenueChart = collect(range(5, 0))->map(function ($monthsAgo) use ($rawRevenue) {
             $date = now()->subMonths($monthsAgo);
+            $key  = $date->year . '-' . $date->month;
             return [
                 'label'  => $date->locale(app()->getLocale())->isoFormat('MMM YY'),
-                'amount' => (int) Payment::where('status', 'paid')
-                    ->whereMonth('paid_at', $date->month)
-                    ->whereYear('paid_at', $date->year)
-                    ->sum('amount'),
+                'amount' => (int) ($rawRevenue->get($key)?->total ?? 0),
             ];
         });
 

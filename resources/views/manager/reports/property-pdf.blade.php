@@ -26,7 +26,7 @@
     <div class="meta">
         {{ $property->code }} · {{ $property->typeLabel() }} · {{ $property->purposeLabel() }}<br>
         {{ $property->address }}@if($property->city) — {{ $property->city }}@endif<br>
-        المالك: @if($property->owner) {{ $property->owner->user->name }} (عمولة {{ $property->owner->commission_rate }}%) @else الشركة @endif<br>
+        المالك: @if($property->owner) {{ $property->owner->user?->name ?? 'مالك' }} (عمولة {{ $property->owner->commission_rate }}%) @else الشركة @endif<br>
         الفترة: سنة {{ $year }}@if($month) — شهر {{ $month }}@endif
     </div>
 
@@ -45,7 +45,7 @@
         <tbody>
             @forelse($payments as $p)
             <tr>
-                <td>{{ $p->tenant->user->name }}</td>
+                <td>{{ $p->tenant?->user?->name ?? '—' }}</td>
                 <td>{{ $p->rentalContract->unit->unit_number ?? '—' }}</td>
                 <td>{{ $p->month }}/{{ $p->year }}</td>
                 <td>{{ number_format($p->amount) }}</td>
@@ -81,7 +81,7 @@
             @forelse($maintenanceRequests as $mr)
             <tr>
                 <td>{{ $mr->title }}</td>
-                <td>{{ $mr->tenant->user->name }}</td>
+                <td>{{ $mr->tenant?->user?->name ?? '—' }}</td>
                 <td>{{ $mr->unit->unit_number ?? '—' }}</td>
                 <td>{{ $mr->priorityLabel() }}</td>
                 <td>{{ $mr->statusLabel() }}</td>

@@ -41,7 +41,7 @@
             <p class="text-xs text-gray-500">{{ $tr('المالك', 'Owner') }}</p>
             <p class="text-base font-bold text-gray-800 mt-1">
                 @if($property->owner)
-                    {{ $property->owner->user->name }}
+                    {{ $property->owner->user?->name ?? $tr('مالك', 'Owner') }}
                     <span class="text-xs font-normal text-gray-500 block mt-0.5">
                         {{ $tr('عمولة الشركة', 'Company Commission') }}: {{ $property->owner->commission_rate }}%
                     </span>

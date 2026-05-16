@@ -94,7 +94,7 @@
                 @endphp
                 <tr>
                     <td>{{ $i + 1 }}</td>
-                    <td>{{ $pay->tenant->user->name ?? '-' }}</td>
+                    <td>{{ $pay->tenant?->user?->name ?? '-' }}</td>
                     <td>{{ $pay->rentalContract->unit->property->name ?? '-' }} / {{ $pay->rentalContract->unit->unit_number ?? '-' }}</td>
                     <td>{{ number_format($pay->amount) }}</td>
                     <td>{{ $months[($pay->month)-1] ?? $pay->month }} {{ $pay->year }}</td>
