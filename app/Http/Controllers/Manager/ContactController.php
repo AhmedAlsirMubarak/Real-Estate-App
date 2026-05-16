@@ -9,8 +9,10 @@ class ContactController extends Controller
 {
     public function index()
     {
+        ContactMessage::where('is_read', false)->update(['is_read' => true]);
+
         $messages = ContactMessage::latest()->paginate(20);
-        $unreadCount = ContactMessage::where('is_read', false)->count();
+        $unreadCount = 0;
 
         return view('manager.contacts.index', compact('messages', 'unreadCount'));
     }

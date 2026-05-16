@@ -108,6 +108,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
 
     // Dues management
     Route::get('dues', [Manager\AssociationDueController::class, 'index'])->name('dues.index');
+    Route::get('dues/{due}/invoice', [Manager\AssociationDueController::class, 'invoice'])->name('dues.invoice');
     Route::patch('dues/{due}/paid', [Manager\AssociationDueController::class, 'markPaid'])->name('dues.paid');
     Route::patch('dues/{due}/waived', [Manager\AssociationDueController::class, 'markWaived'])->name('dues.waived');
     Route::delete('dues/{due}', [Manager\AssociationDueController::class, 'destroy'])->name('dues.destroy');
@@ -162,6 +163,7 @@ Route::middleware(['auth', 'role:owner'])->prefix('owner')->name('owner.')->grou
     Route::get('properties/{property}', [Owner\PropertyController::class, 'show'])->name('properties.show');
 
     Route::get('dues', [Owner\DueController::class, 'index'])->name('dues.index');
+    Route::get('dues/{due}/invoice', [Owner\DueController::class, 'invoice'])->name('dues.invoice');
 
     Route::get('meetings', [Owner\MeetingController::class, 'index'])->name('meetings.index');
     Route::get('meetings/{meeting}', [Owner\MeetingController::class, 'show'])->name('meetings.show');

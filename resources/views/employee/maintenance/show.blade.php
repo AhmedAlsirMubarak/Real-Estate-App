@@ -63,6 +63,22 @@
                     <dd class="font-medium">{{ $maintenanceRequest->external_worker_cost ? number_format($maintenanceRequest->external_worker_cost, 2) : '0.00' }} {{ $isAr ? 'ر.ع' : 'OMR' }}</dd>
                 </div>
                 @endif
+
+                @if($maintenanceRequest->images->isNotEmpty())
+                <div>
+                    <dt class="text-gray-500 mb-2">{{ $tr('صور المشكلة', 'Issue Photos') }} ({{ $maintenanceRequest->images->count() }})</dt>
+                    <dd>
+                        <div class="grid grid-cols-3 gap-2 mt-1">
+                            @foreach($maintenanceRequest->images as $image)
+                            <a href="{{ $image->url() }}" target="_blank"
+                               class="block rounded-lg overflow-hidden border border-gray-200 aspect-square hover:opacity-90 transition">
+                                <img src="{{ $image->url() }}" alt="" class="w-full h-full object-cover">
+                            </a>
+                            @endforeach
+                        </div>
+                    </dd>
+                </div>
+                @endif
             </dl>
         </div>
 

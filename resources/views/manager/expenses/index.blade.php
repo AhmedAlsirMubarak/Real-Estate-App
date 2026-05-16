@@ -105,6 +105,7 @@
                         <th class="px-4 py-3 text-right">{{ $tr('التاريخ', 'Date') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('المبلغ', 'Amount') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('دُفع بواسطة', 'Paid by') }}</th>
+                        <th class="px-4 py-3 text-right">{{ $tr('الفاتورة', 'Invoice') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('إجراءات', 'Actions') }}</th>
                     </tr>
                 </thead>
@@ -133,6 +134,19 @@
                         <td class="px-4 py-3 text-gray-600 text-xs">{{ $expense->expense_date->format('Y/m/d') }}</td>
                         <td class="px-4 py-3 font-semibold text-red-700">{{ number_format($expense->amount) }} {{ $currency }}</td>
                         <td class="px-4 py-3 text-gray-600 text-xs">{{ $displayName($expense->paidByUser->name ?? null, $tr('—', 'N/A')) }}</td>
+                        <td class="px-4 py-3">
+                            @if($expense->receipt_path)
+                            <a href="{{ Storage::disk('public')->url($expense->receipt_path) }}" target="_blank"
+                               class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                                </svg>
+                                {{ $tr('عرض', 'View') }}
+                            </a>
+                            @else
+                            <span class="text-gray-300 text-xs">—</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3">
                             <form method="POST" action="{{ route('manager.expenses.destroy', $expense) }}"
                                   onsubmit="return confirm('{{ $tr('حذف هذا المصروف؟', 'Delete this expense?') }}')">

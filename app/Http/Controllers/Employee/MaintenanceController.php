@@ -26,7 +26,7 @@ class MaintenanceController extends Controller
     public function show(MaintenanceRequest $maintenanceRequest)
     {
         $this->ensureEmployeeCanManageRequest(auth()->id(), $maintenanceRequest);
-        $maintenanceRequest->load(['tenant.user', 'unit.property', 'assignedEmployee']);
+        $maintenanceRequest->load(['tenant.user', 'unit.property', 'assignedEmployee', 'images']);
         return view('employee.maintenance.show', compact('maintenanceRequest'));
     }
 

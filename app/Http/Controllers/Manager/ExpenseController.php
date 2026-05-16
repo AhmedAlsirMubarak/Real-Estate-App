@@ -8,6 +8,7 @@ use App\Models\Property;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 class ExpenseController extends Controller
 {
@@ -55,16 +56,17 @@ class ExpenseController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'scope'        => 'required|in:company,property',
-            'category'     => 'required|in:utilities,maintenance,salaries,marketing,repairs,other',
-            'title_ar'     => 'required|string|max:255',
-            'title_en'     => 'required|string|max:255',
-            'amount'       => 'required|numeric|min:0.01',
-            'expense_date' => 'required|date',
+            'scope'          => 'required|in:company,property',
+            'category'       => 'required|in:utilities,maintenance,salaries,marketing,repairs,other',
+            'title_ar'       => 'required|string|max:255',
+            'title_en'       => 'required|string|max:255',
+            'amount'         => 'required|numeric|min:0.01',
+            'expense_date'   => 'required|date',
             'description_ar' => 'nullable|string|max:1000',
             'description_en' => 'nullable|string|max:1000',
-            'property_id'  => 'required_if:scope,property|nullable|exists:properties,id',
-            'paid_by'      => 'nullable|exists:users,id',
+            'property_id'    => 'required_if:scope,property|nullable|exists:properties,id',
+            'paid_by'        => 'nullable|exists:users,id',
+            'invoice'        => 'nullable|file|mimes:pdf|max:10240',
         ]);
 
         $expense = new Expense();
@@ -86,6 +88,23 @@ class ExpenseController extends Controller
         if ($data['scope'] === 'property' && ! empty($data['property_id'])) {
             $expense->expensable_type = Property::class;
             $expense->expensable_id   = $data['property_id'];
+        }
+
+        if ($request->hasFile('invoice')) {
+            $file    = $request->file('invoice');
+            $tmpPath = $file->getPathname();
+            if ($tmpPath && file_exists($tmpPath)) {
+                $ext      = 'pdf';
+                $filename = sha1(uniqid('', true) . microtime()) . '.' . $ext;
+                try {
+                    $stored = Storage::disk('public')->putFileAs('expense-invoices', $tmpPath, $filename);
+                    if ($stored) {
+                        $expense->receipt_path = $stored;
+                    }
+                } catch (\Throwable) {
+                    // silently skip if storage fails
+                }
+            }
         }
 
         $expense->save();

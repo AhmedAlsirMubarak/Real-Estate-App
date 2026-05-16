@@ -5,11 +5,33 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\Association;
 use App\Models\AssociationDue;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class AssociationDueController extends Controller
 {
+    public function invoice(AssociationDue $due)
+    {
+        $due->load(['association.property.units', 'owner.user']);
+
+        $currency        = 'OMR';
+        $ownerName       = $due->owner?->user?->name ?? 'Owner';
+        $ownerPhone      = $due->owner?->phone ?? $due->owner?->user?->phone ?? null;
+        $propertyName    = $due->association?->property?->name ?? 'Property';
+        $associationName = $due->association?->name_en ?? $due->association?->name_ar ?? '';
+        $unitCount       = $due->association?->property?->units?->count() ?? 0;
+
+        $pdf = Pdf::loadView('manager.dues.invoice', compact(
+            'due', 'currency', 'ownerName', 'ownerPhone',
+            'propertyName', 'associationName', 'unitCount'
+        ))->setPaper('a4');
+
+        $filename = 'invoice-INV-' . str_pad($due->id, 6, '0', STR_PAD_LEFT) . '.pdf';
+
+        return $pdf->stream($filename);
+    }
+
     public function index(Request $request)
     {
         $query = AssociationDue::with(['association.property', 'owner.user']);
