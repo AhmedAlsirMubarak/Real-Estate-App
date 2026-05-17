@@ -19,7 +19,7 @@ class ScheduledReportController extends Controller
 
         $reports = ScheduledReport::query()
             ->when($section, fn ($q) => $q->where('section', $section))
-            ->with(['property', 'association', 'creator'])
+            ->with(['property', 'association', 'creator', 'latestRun'])
             ->orderBy('next_run_at')
             ->paginate(20);
 
@@ -66,7 +66,7 @@ class ScheduledReportController extends Controller
 
     public function update(Request $request, ScheduledReport $scheduledReport)
     {
-        $data = $this->validateData($request, $scheduledReport);
+        $data = $this->validateData($request);
         $data['period_months'] = (int) $data['period_months'];
         $scheduledReport->update($data);
 
@@ -96,10 +96,14 @@ class ScheduledReportController extends Controller
     {
         abort_unless($run->file_path && Storage::disk('local')->exists($run->file_path), 404);
 
-        return Storage::disk('local')->download($run->file_path);
+        $absolute = Storage::disk('local')->path($run->file_path);
+        $name     = 'hoa-report-' . $run->scheduled_report_id
+                    . '-' . ($run->period_start?->format('Y-m') ?? 'period') . '.pdf';
+
+        return response()->download($absolute, $name, ['Content-Type' => 'application/pdf']);
     }
 
-    private function validateData(Request $request, ?ScheduledReport $existing = null): array
+    private function validateData(Request $request): array
     {
         return $request->validate([
             'name'           => ['required', 'string', 'max:160'],

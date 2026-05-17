@@ -56,6 +56,11 @@ class ScheduledReport extends Model
         return $this->hasMany(ScheduledReportRun::class);
     }
 
+    public function latestRun()
+    {
+        return $this->hasOne(ScheduledReportRun::class)->latestOfMany();
+    }
+
     public function isDue(): bool
     {
         return $this->status === 'active'

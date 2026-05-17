@@ -26,9 +26,10 @@
                 linear-gradient(180deg, var(--admin-bg-1) 0%, var(--admin-bg-2) 100%);
         }
         #sidebar { transition: transform 0.3s ease, width 0.3s ease; }
+        @media (min-width: 1024px) { #sidebar { transition: none; } }
         #overlay { transition: opacity 0.3s ease; }
         .sidebar-link {
-            transition: all 0.2s ease;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
             border: 1px solid transparent;
             border-radius: 12px;
             margin: 0 8px 4px;
@@ -36,9 +37,7 @@
         .sidebar-link:hover {
             background: rgba(255,255,255,0.10) !important;
             border-color: rgba(255,255,255,0.12);
-            transform: translateX(-2px);
         }
-        [dir="ltr"] .sidebar-link:hover { transform: translateX(2px); }
         .sidebar-link.active {
             background: rgba(255,255,255,0.16) !important;
             border-color: rgba(255,255,255,0.22);

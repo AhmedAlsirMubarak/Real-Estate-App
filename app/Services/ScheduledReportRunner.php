@@ -52,12 +52,17 @@ class ScheduledReportRunner
             ? $this->collectHoaData($report, $start, $end)
             : $this->collectManagementData($report, $start, $end);
 
+        $prevLocale = app()->getLocale();
+        app()->setLocale('ar');
+
         $html = view('manager.scheduled-reports.pdf', [
             'report' => $report,
             'data'   => $data,
             'start'  => $start,
             'end'    => $end,
         ])->render();
+
+        app()->setLocale($prevLocale);
 
         if (! is_dir(storage_path('app/mpdf'))) {
             mkdir(storage_path('app/mpdf'), 0755, true);

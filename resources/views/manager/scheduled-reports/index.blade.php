@@ -48,6 +48,7 @@
                         <th class="px-4 py-3 text-right font-semibold">{{ $tr('الفترة', 'Period') }}</th>
                         <th class="px-4 py-3 text-right font-semibold">{{ $tr('التشغيل القادم', 'Next Run') }}</th>
                         <th class="px-4 py-3 text-right font-semibold">{{ $tr('الحالة', 'Status') }}</th>
+                        <th class="px-4 py-3 text-right font-semibold">{{ $tr('آخر تشغيل', 'Last Run') }}</th>
                         <th class="px-4 py-3 text-right font-semibold">{{ $tr('إجراءات', 'Actions') }}</th>
                     </tr>
                 </thead>
@@ -71,6 +72,21 @@
                                 <span class="text-xs px-2 py-0.5 rounded-full {{ $report->status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600' }}">
                                     {{ $report->statusLabel() }}
                                 </span>
+                            </td>
+                            <td class="px-4 py-3">
+                                @php $lastRun = $report->latestRun; @endphp
+                                @if($lastRun && $lastRun->status === 'success')
+                                    <div class="text-xs text-gray-500">{{ optional($lastRun->generated_at)->format('Y-m-d H:i') }}</div>
+                                    <a href="{{ route('manager.scheduled-reports.download', $lastRun) }}"
+                                       class="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium mt-0.5">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                        {{ $tr('تحميل PDF', 'Download PDF') }}
+                                    </a>
+                                @elseif($lastRun && $lastRun->status === 'failed')
+                                    <span class="text-xs text-red-500">{{ $tr('فشل التشغيل', 'Run failed') }}</span>
+                                @else
+                                    <span class="text-xs text-gray-400">{{ $tr('لم يُشغَّل بعد', 'Not run yet') }}</span>
+                                @endif
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-2">
