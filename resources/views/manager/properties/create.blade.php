@@ -106,6 +106,65 @@
                     </select>
                 </div>
 
+                {{-- Referral employee who brought this property --}}
+                <div class="col-span-2 border-t border-dashed border-gray-200 pt-4 mt-1">
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{{ $tr('موظف الإحالة (من أحضر العقار)', 'Referral (Who Sourced This Property)') }}</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('موظف الإحالة', 'Referral Employee') }}</label>
+                            <select name="referral_employee_id" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                                <option value="">— {{ $tr('لا يوجد', 'None') }} —</option>
+                                @foreach($employees as $emp)
+                                <option value="{{ $emp->id }}" @selected(old('referral_employee_id') == $emp->id)>{{ $emp->name }}</option>
+                                @endforeach
+                            </select>
+                            <p class="text-xs text-gray-400 mt-1">{{ $tr('الموظف الذي أحضر هذا العقار أو الوحدة للشركة', 'Employee who sourced or referred this property to the company') }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('نسبة عمولة الإحالة %', 'Referral Commission %') }}</label>
+                            <div class="relative">
+                                <input type="number" name="referral_commission_rate"
+                                       value="{{ old('referral_commission_rate') }}"
+                                       step="0.01" min="0" max="100" placeholder="0.00"
+                                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm pr-8">
+                                <span class="absolute inset-y-0 {{ app()->getLocale() === 'ar' ? 'left-3' : 'right-3' }} flex items-center text-gray-400 text-sm">%</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">{{ $tr('تُحتسب من إجمالي الإيجار المحصَّل لهذا العقار', 'Calculated from total collected rent for this property') }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Utility account numbers --}}
+                <div class="col-span-2 border-t border-dashed border-gray-200 pt-4 mt-1">
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{{ $tr('أرقام حسابات الخدمات', 'Utility Account Numbers') }}</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                <span class="inline-flex items-center gap-1">
+                                    <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                    {{ $tr('رقم حساب الكهرباء', 'Electricity Account No.') }}
+                                </span>
+                            </label>
+                            <input type="text" name="electricity_account_number" value="{{ old('electricity_account_number') }}"
+                                   placeholder="{{ $tr('اختياري', 'Optional') }}"
+                                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                            @error('electricity_account_number') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                <span class="inline-flex items-center gap-1">
+                                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 22s8-6 8-12a8 8 0 1 0-16 0c0 6 8 12 8 12z"/></svg>
+                                    {{ $tr('رقم حساب الماء', 'Water Account No.') }}
+                                </span>
+                            </label>
+                            <input type="text" name="water_account_number" value="{{ old('water_account_number') }}"
+                                   placeholder="{{ $tr('اختياري', 'Optional') }}"
+                                   class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                            @error('water_account_number') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+                </div>
+
                 <div id="floors-field">
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('عدد الطوابق', 'Floors') }}</label>
                     <input type="number" name="floors" value="{{ old('floors', 1) }}" min="1" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">

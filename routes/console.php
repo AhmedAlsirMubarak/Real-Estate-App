@@ -15,3 +15,4 @@ Artisan::command('reports:run-scheduled', function (ScheduledReportRunner $runne
 })->purpose('Generate any scheduled reports that are due (HOA + Building Mgmt)');
 
 Schedule::command('reports:run-scheduled')->dailyAt('02:00');
+Schedule::command('contracts:check-expiry')->dailyAt('08:00');

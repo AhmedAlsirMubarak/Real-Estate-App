@@ -23,6 +23,9 @@ class RentalContract extends Model
         'approved_by_owner_id',
         'owner_approval_notes',
         'notes',
+        'contract_file',
+        'electricity_account_number',
+        'water_account_number',
     ];
 
     protected $casts = [

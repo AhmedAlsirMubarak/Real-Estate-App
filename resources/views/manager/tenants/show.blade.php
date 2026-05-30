@@ -26,15 +26,75 @@
             <div class="bg-white rounded-xl shadow p-6">
                 <h3 class="font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100">بيانات العقد النشط</h3>
                 @if($tenant->activeContract)
-                @php $c = $tenant->activeContract; @endphp
+                @php
+                    $c = $tenant->activeContract;
+                    $daysLeft = $c->end_date ? now()->diffInDays($c->end_date, false) : null;
+                @endphp
                 <dl class="space-y-3">
                     <div class="flex justify-between"><dt class="text-gray-500 text-sm">العقار</dt><dd class="font-medium">{{ $c->unit->property->name ?? '-' }}</dd></div>
                     <div class="flex justify-between"><dt class="text-gray-500 text-sm">الوحدة</dt><dd class="font-medium">{{ $c->unit->unit_number ?? '-' }}</dd></div>
                     <div class="flex justify-between"><dt class="text-gray-500 text-sm">تاريخ البدء</dt><dd class="font-medium">{{ $c->start_date ? $c->start_date->format('Y/m/d') : '-' }}</dd></div>
-                    <div class="flex justify-between"><dt class="text-gray-500 text-sm">تاريخ الانتهاء</dt><dd class="font-medium">{{ $c->end_date ? $c->end_date->format('Y/m/d') : '-' }}</dd></div>
+                    <div class="flex justify-between items-center">
+                        <dt class="text-gray-500 text-sm">تاريخ الانتهاء</dt>
+                        <dd class="font-medium flex items-center gap-2">
+                            {{ $c->end_date ? $c->end_date->format('Y/m/d') : '-' }}
+                            @if($daysLeft !== null && $daysLeft >= 0 && $daysLeft <= 30)
+                                <span class="px-2 py-0.5 rounded-full text-xs font-bold {{ $daysLeft <= 7 ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700' }}">
+                                    {{ $daysLeft }} يوم
+                                </span>
+                            @elseif($daysLeft !== null && $daysLeft < 0)
+                                <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">منتهي</span>
+                            @endif
+                        </dd>
+                    </div>
                     <div class="flex justify-between"><dt class="text-gray-500 text-sm">الإيجار الشهري</dt><dd class="font-bold text-blue-700">{{ number_format($c->monthly_rent) }} ر.ع</dd></div>
                     <div class="flex justify-between"><dt class="text-gray-500 text-sm">مبلغ التأمين</dt><dd class="font-medium">{{ number_format($c->deposit ?? 0) }} ر.ع</dd></div>
+                    @if($c->electricity_account_number)
+                    <div class="flex justify-between"><dt class="text-gray-500 text-sm flex items-center gap-1"><svg class="w-3.5 h-3.5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>رقم حساب الكهرباء</dt><dd class="font-medium font-mono">{{ $c->electricity_account_number }}</dd></div>
+                    @endif
+                    @if($c->water_account_number)
+                    <div class="flex justify-between"><dt class="text-gray-500 text-sm flex items-center gap-1"><svg class="w-3.5 h-3.5 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2c-5.33 4.55-8 8.48-8 11.8C4 17.78 7.58 22 12 22s8-4.22 8-8.2C20 10.48 17.33 6.55 12 2z"/></svg>رقم حساب الماء</dt><dd class="font-medium font-mono">{{ $c->water_account_number }}</dd></div>
+                    @endif
                 </dl>
+
+                {{-- Contract file section --}}
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">ملف العقد</p>
+                    @if($c->contract_file)
+                        <div class="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg mb-3">
+                            <svg class="w-8 h-8 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/></svg>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-800 truncate">{{ basename($c->contract_file) }}</p>
+                                <p class="text-xs text-gray-500">ملف العقد محفوظ</p>
+                            </div>
+                            <a href="{{ asset('storage/' . $c->contract_file) }}" target="_blank"
+                               class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                تحميل
+                            </a>
+                            <form method="POST" action="{{ route('manager.rental-contracts.delete-file', $c) }}"
+                                  onsubmit="return confirm('حذف ملف العقد؟')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="text-red-500 hover:text-red-700 p-1" title="حذف الملف">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </form>
+                        </div>
+                    @endif
+                    <form method="POST" action="{{ route('manager.rental-contracts.upload-file', $c) }}"
+                          enctype="multipart/form-data" class="flex items-center gap-2">
+                        @csrf
+                        <label class="flex-1 flex items-center gap-2 cursor-pointer border border-dashed border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-500 hover:border-blue-400 hover:bg-blue-50 transition">
+                            <svg class="w-4 h-4 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                            <span id="file-label-{{ $c->id }}">{{ $c->contract_file ? 'استبدال الملف…' : 'رفع ملف العقد…' }}</span>
+                            <input type="file" name="contract_file" accept=".pdf,.doc,.docx" class="hidden"
+                                   onchange="document.getElementById('file-label-{{ $c->id }}').textContent = this.files[0]?.name || '{{ $c->contract_file ? 'استبدال الملف…' : 'رفع ملف العقد…' }}'">
+                        </label>
+                        <button type="submit" class="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm font-medium">رفع</button>
+                    </form>
+                    @error('contract_file') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                    <p class="text-xs text-gray-400 mt-1">PDF, DOC, DOCX — حد أقصى 10 ميجا</p>
+                </div>
                 @else
                 <p class="text-gray-400 text-center py-4">لا يوجد عقد نشط</p>
                 @endif

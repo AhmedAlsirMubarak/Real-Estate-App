@@ -43,7 +43,7 @@ class PropertyController extends Controller
             ->paginate(10)
             ->appends($request->query());
 
-        return view('manager.properties.index', compact('properties', 'search', 'section'));
+        return view('manager.properties.index', compact('properties', 'search', 'section', 'typeFilter', 'purposeFilter'));
     }
 
     public function create()
@@ -177,14 +177,13 @@ class PropertyController extends Controller
 
     private function storeUploadedFile(\Illuminate\Http\UploadedFile $file, string $directory): string|false
     {
-        $tmpPath = $file->getPathname();
-        if (!file_exists($tmpPath)) {
+        if (! $file->isValid()) {
             return false;
         }
         $ext      = strtolower($file->getClientOriginalExtension() ?: 'jpg');
         $filename = sha1(uniqid('', true) . microtime()) . '.' . $ext;
         try {
-            $stored = Storage::disk('public')->putFileAs($directory, $tmpPath, $filename);
+            $stored = Storage::disk('public')->putFileAs($directory, $file, $filename);
         } catch (\Throwable) {
             return false;
         }
@@ -283,13 +282,17 @@ class PropertyController extends Controller
             'city_en'     => 'nullable|string|max:100',
             'description_ar' => 'nullable|string',
             'description_en' => 'nullable|string',
-            'owner_id'    => 'nullable|exists:owners,id',
-            'employee_id' => 'nullable|exists:users,id',
+            'owner_id'                 => 'nullable|exists:owners,id',
+            'employee_id'              => 'nullable|exists:users,id',
+            'referral_employee_id'     => 'nullable|exists:users,id',
+            'referral_commission_rate' => 'nullable|numeric|min:0|max:100',
             'floors'      => 'nullable|integer|min:1',
             'total_area'  => 'nullable|numeric|min:0',
             'bedrooms'    => 'nullable|integer|min:0',
             'bathrooms'   => 'nullable|integer|min:0',
             'status'      => 'nullable|in:active,sold,under_maintenance,archived',
+            'electricity_account_number' => 'nullable|string|max:100',
+            'water_account_number'       => 'nullable|string|max:100',
         ]);
     }
 

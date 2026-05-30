@@ -18,7 +18,8 @@ class MaintenanceController extends Controller
         })->when($status !== 'all', fn($q) => $q->where('status', $status))
           ->with(['tenant.user', 'unit.property'])
           ->latest()
-          ->paginate(15);
+          ->paginate(15)
+          ->withQueryString();
 
         return view('employee.maintenance.index', compact('requests', 'status'));
     }

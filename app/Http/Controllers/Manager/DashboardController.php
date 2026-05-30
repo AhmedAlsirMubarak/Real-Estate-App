@@ -9,6 +9,7 @@ use App\Models\MaintenanceRequest;
 use App\Models\Owner;
 use App\Models\Payment;
 use App\Models\Property;
+use App\Models\RentalContract;
 use App\Models\SaleContract;
 use App\Models\Tenant;
 use App\Models\Unit;
@@ -18,6 +19,9 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        // Release session lock early so clicking links during page load doesn't block
+        session()->save();
+
         $totalUnits = Unit::count();
         $rentedUnits = Unit::where('status', 'rented')->count();
 
@@ -80,6 +84,12 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        return view('manager.dashboard', compact('stats', 'recentMaintenance', 'recentPayments', 'revenueChart'));
+        $expiringContracts = RentalContract::where('status', 'active')
+            ->whereBetween('end_date', [now()->toDateString(), now()->addDays(30)->toDateString()])
+            ->with(['tenant.user', 'unit.property'])
+            ->orderBy('end_date')
+            ->get();
+
+        return view('manager.dashboard', compact('stats', 'recentMaintenance', 'recentPayments', 'revenueChart', 'expiringContracts'));
     }
 }

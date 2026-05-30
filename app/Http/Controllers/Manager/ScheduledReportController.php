@@ -21,7 +21,8 @@ class ScheduledReportController extends Controller
             ->when($section, fn ($q) => $q->where('section', $section))
             ->with(['property', 'association', 'creator', 'latestRun'])
             ->orderBy('next_run_at')
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         return view('manager.scheduled-reports.index', compact('reports', 'section'));
     }

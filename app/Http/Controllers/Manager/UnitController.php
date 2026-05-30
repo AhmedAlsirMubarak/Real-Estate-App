@@ -113,14 +113,13 @@ class UnitController extends Controller
 
     private function storeUploadedFile(\Illuminate\Http\UploadedFile $file, string $directory): string|false
     {
-        $tmpPath = $file->getPathname();
-        if (!file_exists($tmpPath)) {
+        if (! $file->isValid()) {
             return false;
         }
         $ext      = strtolower($file->getClientOriginalExtension() ?: 'jpg');
         $filename = sha1(uniqid('', true) . microtime()) . '.' . $ext;
         try {
-            $stored = Storage::disk('public')->putFileAs($directory, $tmpPath, $filename);
+            $stored = Storage::disk('public')->putFileAs($directory, $file, $filename);
         } catch (\Throwable) {
             return false;
         }

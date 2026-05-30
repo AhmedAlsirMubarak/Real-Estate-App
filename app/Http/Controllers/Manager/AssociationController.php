@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
 use App\Models\Association;
+use App\Models\NoObjectionCertificate;
+use App\Models\NoObjectionSaleCertificate;
 use App\Models\Property;
 use Illuminate\Http\Request;
+use Mpdf\Mpdf;
 
 class AssociationController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
         $associations = Association::with(['property.owners', 'dues'])
             ->latest()
@@ -27,17 +30,28 @@ class AssociationController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'property_id'          => 'required|exists:properties,id|unique:associations,property_id',
-            'name_ar'              => 'required|string|max:255',
-            'name_en'              => 'required|string|max:255',
-            'established_date'     => 'nullable|date',
-            'monthly_fee_per_unit' => 'required|numeric|min:0',
-            'description_ar'       => 'nullable|string',
-            'description_en'       => 'nullable|string',
-            'status'               => 'required|in:active,inactive',
+            'property_id'                => 'required|exists:properties,id|unique:associations,property_id',
+            'name_ar'                    => 'required|string|max:255',
+            'name_en'                    => 'required|string|max:255',
+            'established_date'           => 'nullable|date',
+            'monthly_fee_per_unit'       => 'required|numeric|min:0',
+            'description_ar'             => 'nullable|string',
+            'description_en'             => 'nullable|string',
+            'status'                     => 'required|in:active,inactive',
+            'electricity_account_number' => 'nullable|string|max:100',
+            'water_account_number'       => 'nullable|string|max:100',
+            'no_objection_certificate'   => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'sketch'                     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'association_certificate'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'personal_id'                => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'manager_id'                 => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
-        $association = Association::create($data);
+        $association = Association::create(array_filter($data, fn ($k) => !in_array($k, [
+            'no_objection_certificate', 'sketch', 'association_certificate', 'personal_id', 'manager_id',
+        ]), ARRAY_FILTER_USE_KEY));
+
+        $this->handleDocumentUploads($request, $association);
 
         return redirect()
             ->route('manager.associations.show', $association)
@@ -52,6 +66,8 @@ class AssociationController extends Controller
             'dues' => fn ($q) => $q->latest('due_date')->limit(20),
             'dues.owner.user',
             'meetings' => fn ($q) => $q->latest('scheduled_at')->limit(10),
+            'noObjectionCertificates.generatedBy',
+            'noObjectionSaleCertificates.generatedBy',
         ]);
 
         return view('manager.associations.show', compact('association'));
@@ -65,25 +81,428 @@ class AssociationController extends Controller
     public function update(Request $request, Association $association)
     {
         $data = $request->validate([
-            'name_ar'              => 'required|string|max:255',
-            'name_en'              => 'required|string|max:255',
-            'established_date'     => 'nullable|date',
-            'monthly_fee_per_unit' => 'required|numeric|min:0',
-            'description_ar'       => 'nullable|string',
-            'description_en'       => 'nullable|string',
-            'status'               => 'required|in:active,inactive',
+            'name_ar'                    => 'required|string|max:255',
+            'name_en'                    => 'required|string|max:255',
+            'established_date'           => 'nullable|date',
+            'monthly_fee_per_unit'       => 'required|numeric|min:0',
+            'description_ar'             => 'nullable|string',
+            'description_en'             => 'nullable|string',
+            'status'                     => 'required|in:active,inactive',
+            'electricity_account_number' => 'nullable|string|max:100',
+            'water_account_number'       => 'nullable|string|max:100',
+            'no_objection_certificate'   => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'sketch'                     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'association_certificate'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'personal_id'                => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'manager_id'                 => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
-        $association->update($data);
+        $association->update(array_filter($data, fn ($k) => !in_array($k, [
+            'no_objection_certificate', 'sketch', 'association_certificate', 'personal_id', 'manager_id',
+        ]), ARRAY_FILTER_USE_KEY));
+
+        $this->handleDocumentUploads($request, $association);
 
         return redirect()
             ->route('manager.associations.show', $association)
             ->with('success', __('Updated Successfully'));
     }
 
+    public function deleteDocument(Association $association, string $field)
+    {
+        $allowed = [
+            'no_objection_certificate_path',
+            'sketch_path',
+            'association_certificate_path',
+            'personal_id_path',
+            'manager_id_path',
+        ];
+
+        abort_unless(in_array($field, $allowed), 403);
+
+        $path = $association->$field;
+        if ($path) {
+            $abs = storage_path('app/public/' . $path);
+            if (file_exists($abs)) {
+                @unlink($abs);
+            }
+        }
+
+        $association->update([$field => null]);
+
+        return back()->with('success', __('Document deleted'));
+    }
+
     public function destroy(Association $association)
     {
         $association->delete();
         return redirect()->route('manager.associations.index')->with('success', __('Deleted Successfully'));
+    }
+
+    public function noObjectionPdf(Request $request, Association $association)
+    {
+        $validated = $request->validate([
+            'lessor_name'  => 'required|string|max:255',
+            'lessor_phone' => 'required|string|max:30',
+            'lessor_id'    => 'required|string|max:50',
+        ]);
+
+        $association->load(['property', 'property.owners.user']);
+
+        $refNumber = 'NOC-' . $association->id . '-' . date('Ymd') . '-' . rand(100, 999);
+
+        $docMap = [
+            'No Objection Certificate'      => $association->no_objection_certificate_path,
+            'Sketch'                         => $association->sketch_path,
+            'Owners Association Certificate' => $association->association_certificate_path,
+            'Personal ID'                    => $association->personal_id_path,
+            "Association Manager's ID"       => $association->manager_id_path,
+        ];
+
+        $uploadedLabels = array_keys(array_filter($docMap));
+
+        $prevLocale = app()->getLocale();
+        app()->setLocale('ar');
+        $html = view('manager.associations.no-objection-pdf', [
+            'association'    => $association,
+            'lessor'         => $validated,
+            'refNumber'      => $refNumber,
+            'documentLabels' => $uploadedLabels,
+        ])->render();
+        app()->setLocale($prevLocale);
+
+        $tempDir = storage_path('app/mpdf');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        // Step 1 — render certificate with mPDF (handles Arabic/RTL)
+        $mpdf = new Mpdf([
+            'mode'         => 'utf-8',
+            'format'       => 'A4',
+            'orientation'  => 'P',
+            'default_font' => 'dejavusans',
+            'tempDir'      => $tempDir,
+        ]);
+        $mpdf->SetDirectionality('rtl');
+        $mpdf->WriteHTML($html);
+        $certContent = $mpdf->Output('', 'S');
+
+        // Step 2 — save cert to temp file so FPDI can import its pages
+        $tempCert = $tempDir . '/noc_cert_' . time() . '_' . rand(1000, 9999) . '.pdf';
+        file_put_contents($tempCert, $certContent);
+
+        try {
+            // Step 3 — use FPDI to assemble final merged PDF
+            $fpdi = new \setasign\Fpdi\Fpdi('P', 'mm', 'A4');
+
+            // Import certificate pages
+            $certPageCount = $fpdi->setSourceFile($tempCert);
+            for ($i = 1; $i <= $certPageCount; $i++) {
+                $tpl  = $fpdi->importPage($i);
+                $size = $fpdi->getTemplateSize($tpl);
+                $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+                $fpdi->AddPage($orientation, [$size['width'], $size['height']]);
+                $fpdi->useTemplate($tpl);
+            }
+
+            // Append each uploaded document
+            foreach ($docMap as $label => $relPath) {
+                if (!$relPath) {
+                    continue;
+                }
+                $absPath = storage_path('app/public/' . $relPath);
+                if (!file_exists($absPath)) {
+                    continue;
+                }
+
+                $ext = strtolower(pathinfo($absPath, PATHINFO_EXTENSION));
+
+                if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
+                    $fpdi->AddPage('P', [210, 297]);
+
+                    // Simple English label header (FPDF built-in fonts are Latin only)
+                    $fpdi->SetFont('Helvetica', 'B', 11);
+                    $fpdi->SetTextColor(30, 58, 138);
+                    $fpdi->SetY(7);
+                    $fpdi->Cell(0, 8, $label, 0, 1, 'C');
+                    $fpdi->SetDrawColor(191, 219, 254);
+                    $fpdi->Line(10, 16, 200, 16);
+
+                    // Fit image within printable area
+                    [$imgW, $imgH] = getimagesize($absPath);
+                    $maxW  = 190;
+                    $maxH  = 263;
+                    $ratio = $imgW / $imgH;
+                    if (($imgW / $maxW) > ($imgH / $maxH)) {
+                        $w = $maxW;
+                        $h = $maxW / $ratio;
+                    } else {
+                        $h = $maxH;
+                        $w = $maxH * $ratio;
+                    }
+                    $x = (210 - $w) / 2;
+                    $fpdi->Image($absPath, $x, 19, $w, $h);
+
+                } elseif ($ext === 'pdf') {
+                    try {
+                        $pdfPageCount = $fpdi->setSourceFile($absPath);
+                        for ($i = 1; $i <= $pdfPageCount; $i++) {
+                            $tpl  = $fpdi->importPage($i);
+                            $size = $fpdi->getTemplateSize($tpl);
+                            $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+                            $fpdi->AddPage($orientation, [$size['width'], $size['height']]);
+                            $fpdi->useTemplate($tpl);
+                        }
+                    } catch (\Exception) {
+                        // Skip encrypted or unreadable PDFs silently
+                    }
+                }
+            }
+
+            $merged = $fpdi->Output('', 'S');
+        } finally {
+            @unlink($tempCert);
+        }
+
+        // Save the generated PDF to local storage for re-download
+        $nocDir = storage_path('app/no-objection-certs/' . $association->id);
+        if (!is_dir($nocDir)) {
+            mkdir($nocDir, 0755, true);
+        }
+        $storedFilename = $refNumber . '.pdf';
+        file_put_contents($nocDir . DIRECTORY_SEPARATOR . $storedFilename, $merged);
+        $filePath = 'no-objection-certs/' . $association->id . '/' . $storedFilename;
+
+        // Persist the record
+        NoObjectionCertificate::create([
+            'association_id' => $association->id,
+            'generated_by'   => $request->user()?->id,
+            'ref_number'     => $refNumber,
+            'lessor_name'    => $validated['lessor_name'],
+            'lessor_phone'   => $validated['lessor_phone'],
+            'lessor_id'      => $validated['lessor_id'],
+            'file_path'      => $filePath,
+        ]);
+
+        $filename = 'no-objection-' . $association->id . '-' . date('Ymd') . '.pdf';
+
+        return response($merged)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+    }
+
+    public function downloadNoc(NoObjectionCertificate $noc, Request $request)
+    {
+        $abs = storage_path('app/' . $noc->file_path);
+        abort_unless($noc->file_path && file_exists($abs), 404);
+
+        $filename = $noc->ref_number . '.pdf';
+
+        if ($request->boolean('preview')) {
+            return response()->file($abs, [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            ]);
+        }
+
+        return response()->download($abs, $filename, ['Content-Type' => 'application/pdf']);
+    }
+
+    public function noSalePdf(Request $request, Association $association)
+    {
+        $validated = $request->validate([
+            'buyer_name'  => 'required|string|max:255',
+            'buyer_phone' => 'required|string|max:30',
+            'buyer_id'    => 'required|string|max:50',
+        ]);
+
+        $association->load(['property', 'property.owners.user']);
+
+        $refNumber = 'NOS-' . $association->id . '-' . date('Ymd') . '-' . rand(100, 999);
+
+        $docMap = [
+            'No Objection Certificate'      => $association->no_objection_certificate_path,
+            'Sketch'                         => $association->sketch_path,
+            'Owners Association Certificate' => $association->association_certificate_path,
+            'Personal ID'                    => $association->personal_id_path,
+            "Association Manager's ID"       => $association->manager_id_path,
+        ];
+
+        $uploadedLabels = array_keys(array_filter($docMap));
+
+        $prevLocale = app()->getLocale();
+        app()->setLocale('ar');
+        $html = view('manager.associations.no-objection-sale-pdf', [
+            'association'    => $association,
+            'buyer'          => $validated,
+            'refNumber'      => $refNumber,
+            'documentLabels' => $uploadedLabels,
+        ])->render();
+        app()->setLocale($prevLocale);
+
+        $tempDir = storage_path('app/mpdf');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $mpdf = new Mpdf([
+            'mode'         => 'utf-8',
+            'format'       => 'A4',
+            'orientation'  => 'P',
+            'default_font' => 'dejavusans',
+            'tempDir'      => $tempDir,
+        ]);
+        $mpdf->SetDirectionality('rtl');
+        $mpdf->WriteHTML($html);
+        $certContent = $mpdf->Output('', 'S');
+
+        $tempCert = $tempDir . '/nos_cert_' . time() . '_' . rand(1000, 9999) . '.pdf';
+        file_put_contents($tempCert, $certContent);
+
+        try {
+            $fpdi = new \setasign\Fpdi\Fpdi('P', 'mm', 'A4');
+
+            $certPageCount = $fpdi->setSourceFile($tempCert);
+            for ($i = 1; $i <= $certPageCount; $i++) {
+                $tpl  = $fpdi->importPage($i);
+                $size = $fpdi->getTemplateSize($tpl);
+                $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+                $fpdi->AddPage($orientation, [$size['width'], $size['height']]);
+                $fpdi->useTemplate($tpl);
+            }
+
+            foreach ($docMap as $label => $relPath) {
+                if (!$relPath) continue;
+                $absPath = storage_path('app/public/' . $relPath);
+                if (!file_exists($absPath)) continue;
+
+                $ext = strtolower(pathinfo($absPath, PATHINFO_EXTENSION));
+
+                if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
+                    $fpdi->AddPage('P', [210, 297]);
+                    $fpdi->SetFont('Helvetica', 'B', 11);
+                    $fpdi->SetTextColor(15, 118, 110);
+                    $fpdi->SetY(7);
+                    $fpdi->Cell(0, 8, $label, 0, 1, 'C');
+                    $fpdi->SetDrawColor(153, 246, 228);
+                    $fpdi->Line(10, 16, 200, 16);
+
+                    [$imgW, $imgH] = getimagesize($absPath);
+                    $maxW  = 190; $maxH = 263;
+                    $ratio = $imgW / $imgH;
+                    if (($imgW / $maxW) > ($imgH / $maxH)) {
+                        $w = $maxW; $h = $maxW / $ratio;
+                    } else {
+                        $h = $maxH; $w = $maxH * $ratio;
+                    }
+                    $fpdi->Image($absPath, (210 - $w) / 2, 19, $w, $h);
+
+                } elseif ($ext === 'pdf') {
+                    try {
+                        $pdfPageCount = $fpdi->setSourceFile($absPath);
+                        for ($i = 1; $i <= $pdfPageCount; $i++) {
+                            $tpl  = $fpdi->importPage($i);
+                            $size = $fpdi->getTemplateSize($tpl);
+                            $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+                            $fpdi->AddPage($orientation, [$size['width'], $size['height']]);
+                            $fpdi->useTemplate($tpl);
+                        }
+                    } catch (\Exception) {
+                        // Skip unreadable PDFs
+                    }
+                }
+            }
+
+            $merged = $fpdi->Output('', 'S');
+        } finally {
+            @unlink($tempCert);
+        }
+
+        $nocDir = storage_path('app/no-objection-sale-certs/' . $association->id);
+        if (!is_dir($nocDir)) {
+            mkdir($nocDir, 0755, true);
+        }
+        $storedFilename = $refNumber . '.pdf';
+        file_put_contents($nocDir . DIRECTORY_SEPARATOR . $storedFilename, $merged);
+        $filePath = 'no-objection-sale-certs/' . $association->id . '/' . $storedFilename;
+
+        NoObjectionSaleCertificate::create([
+            'association_id' => $association->id,
+            'generated_by'   => $request->user()?->id,
+            'ref_number'     => $refNumber,
+            'buyer_name'     => $validated['buyer_name'],
+            'buyer_phone'    => $validated['buyer_phone'],
+            'buyer_id'       => $validated['buyer_id'],
+            'file_path'      => $filePath,
+        ]);
+
+        $filename = 'no-objection-sale-' . $association->id . '-' . date('Ymd') . '.pdf';
+
+        return response($merged)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+    }
+
+    public function downloadNocSale(NoObjectionSaleCertificate $noc, Request $request)
+    {
+        $abs = storage_path('app/' . $noc->file_path);
+        abort_unless($noc->file_path && file_exists($abs), 404);
+
+        $filename = $noc->ref_number . '.pdf';
+
+        if ($request->boolean('preview')) {
+            return response()->file($abs, [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            ]);
+        }
+
+        return response()->download($abs, $filename, ['Content-Type' => 'application/pdf']);
+    }
+
+    private function handleDocumentUploads(Request $request, Association $association): void
+    {
+        $documents = [
+            'no_objection_certificate' => 'no_objection_certificate_path',
+            'sketch'                   => 'sketch_path',
+            'association_certificate'  => 'association_certificate_path',
+            'personal_id'              => 'personal_id_path',
+            'manager_id'               => 'manager_id_path',
+        ];
+
+        $targetDir = storage_path('app/public/associations/' . $association->id);
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+
+        $updates = [];
+        foreach ($documents as $inputName => $column) {
+            if (!$request->hasFile($inputName)) {
+                continue;
+            }
+
+            $file     = $request->file($inputName);
+            $filename = $inputName . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $destPath = $targetDir . DIRECTORY_SEPARATOR . $filename;
+
+            if (!move_uploaded_file($file->getPathname(), $destPath)) {
+                continue;
+            }
+
+            // Remove old file only after new one is safely in place
+            if ($association->$column) {
+                $old = storage_path('app/public/' . $association->$column);
+                if (file_exists($old)) {
+                    @unlink($old);
+                }
+            }
+
+            $updates[$column] = 'associations/' . $association->id . '/' . $filename;
+        }
+
+        if ($updates) {
+            $association->update($updates);
+        }
     }
 }

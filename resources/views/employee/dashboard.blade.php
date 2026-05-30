@@ -32,7 +32,7 @@
             </form>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             <div class="bg-white rounded-xl shadow p-4">
                 <p class="text-xs text-gray-500">{{ $tr('العقارات المسندة', 'Assigned Properties') }}</p>
                 <p class="text-2xl font-bold text-gray-800 mt-1">{{ $stats['total_properties'] ?? 0 }}</p>
@@ -52,6 +52,15 @@
             <div class="bg-white rounded-xl shadow p-4">
                 <p class="text-xs text-gray-500">{{ $tr('عمولتك الإجمالية', 'Your Total Commission') }} ({{ $year }})</p>
                 <p class="text-2xl font-bold text-indigo-700 mt-1">{{ number_format($commissionStats['total'] ?? 0) }} {{ $currency }}</p>
+            </div>
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-xl shadow p-4">
+                <p class="text-xs text-blue-600">{{ $tr('عمولة الإحالة', 'Referral Commission') }} ({{ $year }})</p>
+                <p class="text-2xl font-bold {{ $referralCommissionTotal > 0 ? 'text-blue-700' : 'text-gray-400' }} mt-1">
+                    {{ number_format($referralCommissionTotal, 2) }} {{ $currency }}
+                </p>
+                @if($referredProperties->isNotEmpty())
+                <p class="text-xs text-blue-400 mt-1">{{ $referredProperties->count() }} {{ $tr('عقار محال', 'referred props') }}</p>
+                @endif
             </div>
         </div>
 
@@ -118,6 +127,59 @@
                 </div>
             </div>
         </div>
+
+        {{-- Referral commission details --}}
+        @if($referredProperties->isNotEmpty())
+        <div class="bg-white rounded-xl shadow overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    {{ $tr('عمولة الإحالة — العقارات التي أحلتها', 'Referral Commission — Properties You Referred') }}
+                </h3>
+                @if($referralCommissionTotal > 0)
+                <span class="text-sm font-bold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">
+                    {{ $tr('الإجمالي', 'Total') }}: {{ number_format($referralCommissionTotal, 2) }} {{ $currency }}
+                </span>
+                @endif
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 text-gray-600 text-xs">
+                        <tr>
+                            <th class="px-4 py-3 text-right">{{ $tr('العقار', 'Property') }}</th>
+                            <th class="px-4 py-3 text-right">{{ $tr('النوع', 'Type') }}</th>
+                            <th class="px-4 py-3 text-right">{{ $tr('نسبة العمولة', 'Commission Rate') }}</th>
+                            <th class="px-4 py-3 text-right">{{ $tr('الإيجار المحصَّل', 'Collected Rent') }} ({{ $year }})</th>
+                            <th class="px-4 py-3 text-right">{{ $tr('العمولة المستحقة', 'Commission Earned') }} ({{ $year }})</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach($referredProperties as $rp)
+                        @php
+                            $rpCollected = $referralPropertyRevenue[$rp->id] ?? 0;
+                            $rpEarned    = ($rp->referral_commission_rate ?? 0) / 100 * $rpCollected;
+                        @endphp
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 font-medium">{{ $rp->name }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $rp->typeLabel() }}</td>
+                            <td class="px-4 py-3">
+                                @if($rp->referral_commission_rate)
+                                    <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-semibold">{{ $rp->referral_commission_rate }}%</span>
+                                @else
+                                    <span class="text-gray-400 text-xs">—</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-gray-700">{{ number_format($rpCollected, 2) }} {{ $currency }}</td>
+                            <td class="px-4 py-3 font-semibold {{ $rpEarned > 0 ? 'text-green-700' : 'text-gray-400' }}">
+                                {{ number_format($rpEarned, 2) }} {{ $currency }}
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
 
         <div class="bg-white rounded-xl shadow overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-100">

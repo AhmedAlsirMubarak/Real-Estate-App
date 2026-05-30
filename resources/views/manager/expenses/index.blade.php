@@ -22,13 +22,28 @@
     <div class="mb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
             <h2 class="text-xl font-bold text-gray-800">{{ $tr('المصروفات', 'Expenses') }}</h2>
-            <p class="text-sm text-gray-500 mt-0.5">{{ $tr('مصروفات الشركة والعقارات — سنة', 'Company and property expenses — Year') }} {{ $year }}</p>
+            <p class="text-sm text-gray-500 mt-0.5">
+                @if($scope === 'company')
+                    {{ $tr('المصروفات الداخلية للشركة', 'Internal company expenses') }} — {{ $year }}
+                @elseif($scope === 'property')
+                    {{ $tr('مصروفات العقارات', 'Property expenses') }} — {{ $year }}
+                @else
+                    {{ $tr('مصروفات الشركة والعقارات — سنة', 'Company and property expenses — Year') }} {{ $year }}
+                @endif
+            </p>
         </div>
-        <a href="{{ route('manager.expenses.create') }}"
-           class="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            {{ $tr('تسجيل مصروف', 'Add Expense') }}
-        </a>
+        <div class="flex gap-2">
+            <a href="{{ route('manager.expenses.export', array_filter(['year' => $year, 'month' => $month, 'scope' => $scope, 'category' => $category, 'property_id' => $propertyId])) }}"
+               class="flex items-center gap-1.5 border border-red-200 text-red-700 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-medium">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                {{ $tr('تصدير PDF', 'Export PDF') }}
+            </a>
+            <a href="{{ route('manager.expenses.create') }}"
+               class="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                {{ $tr('تسجيل مصروف', 'Add Expense') }}
+            </a>
+        </div>
     </div>
 
     {{-- Summary cards --}}
@@ -63,14 +78,29 @@
     </div>
 
     {{-- Filters --}}
-    <form method="GET" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-5 grid grid-cols-1 md:grid-cols-5 gap-3">
+    <form method="GET" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-5 grid grid-cols-1 md:grid-cols-6 gap-3">
         <input type="number" name="year" value="{{ $year }}" placeholder="{{ $tr('السنة', 'Year') }}"
                class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
-        <select name="scope" class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
-            <option value="">{{ $tr('كل النطاقات', 'All scopes') }}</option>
-            <option value="company" @selected($scope==='company')>{{ $tr('شركة', 'Company') }}</option>
-            <option value="property" @selected($scope==='property')>{{ $tr('عقار', 'Property') }}</option>
+        <select name="month" class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
+            <option value="">{{ $tr('كل الأشهر', 'All months') }}</option>
+            @foreach(['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'] as $i => $mn)
+            <option value="{{ $i+1 }}" @selected($month == $i+1)>{{ $mn }}</option>
+            @endforeach
         </select>
+        @if($scope === 'company')
+            {{-- Locked to company scope when coming from Finance department --}}
+            <input type="hidden" name="scope" value="company">
+            <div class="border border-blue-100 bg-blue-50 rounded-lg px-3 py-2 text-sm text-blue-700 font-medium flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16"/></svg>
+                {{ $tr('مصروفات الشركة فقط', 'Company expenses only') }}
+            </div>
+        @else
+            <select name="scope" class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                <option value="">{{ $tr('كل النطاقات', 'All scopes') }}</option>
+                <option value="company" @selected($scope==='company')>{{ $tr('شركة', 'Company') }}</option>
+                <option value="property" @selected($scope==='property')>{{ $tr('عقار', 'Property') }}</option>
+            </select>
+        @endif
         <select name="category" class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
             <option value="">{{ $tr('كل الفئات', 'All categories') }}</option>
             <option value="utilities" @selected($category==='utilities')>{{ $tr('مرافق', 'Utilities') }}</option>

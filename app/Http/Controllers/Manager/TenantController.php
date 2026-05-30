@@ -63,6 +63,8 @@ class TenantController extends Controller
             'end_date' => 'required|date|after:start_date',
             'monthly_rent' => 'required|numeric|min:0',
             'deposit' => 'nullable|numeric|min:0',
+            'electricity_account_number' => 'nullable|string|max:100',
+            'water_account_number'       => 'nullable|string|max:100',
         ]);
 
         $user = User::create(array_merge($this->buildUserNamePayload($validated), [
@@ -80,13 +82,15 @@ class TenantController extends Controller
         ]);
 
         RentalContract::create([
-            'unit_id' => $validated['unit_id'],
-            'tenant_id' => $tenant->id,
-            'start_date' => $validated['start_date'],
-            'end_date' => $validated['end_date'],
-            'monthly_rent' => $validated['monthly_rent'],
-            'deposit' => $validated['deposit'] ?? 0,
-            'status' => 'active',
+            'unit_id'                    => $validated['unit_id'],
+            'tenant_id'                  => $tenant->id,
+            'start_date'                 => $validated['start_date'],
+            'end_date'                   => $validated['end_date'],
+            'monthly_rent'               => $validated['monthly_rent'],
+            'deposit'                    => $validated['deposit'] ?? 0,
+            'status'                     => 'active',
+            'electricity_account_number' => $validated['electricity_account_number'] ?? null,
+            'water_account_number'       => $validated['water_account_number'] ?? null,
         ]);
 
         Unit::find($validated['unit_id'])->update(['status' => 'rented']);
@@ -97,7 +101,7 @@ class TenantController extends Controller
 
     public function show(Tenant $tenant)
     {
-        $tenant->load(['user', 'rentalContracts.unit.property', 'maintenanceRequests.unit', 'payments']);
+        $tenant->load(['user', 'activeContract.unit.property', 'rentalContracts.unit.property', 'maintenanceRequests.unit', 'payments']);
         return view('manager.tenants.show', compact('tenant'));
     }
 
@@ -136,6 +140,8 @@ class TenantController extends Controller
             'end_date'          => 'nullable|required_with:unit_id|date|after:start_date',
             'monthly_rent'      => 'nullable|required_with:unit_id|numeric|min:0',
             'deposit'           => 'nullable|numeric|min:0',
+            'electricity_account_number' => 'nullable|string|max:100',
+            'water_account_number'       => 'nullable|string|max:100',
         ]);
 
         $userUpdate = array_merge($this->buildUserNamePayload($validated), [
@@ -161,21 +167,25 @@ class TenantController extends Controller
                     Unit::find($validated['unit_id'])?->update(['status' => 'rented']);
                 }
                 $contract->update([
-                    'unit_id'      => $validated['unit_id'],
-                    'start_date'   => $validated['start_date'],
-                    'end_date'     => $validated['end_date'],
-                    'monthly_rent' => $validated['monthly_rent'],
-                    'deposit'      => $validated['deposit'] ?? $contract->deposit,
+                    'unit_id'                    => $validated['unit_id'],
+                    'start_date'                 => $validated['start_date'],
+                    'end_date'                   => $validated['end_date'],
+                    'monthly_rent'               => $validated['monthly_rent'],
+                    'deposit'                    => $validated['deposit'] ?? $contract->deposit,
+                    'electricity_account_number' => $validated['electricity_account_number'] ?? $contract->electricity_account_number,
+                    'water_account_number'       => $validated['water_account_number'] ?? $contract->water_account_number,
                 ]);
             } else {
                 RentalContract::create([
-                    'unit_id'      => $validated['unit_id'],
-                    'tenant_id'    => $tenant->id,
-                    'start_date'   => $validated['start_date'],
-                    'end_date'     => $validated['end_date'],
-                    'monthly_rent' => $validated['monthly_rent'],
-                    'deposit'      => $validated['deposit'] ?? 0,
-                    'status'       => 'active',
+                    'unit_id'                    => $validated['unit_id'],
+                    'tenant_id'                  => $tenant->id,
+                    'start_date'                 => $validated['start_date'],
+                    'end_date'                   => $validated['end_date'],
+                    'monthly_rent'               => $validated['monthly_rent'],
+                    'deposit'                    => $validated['deposit'] ?? 0,
+                    'status'                     => 'active',
+                    'electricity_account_number' => $validated['electricity_account_number'] ?? null,
+                    'water_account_number'       => $validated['water_account_number'] ?? null,
                 ]);
                 Unit::find($validated['unit_id'])?->update(['status' => 'rented']);
             }

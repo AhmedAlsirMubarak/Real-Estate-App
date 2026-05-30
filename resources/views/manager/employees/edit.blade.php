@@ -30,6 +30,12 @@
                     <input type="text" name="phone" value="{{ old('phone', $employee->phone) }}"
                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500">
                 </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الراتب الأساسي (ر.ع)', 'Base Salary (OMR)') }}</label>
+                    <input type="number" step="0.01" min="0" name="base_salary" value="{{ old('base_salary', $employee->base_salary) }}"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500">
+                    @error('base_salary')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
                 <div class="flex gap-3 pt-2">
                     <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition">{{ $tr('حفظ التعديلات', 'Save Changes') }}</button>
                     <a href="{{ route('manager.employees.index') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg font-medium transition">{{ $tr('إلغاء', 'Cancel') }}</a>

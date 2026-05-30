@@ -74,6 +74,8 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::get('tenants/import/template', [Manager\TenantController::class, 'downloadTemplate'])->name('tenants.import.template');
     Route::get('tenants/export', [Manager\TenantController::class, 'export'])->name('tenants.export');
     Route::resource('tenants', Manager\TenantController::class);
+    Route::post('rental-contracts/{contract}/upload-file', [Manager\RentalContractController::class, 'uploadFile'])->name('rental-contracts.upload-file');
+    Route::delete('rental-contracts/{contract}/delete-file', [Manager\RentalContractController::class, 'deleteFile'])->name('rental-contracts.delete-file');
     Route::resource('employees', Manager\EmployeeController::class);
     Route::resource('users', Manager\UserController::class)->only(['index', 'create', 'store', 'edit', 'update']);
     Route::patch('users/{user}/toggle-block', [Manager\UserController::class, 'toggleBlock'])->name('users.toggle-block');
@@ -91,14 +93,14 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::post('scheduled-reports/{scheduledReport}/run', [Manager\ScheduledReportController::class, 'runNow'])->name('scheduled-reports.run');
     Route::get('scheduled-reports/runs/{run}/download', [Manager\ScheduledReportController::class, 'download'])->name('scheduled-reports.download');
 
-    Route::get('expenses', [Manager\ExpenseController::class, 'index'])->name('expenses.index');
-    Route::get('expenses/create', [Manager\ExpenseController::class, 'create'])->name('expenses.create');
-    Route::post('expenses', [Manager\ExpenseController::class, 'store'])->name('expenses.store');
-    Route::delete('expenses/{expense}', [Manager\ExpenseController::class, 'destroy'])->name('expenses.destroy');
-
     // Owners Association (HOA)
     Route::resource('associations', Manager\AssociationController::class);
     Route::post('associations/{association}/dues/generate', [Manager\AssociationDueController::class, 'generate'])->name('associations.dues.generate');
+    Route::delete('associations/{association}/documents/{field}', [Manager\AssociationController::class, 'deleteDocument'])->name('associations.documents.delete');
+    Route::post('associations/{association}/no-objection-pdf', [Manager\AssociationController::class, 'noObjectionPdf'])->name('associations.no-objection-pdf');
+    Route::get('associations/no-objection-certs/{noc}/download', [Manager\AssociationController::class, 'downloadNoc'])->name('associations.noc.download');
+    Route::post('associations/{association}/no-objection-sale-pdf', [Manager\AssociationController::class, 'noSalePdf'])->name('associations.no-objection-sale-pdf');
+    Route::get('associations/no-objection-sale-certs/{noc}/download', [Manager\AssociationController::class, 'downloadNocSale'])->name('associations.noc-sale.download');
 
     // Property fractional owners (pivot)
     Route::get('properties/{property}/owners', [Manager\PropertyOwnerController::class, 'index'])->name('properties.owners.index');
@@ -116,17 +118,47 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     // Meetings
     Route::resource('meetings', Manager\AssociationMeetingController::class);
 
-    // Salaries
-    Route::resource('salaries', Manager\SalaryController::class)->except(['show']);
-    Route::post('salaries/generate', [Manager\SalaryController::class, 'generate'])->name('salaries.generate');
-    Route::patch('salaries/{salary}/pay', [Manager\SalaryController::class, 'pay'])->name('salaries.pay');
-
     Route::get('contacts', [Manager\ContactController::class, 'index'])->name('contacts.index');
     Route::get('contacts/{contact}', [Manager\ContactController::class, 'show'])->name('contacts.show');
     Route::delete('contacts/{contact}', [Manager\ContactController::class, 'destroy'])->name('contacts.destroy');
 
     // Customers (leads / requirements)
     Route::resource('customers', Manager\CustomerController::class)->except(['show']);
+
+    // Company Departments — HR (manager only)
+    Route::resource('contracts', Manager\EmployeeContractController::class)->except(['show']);
+});
+
+// Real Estate Development (manager only)
+Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')->group(function () {
+    Route::resource('development', Manager\DevelopmentProjectController::class);
+    Route::patch('development/{development}/progress', [Manager\DevelopmentProjectController::class, 'updateProgress'])->name('development.progress');
+    Route::get('development/{development}/report', [Manager\DevelopmentProjectController::class, 'report'])->name('development.report');
+    Route::post('development/{development}/expenses', [Manager\DevelopmentExpenseController::class, 'store'])->name('development.expenses.store');
+    Route::delete('development/{development}/expenses/{expense}', [Manager\DevelopmentExpenseController::class, 'destroy'])->name('development.expenses.destroy');
+    Route::post('development/{development}/contractors', [Manager\DevelopmentContractorController::class, 'store'])->name('development.contractors.store');
+    Route::delete('development/{development}/contractors/{contractor}', [Manager\DevelopmentContractorController::class, 'destroy'])->name('development.contractors.destroy');
+    Route::post('development/{development}/contractors/{contractor}/payments', [Manager\DevelopmentContractorPaymentController::class, 'store'])->name('development.contractors.payments.store');
+    Route::post('development/{development}/documents', [Manager\DevelopmentDocumentController::class, 'store'])->name('development.documents.store');
+    Route::delete('development/{development}/documents/{document}', [Manager\DevelopmentDocumentController::class, 'destroy'])->name('development.documents.destroy');
+});
+
+// Finance routes — shared between manager and accountant
+Route::middleware(['auth', 'role:manager|accountant'])->prefix('manager')->name('manager.')->group(function () {
+    Route::get('finance', [Manager\FinanceDashboardController::class, 'index'])->name('finance.dashboard');
+    Route::resource('budgets', Manager\CompanyBudgetController::class)->except(['show']);
+    Route::resource('assets', Manager\CompanyAssetController::class)->except(['show']);
+
+    Route::get('expenses/export', [Manager\ExpenseController::class, 'exportPdf'])->name('expenses.export');
+    Route::get('expenses', [Manager\ExpenseController::class, 'index'])->name('expenses.index');
+    Route::get('expenses/create', [Manager\ExpenseController::class, 'create'])->name('expenses.create');
+    Route::post('expenses', [Manager\ExpenseController::class, 'store'])->name('expenses.store');
+    Route::delete('expenses/{expense}', [Manager\ExpenseController::class, 'destroy'])->name('expenses.destroy');
+
+    Route::get('salaries/export', [Manager\SalaryController::class, 'exportPdf'])->name('salaries.export');
+    Route::resource('salaries', Manager\SalaryController::class)->except([]);
+    Route::post('salaries/generate', [Manager\SalaryController::class, 'generate'])->name('salaries.generate');
+    Route::patch('salaries/{salary}/pay', [Manager\SalaryController::class, 'pay'])->name('salaries.pay');
 });
 
 // Employee routes

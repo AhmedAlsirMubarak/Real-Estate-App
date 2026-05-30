@@ -8,11 +8,14 @@ use App\Models\MaintenanceRequest;
 use App\Models\Payment;
 use App\Models\Property;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        session()->save();
+
         $employee = $request->user();
         $year = (int) $request->input('year', now()->year);
         if ($year < 2000 || $year > ((int) now()->year + 2)) {
@@ -91,6 +94,28 @@ class DashboardController extends Controller
             ->take(6)
             ->get();
 
+        // Referral commission (properties this employee referred, filtered by year)
+        $referredProperties = Property::where('referral_employee_id', $employee->id)->get();
+        $referralPropertyRevenue = collect();
+        $referralCommissionTotal = 0;
+
+        if ($referredProperties->isNotEmpty()) {
+            $referredIds = $referredProperties->pluck('id');
+            $referralPropertyRevenue = DB::table('payments')
+                ->join('rental_contracts', 'payments.rental_contract_id', '=', 'rental_contracts.id')
+                ->join('units', 'rental_contracts.unit_id', '=', 'units.id')
+                ->where('payments.status', 'paid')
+                ->where('payments.year', $year)
+                ->whereIn('units.property_id', $referredIds)
+                ->selectRaw('units.property_id, SUM(payments.amount) as total_paid')
+                ->groupBy('units.property_id')
+                ->pluck('total_paid', 'property_id');
+
+            $referralCommissionTotal = $referredProperties->sum(
+                fn ($p) => ($p->referral_commission_rate ?? 0) / 100 * ($referralPropertyRevenue[$p->id] ?? 0)
+            );
+        }
+
         return view('employee.dashboard', compact(
             'stats',
             'properties',
@@ -99,6 +124,9 @@ class DashboardController extends Controller
             'propertyRentSummary',
             'commissionStats',
             'recentCommissions',
+            'referredProperties',
+            'referralPropertyRevenue',
+            'referralCommissionTotal',
             'year'
         ));
     }

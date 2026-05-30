@@ -21,7 +21,8 @@ class PaymentController extends Controller
             ->where('year', $year)
             ->when($month, fn($q) => $q->where('month', $month))
             ->latest()
-            ->paginate(20);
+            ->paginate(20)
+            ->withQueryString();
 
         return view('accountant.payments.index', compact('payments', 'status', 'year', 'month'));
     }

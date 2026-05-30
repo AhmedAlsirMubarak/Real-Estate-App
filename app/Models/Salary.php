@@ -14,6 +14,10 @@ class Salary extends Model
         'period_month',
         'period_year',
         'base_salary',
+        'housing_allowance',
+        'transport_allowance',
+        'food_allowance',
+        'other_allowances',
         'bonuses',
         'deductions',
         'net_paid',
@@ -24,12 +28,35 @@ class Salary extends Model
     ];
 
     protected $casts = [
-        'paid_at'    => 'date',
-        'base_salary'=> 'decimal:2',
-        'bonuses'    => 'decimal:2',
-        'deductions' => 'decimal:2',
-        'net_paid'   => 'decimal:2',
+        'paid_at'             => 'date',
+        'base_salary'         => 'decimal:2',
+        'housing_allowance'   => 'decimal:2',
+        'transport_allowance' => 'decimal:2',
+        'food_allowance'      => 'decimal:2',
+        'other_allowances'    => 'decimal:2',
+        'bonuses'             => 'decimal:2',
+        'deductions'          => 'decimal:2',
+        'net_paid'            => 'decimal:2',
     ];
+
+    public function totalAllowances(): float
+    {
+        return (float) $this->housing_allowance
+             + (float) $this->transport_allowance
+             + (float) $this->food_allowance
+             + (float) $this->other_allowances;
+    }
+
+    public static function calcNet(array $data): float
+    {
+        return (float) ($data['base_salary'] ?? 0)
+             + (float) ($data['housing_allowance'] ?? 0)
+             + (float) ($data['transport_allowance'] ?? 0)
+             + (float) ($data['food_allowance'] ?? 0)
+             + (float) ($data['other_allowances'] ?? 0)
+             + (float) ($data['bonuses'] ?? 0)
+             - (float) ($data['deductions'] ?? 0);
+    }
 
     public function employee()
     {

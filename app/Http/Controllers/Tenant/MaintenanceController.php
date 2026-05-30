@@ -64,14 +64,13 @@ class MaintenanceController extends Controller
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $tmpPath = $image->getPathname();
-                if (!$tmpPath || !file_exists($tmpPath)) {
+                if (! $image->isValid()) {
                     continue;
                 }
                 $ext      = strtolower($image->getClientOriginalExtension() ?: 'jpg');
                 $filename = sha1(uniqid('', true) . microtime()) . '.' . $ext;
                 try {
-                    $stored = Storage::disk('public')->putFileAs('maintenance-images', $tmpPath, $filename);
+                    $stored = Storage::disk('public')->putFileAs('maintenance-images', $image, $filename);
                 } catch (\Throwable) {
                     continue;
                 }

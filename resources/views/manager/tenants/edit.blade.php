@@ -105,6 +105,26 @@
                         <input type="number" name="deposit" value="{{ old('deposit', $contract?->deposit ?? 0) }}" min="0" step="0.01"
                                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500">
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            <span class="inline-flex items-center gap-1">
+                                <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                {{ $tr('رقم حساب الكهرباء', 'Electricity Account No.') }}
+                            </span>
+                        </label>
+                        <input type="text" name="electricity_account_number" value="{{ old('electricity_account_number', $contract?->electricity_account_number) }}"
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            <span class="inline-flex items-center gap-1">
+                                <svg class="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2c-5.33 4.55-8 8.48-8 11.8C4 17.78 7.58 22 12 22s8-4.22 8-8.2C20 10.48 17.33 6.55 12 2z"/></svg>
+                                {{ $tr('رقم حساب الماء', 'Water Account No.') }}
+                            </span>
+                        </label>
+                        <input type="text" name="water_account_number" value="{{ old('water_account_number', $contract?->water_account_number) }}"
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500">
+                    </div>
                 </div>
             </div>
 

@@ -20,6 +20,7 @@ class User extends Authenticatable
         'email',
         'password',
         'phone',
+        'base_salary',
         'is_blocked',
         'blocked_at',
     ];
@@ -36,12 +37,18 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_blocked' => 'boolean',
             'blocked_at' => 'datetime',
+            'base_salary' => 'decimal:2',
         ];
     }
 
     public function managedProperties()
     {
         return $this->hasMany(Property::class, 'employee_id');
+    }
+
+    public function referredProperties()
+    {
+        return $this->hasMany(Property::class, 'referral_employee_id');
     }
 
     public function tenant()

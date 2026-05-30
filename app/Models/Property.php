@@ -29,11 +29,15 @@ class Property extends Model
         'description_en',
         'owner_id',
         'employee_id',
+        'referral_employee_id',
+        'referral_commission_rate',
         'floors',
         'total_area',
         'bedrooms',
         'bathrooms',
         'status',
+        'electricity_account_number',
+        'water_account_number',
     ];
 
     public function owner()
@@ -56,6 +60,11 @@ class Property extends Model
     public function employee()
     {
         return $this->belongsTo(User::class, 'employee_id');
+    }
+
+    public function referralEmployee()
+    {
+        return $this->belongsTo(User::class, 'referral_employee_id');
     }
 
     public function units()

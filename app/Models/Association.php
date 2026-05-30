@@ -18,6 +18,13 @@ class Association extends Model
         'description_ar',
         'description_en',
         'status',
+        'electricity_account_number',
+        'water_account_number',
+        'no_objection_certificate_path',
+        'sketch_path',
+        'association_certificate_path',
+        'personal_id_path',
+        'manager_id_path',
     ];
 
     protected $casts = [
@@ -38,6 +45,16 @@ class Association extends Model
     public function meetings()
     {
         return $this->hasMany(AssociationMeeting::class);
+    }
+
+    public function noObjectionCertificates()
+    {
+        return $this->hasMany(NoObjectionCertificate::class)->latest();
+    }
+
+    public function noObjectionSaleCertificates()
+    {
+        return $this->hasMany(NoObjectionSaleCertificate::class)->latest();
     }
 
     public function getNameAttribute(): string

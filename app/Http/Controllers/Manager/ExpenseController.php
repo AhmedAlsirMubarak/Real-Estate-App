@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Mpdf\Mpdf;
 
 class ExpenseController extends Controller
 {
@@ -18,11 +19,15 @@ class ExpenseController extends Controller
         $category   = $request->input('category', '');
         $propertyId = $request->input('property_id', '');
         $year       = $request->input('year', now()->year);
+        $month      = $request->input('month', '');
 
         $query = Expense::with(['paidByUser', 'expensable'])
             ->whereYear('expense_date', $year)
             ->latest('expense_date');
 
+        if ($month) {
+            $query->whereMonth('expense_date', $month);
+        }
         if ($scope) {
             $query->where('scope', $scope);
         }
@@ -37,13 +42,16 @@ class ExpenseController extends Controller
         $expenses   = $query->paginate(20)->withQueryString();
         $properties = Property::orderBy('name')->get();
 
+        $totalsQuery = fn () => Expense::whereYear('expense_date', $year)
+            ->when($month, fn ($q) => $q->whereMonth('expense_date', $month));
+
         $totals = [
-            'company'  => Expense::where('scope', 'company')->whereYear('expense_date', $year)->sum('amount'),
-            'property' => Expense::where('scope', 'property')->whereYear('expense_date', $year)->sum('amount'),
-            'total'    => Expense::whereYear('expense_date', $year)->sum('amount'),
+            'company'  => (clone $totalsQuery())->where('scope', 'company')->sum('amount'),
+            'property' => (clone $totalsQuery())->where('scope', 'property')->sum('amount'),
+            'total'    => $totalsQuery()->sum('amount'),
         ];
 
-        return view('manager.expenses.index', compact('expenses', 'properties', 'totals', 'scope', 'category', 'propertyId', 'year'));
+        return view('manager.expenses.index', compact('expenses', 'properties', 'totals', 'scope', 'category', 'propertyId', 'year', 'month'));
     }
 
     public function create()
@@ -91,13 +99,12 @@ class ExpenseController extends Controller
         }
 
         if ($request->hasFile('invoice')) {
-            $file    = $request->file('invoice');
-            $tmpPath = $file->getPathname();
-            if ($tmpPath && file_exists($tmpPath)) {
+            $file = $request->file('invoice');
+            if ($file->isValid()) {
                 $ext      = 'pdf';
                 $filename = sha1(uniqid('', true) . microtime()) . '.' . $ext;
                 try {
-                    $stored = Storage::disk('public')->putFileAs('expense-invoices', $tmpPath, $filename);
+                    $stored = Storage::disk('public')->putFileAs('expense-invoices', $file, $filename);
                     if ($stored) {
                         $expense->receipt_path = $stored;
                     }
@@ -111,6 +118,61 @@ class ExpenseController extends Controller
 
         return redirect()->route('manager.expenses.index')
             ->with('success', 'تم تسجيل المصروف بنجاح');
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $scope      = $request->input('scope', '');
+        $category   = $request->input('category', '');
+        $propertyId = $request->input('property_id', '');
+        $year       = $request->input('year', now()->year);
+        $month      = $request->input('month', '');
+
+        $query = Expense::with(['paidByUser', 'expensable'])
+            ->whereYear('expense_date', $year)
+            ->when($month, fn ($q) => $q->whereMonth('expense_date', $month))
+            ->when($scope, fn ($q) => $q->where('scope', $scope))
+            ->when($category, fn ($q) => $q->where('category', $category))
+            ->when($propertyId, fn ($q) => $q->where('expensable_type', Property::class)->where('expensable_id', $propertyId))
+            ->orderBy('expense_date')
+            ->get();
+
+        $totals = [
+            'company'  => $query->where('scope', 'company')->sum('amount'),
+            'property' => $query->where('scope', 'property')->sum('amount'),
+            'total'    => $query->sum('amount'),
+        ];
+
+        $html = view('manager.expenses.expense-pdf', compact('query', 'totals', 'year', 'month', 'scope', 'category'))->render();
+
+        if (! is_dir(storage_path('app/mpdf'))) {
+            mkdir(storage_path('app/mpdf'), 0755, true);
+        }
+
+        $mpdf = new Mpdf([
+            'mode'             => 'utf-8',
+            'format'           => 'A4',
+            'orientation'      => 'L',
+            'margin_top'       => 0,
+            'margin_bottom'    => 15,
+            'margin_left'      => 0,
+            'margin_right'     => 0,
+            'default_font'     => 'dejavusans',
+            'autoLangToFont'   => true,
+            'autoScriptToLang' => true,
+            'tempDir'          => storage_path('app/mpdf'),
+        ]);
+
+        $mpdf->SetDirectionality('rtl');
+        $mpdf->WriteHTML($html);
+
+        $monthNames = ['', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+        $periodPart = $month ? ($monthNames[$month] ?? $month) . '-' . $year : $year;
+        $filename   = "تقرير-المصروفات-{$periodPart}.pdf";
+
+        return response($mpdf->Output($filename, 'S'))
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
     }
 
     public function destroy(Expense $expense)

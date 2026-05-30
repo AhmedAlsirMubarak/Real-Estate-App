@@ -38,6 +38,12 @@
                            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الراتب الأساسي (ر.ع)', 'Base Salary (OMR)') }}</label>
+                    <input type="number" step="0.01" min="0" name="base_salary" value="{{ old('base_salary', 0) }}"
+                           class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 @error('base_salary') border-red-500 @enderror">
+                    @error('base_salary')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الدور', 'Role') }} <span class="text-red-500">*</span></label>
                     <select name="role" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500">
                         <option value="employee" {{ old('role')=='employee'?'selected':'' }}>{{ $tr('موظف', 'Employee') }}</option>

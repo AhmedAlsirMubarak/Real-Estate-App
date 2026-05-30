@@ -35,7 +35,9 @@
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('البريد الإلكتروني', 'Email') }}</th>
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('الهاتف', 'Phone') }}</th>
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('الدور', 'Role') }}</th>
-                            <th class="px-4 py-3 text-right font-medium">{{ $tr('العقارات', 'Properties') }}</th>
+                            <th class="px-4 py-3 text-right font-medium">{{ $tr('العقارات المُسنَدة', 'Managed') }}</th>
+                            <th class="px-4 py-3 text-right font-medium">{{ $tr('عقارات مُحالة', 'Referred') }}</th>
+                            <th class="px-4 py-3 text-right font-medium">{{ $tr('عمولة الإحالة', 'Referral Comm.') }}</th>
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('الإجراءات', 'Actions') }}</th>
                         </tr>
                     </thead>
@@ -51,7 +53,25 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3">
-                                <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">{{ $employee->managed_properties_count }} {{ $tr('عقار', 'properties') }}</span>
+                                <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">{{ $employee->managed_properties_count }}</span>
+                            </td>
+                            <td class="px-4 py-3">
+                                @if($employee->referred_properties_count > 0)
+                                    <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">{{ $employee->referred_properties_count }} {{ $tr('عقار', 'props') }}</span>
+                                @else
+                                    <span class="text-gray-400 text-xs">—</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                @if($employee->referred_properties_count > 0)
+                                    <div class="text-sm font-semibold {{ $employee->referral_commission_earned > 0 ? 'text-green-700' : 'text-gray-400' }}">
+                                        {{ number_format($employee->referral_commission_earned, 2) }}
+                                        <span class="text-xs font-normal text-gray-500">{{ $tr('ر.ع', 'OMR') }}</span>
+                                    </div>
+                                    <div class="text-xs text-gray-400">{{ $tr('من الإيجار المحصَّل', 'from collected rent') }}</div>
+                                @else
+                                    <span class="text-gray-400 text-xs">—</span>
+                                @endif
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center gap-2">
@@ -65,7 +85,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">{{ $tr('لا يوجد موظفون مسجلون', 'No employees found') }}</td></tr>
+                        <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">{{ $tr('لا يوجد موظفون مسجلون', 'No employees found') }}</td></tr>
                         @endforelse
                     </tbody>
                 </table>

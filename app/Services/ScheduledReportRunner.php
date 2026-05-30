@@ -98,28 +98,55 @@ class ScheduledReportRunner
     {
         $propertyIds = $this->resolvePropertyIds($report, ['management', 'external']);
 
-        $payments = Payment::whereHas('rentalContract.unit', function ($q) use ($propertyIds) {
-            $q->whereIn('property_id', $propertyIds);
-        })->whereBetween('created_at', [$start, $end])->get();
-
-        $expenses = Expense::where('expensable_type', Property::class)
-            ->whereIn('expensable_id', $propertyIds)
-            ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])
+        $properties = Property::whereIn('id', $propertyIds)
+            ->with([
+                'owner.user',
+                'employee',
+                'units'                                   => fn ($q) => $q->orderBy('unit_number'),
+                'units.activeRentalContract.tenant.user',
+                'units.activeRentalContract.tenant',
+                'units.activeSaleContract.buyer.user',
+            ])
             ->get();
 
-        $maintenance = MaintenanceRequest::whereHas('unit', function ($q) use ($propertyIds) {
+        $allPayments = Payment::whereHas('rentalContract.unit', function ($q) use ($propertyIds) {
             $q->whereIn('property_id', $propertyIds);
-        })->whereBetween('created_at', [$start, $end])->get();
+        })->whereBetween('created_at', [$start, $end])
+          ->with(['tenant.user', 'rentalContract.unit'])
+          ->orderBy('year')->orderBy('month')
+          ->get();
+
+        $allExpenses = Expense::where('expensable_type', Property::class)
+            ->whereIn('expensable_id', $propertyIds)
+            ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])
+            ->orderBy('expense_date')
+            ->get();
+
+        $allMaintenance = MaintenanceRequest::whereHas('unit', function ($q) use ($propertyIds) {
+            $q->whereIn('property_id', $propertyIds);
+        })->whereBetween('created_at', [$start, $end])
+          ->with(['tenant.user', 'unit'])
+          ->get();
+
+        $paymentsByProperty    = $allPayments->groupBy(fn ($p) => $p->rentalContract?->unit?->property_id);
+        $expensesByProperty    = $allExpenses->groupBy('expensable_id');
+        $maintenanceByProperty = $allMaintenance->groupBy(fn ($m) => $m->unit?->property_id);
 
         return [
-            'properties_count'   => count($propertyIds),
-            'total_revenue'      => $payments->where('status', 'paid')->sum('amount'),
-            'pending_payments'   => $payments->where('status', 'pending')->count(),
-            'overdue_payments'   => $payments->where('status', 'overdue')->count(),
-            'total_expenses'     => $expenses->sum('amount'),
-            'net_income'         => $payments->where('status', 'paid')->sum('amount') - $expenses->sum('amount'),
-            'maintenance_total'  => $maintenance->count(),
-            'maintenance_done'   => $maintenance->where('status', 'completed')->count(),
+            // ── Aggregates (used for summary cards) ──
+            'properties_count'        => count($propertyIds),
+            'total_revenue'           => $allPayments->where('status', 'paid')->sum('amount'),
+            'pending_payments'        => $allPayments->where('status', 'pending')->count(),
+            'overdue_payments'        => $allPayments->where('status', 'overdue')->count(),
+            'total_expenses'          => $allExpenses->sum('amount'),
+            'net_income'              => $allPayments->where('status', 'paid')->sum('amount') - $allExpenses->sum('amount'),
+            'maintenance_total'       => $allMaintenance->count(),
+            'maintenance_done'        => $allMaintenance->where('status', 'completed')->count(),
+            // ── Full data for detailed sections ──
+            'properties'              => $properties,
+            'payments_by_property'    => $paymentsByProperty,
+            'expenses_by_property'    => $expensesByProperty,
+            'maintenance_by_property' => $maintenanceByProperty,
         ];
     }
 
@@ -132,29 +159,43 @@ class ScheduledReportRunner
                 ->pluck('id')
                 ->all();
 
-        $dues = AssociationDue::whereIn('association_id', $associationIds)
-            ->whereBetween('created_at', [$start, $end])
+        $associations = \App\Models\Association::whereIn('id', $associationIds)
+            ->with([
+                'property',
+                'dues' => fn ($q) => $q
+                    ->whereBetween('due_date', [$start->toDateString(), $end->toDateString()])
+                    ->with('owner.user')
+                    ->orderBy('due_date'),
+                'meetings' => fn ($q) => $q
+                    ->whereBetween('scheduled_at', [$start, $end])
+                    ->orderBy('scheduled_at'),
+            ])
             ->get();
 
-        $meetings = \App\Models\AssociationMeeting::whereIn('association_id', $associationIds)
-            ->whereBetween('scheduled_at', [$start, $end])
-            ->count();
+        $allDues = $associations->flatMap(fn ($a) => $a->dues);
 
-        $propertyIds = \App\Models\Association::whereIn('id', $associationIds)->pluck('property_id')->all();
-        $expenses = Expense::where('expensable_type', Property::class)
+        $propertyIds = $associations->pluck('property_id')->filter()->all();
+        $allExpenses = Expense::where('expensable_type', Property::class)
             ->whereIn('expensable_id', $propertyIds)
             ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])
+            ->orderBy('expense_date')
             ->get();
 
+        $expensesByProperty = $allExpenses->groupBy('expensable_id');
+
         return [
+            // ── Aggregates ──
             'associations_count' => count($associationIds),
-            'dues_total'         => $dues->sum('amount'),
-            'dues_paid'          => $dues->where('status', 'paid')->sum('amount'),
-            'dues_unpaid'        => $dues->whereIn('status', ['pending', 'overdue'])->sum('amount'),
-            'dues_waived'        => $dues->where('status', 'waived')->sum('amount'),
-            'meetings_count'     => $meetings,
-            'total_expenses'     => $expenses->sum('amount'),
-            'balance'            => $dues->where('status', 'paid')->sum('amount') - $expenses->sum('amount'),
+            'dues_total'         => $allDues->sum('amount'),
+            'dues_paid'          => $allDues->where('status', 'paid')->sum('amount'),
+            'dues_unpaid'        => $allDues->whereIn('status', ['pending', 'overdue'])->sum('amount'),
+            'dues_waived'        => $allDues->where('status', 'waived')->sum('amount'),
+            'meetings_count'     => $associations->sum(fn ($a) => $a->meetings->count()),
+            'total_expenses'     => $allExpenses->sum('amount'),
+            'balance'            => $allDues->where('status', 'paid')->sum('amount') - $allExpenses->sum('amount'),
+            // ── Full objects ──
+            'associations'          => $associations,
+            'expenses_by_property'  => $expensesByProperty,
         ];
     }
 
