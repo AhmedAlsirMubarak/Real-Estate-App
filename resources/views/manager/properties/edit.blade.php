@@ -82,6 +82,66 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">City (English)</label>
                     <input type="text" name="city_en" value="{{ $cityEnValue }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                 </div>
+
+                {{-- Map Coordinates --}}
+                <div class="col-span-2 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-blue-700"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/></svg>
+                        <span class="text-sm font-bold text-blue-900">{{ $tr('إحداثيات الخريطة', 'Map Coordinates') }}</span>
+                        <span class="text-xs text-blue-600">({{ $tr('اختياري — للخريطة التفاعلية', 'Optional — for interactive map') }})</span>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">
+                            {{ $tr('الإحداثيات', 'Coordinates') }}
+                            <span class="text-gray-400 font-normal">({{ $tr('خط العرض، خط الطول', 'latitude, longitude') }})</span>
+                        </label>
+                        @php
+                            $coordsVal = ($property->latitude && $property->longitude)
+                                ? old('latitude', $property->latitude) . ', ' . old('longitude', $property->longitude)
+                                : old('_coords', '');
+                        @endphp
+                        <input type="text" id="coords-input"
+                               value="{{ $coordsVal }}"
+                               placeholder="23.64017916319336, 58.24496583677259"
+                               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono"
+                               oninput="parseCoords(this.value)"
+                               autocomplete="off">
+                        <input type="hidden" name="latitude"  id="lat-hidden"  value="{{ old('latitude',  $property->latitude)  }}">
+                        <input type="hidden" name="longitude" id="lng-hidden"  value="{{ old('longitude', $property->longitude) }}">
+                        <div id="coords-feedback" class="text-xs mt-1.5" style="display:none"></div>
+                    </div>
+                    <p class="text-xs text-blue-600 mt-2 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
+                        {{ $tr('انسخ الإحداثيات من خرائط جوجل (نقر أيمن → نسخ الإحداثيات) والصقها مباشرةً', 'Copy coordinates from Google Maps (right-click → Copy coordinates) and paste directly here') }}
+                    </p>
+                    <script>
+                    function parseCoords(val) {
+                        var fb = document.getElementById('coords-feedback');
+                        var parts = val.trim().split(/[\s,،]+/).filter(Boolean);
+                        if (parts.length >= 2) {
+                            var lat = parseFloat(parts[0]), lng = parseFloat(parts[1]);
+                            if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                                document.getElementById('lat-hidden').value = lat;
+                                document.getElementById('lng-hidden').value = lng;
+                                fb.style.display = 'block';
+                                fb.style.color = '#16a34a';
+                                fb.textContent = '✓ {{ $tr("تم التعرف على الإحداثيات", "Coordinates recognised") }}: ' + lat.toFixed(6) + ', ' + lng.toFixed(6);
+                                return;
+                            }
+                        }
+                        document.getElementById('lat-hidden').value = '';
+                        document.getElementById('lng-hidden').value = '';
+                        if (val.trim().length > 3) {
+                            fb.style.display = 'block';
+                            fb.style.color = '#dc2626';
+                            fb.textContent = '{{ $tr("صيغة غير صحيحة — مثال: 23.640, 58.244", "Invalid format — example: 23.640, 58.244") }}';
+                        } else {
+                            fb.style.display = 'none';
+                        }
+                    }
+                    </script>
+                </div>
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('المالك', 'Owner') }}</label>
                     <select name="owner_id" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">

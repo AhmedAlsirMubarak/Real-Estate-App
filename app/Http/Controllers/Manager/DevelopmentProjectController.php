@@ -7,6 +7,7 @@ use App\Models\DevelopmentExpense;
 use App\Models\DevelopmentProject;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Mpdf\Mpdf;
 
 class DevelopmentProjectController extends Controller
 {
@@ -199,8 +200,80 @@ class DevelopmentProjectController extends Controller
         $categories = DevelopmentExpense::categories();
         $catLabels  = DevelopmentExpense::categoryLabels($isAr);
 
-        return view('manager.development.report', compact(
-            'development', 'expenseByCategory', 'monthlyBreakdown', 'categories', 'catLabels'
-        ));
+        $html = view('manager.development.report', compact(
+            'development', 'expenseByCategory', 'monthlyBreakdown', 'categories', 'catLabels', 'isAr'
+        ))->render();
+
+        $tempDir = storage_path('app/mpdf');
+        if (! is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $mpdf = new Mpdf([
+            'mode'         => 'utf-8',
+            'format'       => 'A4',
+            'orientation'  => 'P',
+            'default_font' => 'dejavusans',
+            'margin_top'   => 0,
+            'margin_bottom'=> 14,
+            'margin_left'  => 0,
+            'margin_right' => 0,
+            'tempDir'      => $tempDir,
+        ]);
+
+        if ($isAr) {
+            $mpdf->SetDirectionality('rtl');
+        }
+
+        $mpdf->WriteHTML($html);
+        $mainContent = $mpdf->Output('', 'S');
+
+        // Save to temp file so FPDI can import pages
+        $tempMain = $tempDir . '/dev_report_' . time() . '_' . rand(1000, 9999) . '.pdf';
+        file_put_contents($tempMain, $mainContent);
+
+        try {
+            $fpdi = new \setasign\Fpdi\Fpdi('P', 'mm', 'A4');
+
+            $pageCount = $fpdi->setSourceFile($tempMain);
+            for ($i = 1; $i <= $pageCount; $i++) {
+                $tpl  = $fpdi->importPage($i);
+                $size = $fpdi->getTemplateSize($tpl);
+                $fpdi->AddPage(($size['width'] > $size['height']) ? 'L' : 'P', [$size['width'], $size['height']]);
+                $fpdi->useTemplate($tpl);
+            }
+
+            // Append all contract & invoice PDFs
+            $attachments = $development->documents
+                ->filter(fn ($d) => in_array($d->type, ['contract', 'invoice']) && $d->isPdf());
+
+            foreach ($attachments as $doc) {
+                $absPath = storage_path('app/public/' . $doc->file_path);
+                if (! file_exists($absPath)) {
+                    continue;
+                }
+                try {
+                    $pdfPages = $fpdi->setSourceFile($absPath);
+                    for ($i = 1; $i <= $pdfPages; $i++) {
+                        $tpl  = $fpdi->importPage($i);
+                        $size = $fpdi->getTemplateSize($tpl);
+                        $fpdi->AddPage(($size['width'] > $size['height']) ? 'L' : 'P', [$size['width'], $size['height']]);
+                        $fpdi->useTemplate($tpl);
+                    }
+                } catch (\Exception) {
+                    // Skip unreadable / encrypted PDFs
+                }
+            }
+
+            $merged = $fpdi->Output('', 'S');
+        } finally {
+            @unlink($tempMain);
+        }
+
+        $filename = 'development-report-' . $development->id . '-' . now()->format('Y-m-d') . '.pdf';
+
+        return response($merged)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
     }
 }

@@ -10,26 +10,24 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Tenant;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    $featured = \App\Models\Property::with(['images' => fn($q) => $q->where('is_primary', true)])
-        ->withCount('units')
-        ->where('status', 'active')
-        ->latest()
-        ->take(3)
-        ->get();
-    return view('welcome', compact('featured'));
-})->name('home');
+Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 Route::get('/locale/{locale}', function (string $locale) {
     abort_unless(in_array($locale, ['ar', 'en'], true), 404);
     session(['locale' => $locale]);
 
-    return redirect()->back();
+    return redirect()->back()->withCookie(
+        cookie('app_locale', $locale, 60 * 24 * 365) // 1 year
+    );
 })->name('locale.switch');
 
 // Public property pages
 Route::get('/properties', [App\Http\Controllers\PropertyController::class, 'index'])->name('properties.index');
 Route::get('/properties/{property}', [App\Http\Controllers\PropertyController::class, 'show'])->name('properties.show');
+
+// Public news pages
+Route::get('/news', [App\Http\Controllers\NewsController::class, 'index'])->name('news.index');
+Route::get('/news/{article:slug}', [App\Http\Controllers\NewsController::class, 'show'])->name('news.show');
 
 Route::post('/contact', [App\Http\Controllers\ContactController::class, 'store'])
     ->middleware('throttle:5,1')
@@ -48,6 +46,10 @@ Route::middleware('auth')->group(function () {
 // Manager routes
 Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')->group(function () {
     Route::get('/dashboard', [Manager\DashboardController::class, 'index'])->name('dashboard');
+
+    // Building Comprehensive Report — must be before resource() to avoid {property} wildcard capture
+    Route::get('properties/comprehensive-report', [Manager\BuildingComprehensiveReportController::class, 'create'])->name('properties.report.create');
+    Route::post('properties/comprehensive-report', [Manager\BuildingComprehensiveReportController::class, 'generate'])->name('properties.report.generate');
 
     Route::get('properties/export', [Manager\PropertyController::class, 'export'])->name('properties.export');
     Route::get('properties/import', [Manager\PropertyController::class, 'importForm'])->name('properties.import.form');
@@ -93,14 +95,18 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::post('scheduled-reports/{scheduledReport}/run', [Manager\ScheduledReportController::class, 'runNow'])->name('scheduled-reports.run');
     Route::get('scheduled-reports/runs/{run}/download', [Manager\ScheduledReportController::class, 'download'])->name('scheduled-reports.download');
 
-    // Owners Association (HOA)
+    // Owners Association (HOA) — specific routes MUST come before resource() to avoid {association} wildcard capture
+    Route::get('associations/comprehensive-report', [Manager\HoaComprehensiveReportController::class, 'create'])->name('associations.report.create');
+    Route::post('associations/comprehensive-report', [Manager\HoaComprehensiveReportController::class, 'generate'])->name('associations.report.generate');
+    Route::get('associations/no-objection-certs/{noc}/download', [Manager\AssociationController::class, 'downloadNoc'])->name('associations.noc.download');
+    Route::delete('associations/no-objection-certs/{noc}', [Manager\AssociationController::class, 'deleteNoc'])->name('associations.noc.delete');
+    Route::get('associations/no-objection-sale-certs/{noc}/download', [Manager\AssociationController::class, 'downloadNocSale'])->name('associations.noc-sale.download');
+    Route::delete('associations/no-objection-sale-certs/{noc}', [Manager\AssociationController::class, 'deleteNocSale'])->name('associations.noc-sale.delete');
     Route::resource('associations', Manager\AssociationController::class);
     Route::post('associations/{association}/dues/generate', [Manager\AssociationDueController::class, 'generate'])->name('associations.dues.generate');
     Route::delete('associations/{association}/documents/{field}', [Manager\AssociationController::class, 'deleteDocument'])->name('associations.documents.delete');
     Route::post('associations/{association}/no-objection-pdf', [Manager\AssociationController::class, 'noObjectionPdf'])->name('associations.no-objection-pdf');
-    Route::get('associations/no-objection-certs/{noc}/download', [Manager\AssociationController::class, 'downloadNoc'])->name('associations.noc.download');
     Route::post('associations/{association}/no-objection-sale-pdf', [Manager\AssociationController::class, 'noSalePdf'])->name('associations.no-objection-sale-pdf');
-    Route::get('associations/no-objection-sale-certs/{noc}/download', [Manager\AssociationController::class, 'downloadNocSale'])->name('associations.noc-sale.download');
 
     // Property fractional owners (pivot)
     Route::get('properties/{property}/owners', [Manager\PropertyOwnerController::class, 'index'])->name('properties.owners.index');
@@ -117,6 +123,23 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
 
     // Meetings
     Route::resource('meetings', Manager\AssociationMeetingController::class);
+
+    // News articles management
+    Route::resource('news', Manager\NewsController::class)->except(['show']);
+    Route::post('news/{news}/images', [Manager\NewsController::class, 'storeImages'])->name('news.images.store');
+    Route::delete('news/{news}/images/{image}', [Manager\NewsController::class, 'destroyImage'])->name('news.images.destroy');
+    Route::patch('news/{news}/images/{image}/primary', [Manager\NewsController::class, 'setPrimaryImage'])->name('news.images.primary');
+
+    // Website Content CMS
+    Route::get('website', [Manager\WebsiteController::class, 'index'])->name('website.index');
+    Route::get('website/{page}', [Manager\WebsiteController::class, 'showPage'])->name('website.page');
+    Route::get('website/{page}/{key}', [Manager\WebsiteController::class, 'editSection'])->name('website.section.edit');
+    Route::post('website/{page}/{key}', [Manager\WebsiteController::class, 'updateSection'])->name('website.section.update');
+    Route::get('website/{page}/{key}/items/create', [Manager\WebsiteController::class, 'createItem'])->name('website.items.create');
+    Route::post('website/{page}/{key}/items', [Manager\WebsiteController::class, 'storeItem'])->name('website.items.store');
+    Route::get('website/{page}/{key}/items/{item}/edit', [Manager\WebsiteController::class, 'editItem'])->name('website.items.edit');
+    Route::put('website/{page}/{key}/items/{item}', [Manager\WebsiteController::class, 'updateItem'])->name('website.items.update');
+    Route::delete('website/{page}/{key}/items/{item}', [Manager\WebsiteController::class, 'destroyItem'])->name('website.items.destroy');
 
     Route::get('contacts', [Manager\ContactController::class, 'index'])->name('contacts.index');
     Route::get('contacts/{contact}', [Manager\ContactController::class, 'show'])->name('contacts.show');
@@ -149,11 +172,16 @@ Route::middleware(['auth', 'role:manager|accountant'])->prefix('manager')->name(
     Route::resource('budgets', Manager\CompanyBudgetController::class)->except(['show']);
     Route::resource('assets', Manager\CompanyAssetController::class)->except(['show']);
 
-    Route::get('expenses/export', [Manager\ExpenseController::class, 'exportPdf'])->name('expenses.export');
+    Route::get('expenses/export',  [Manager\ExpenseController::class, 'exportPdf'])->name('expenses.export');
+    Route::get('expenses/preview', [Manager\ExpenseController::class, 'previewPdf'])->name('expenses.preview');
     Route::get('expenses', [Manager\ExpenseController::class, 'index'])->name('expenses.index');
     Route::get('expenses/create', [Manager\ExpenseController::class, 'create'])->name('expenses.create');
     Route::post('expenses', [Manager\ExpenseController::class, 'store'])->name('expenses.store');
+    Route::get('expenses/{expense}/edit', [Manager\ExpenseController::class, 'edit'])->name('expenses.edit');
+    Route::patch('expenses/{expense}', [Manager\ExpenseController::class, 'update'])->name('expenses.update');
     Route::delete('expenses/{expense}', [Manager\ExpenseController::class, 'destroy'])->name('expenses.destroy');
+    Route::delete('expense-invoices/{invoice}', [Manager\ExpenseController::class, 'destroyInvoice'])->name('expenses.invoices.destroy');
+    Route::delete('expenses/{expense}/receipt', [Manager\ExpenseController::class, 'destroyReceipt'])->name('expenses.receipt.destroy');
 
     Route::get('salaries/export', [Manager\SalaryController::class, 'exportPdf'])->name('salaries.export');
     Route::resource('salaries', Manager\SalaryController::class)->except([]);

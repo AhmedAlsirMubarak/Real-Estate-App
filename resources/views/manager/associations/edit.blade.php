@@ -1,9 +1,13 @@
 <x-app-layout>
-    <x-slot name="title">{{ __('Edit') }} — {{ __('Owners Association') }}</x-slot>
+    @php
+        $isAr = app()->getLocale() === 'ar';
+        $tr   = fn(string $ar, string $en) => $isAr ? $ar : $en;
+    @endphp
+    <x-slot name="title">{{ $tr('تعديل', 'Edit') }} — {{ $tr('جمعية الملاك', 'Owners Association') }}</x-slot>
 
     <div class="mb-5 flex items-center justify-between">
-        <h2 class="text-xl font-bold text-gray-800">{{ __('Edit') }} — {{ $association->name }}</h2>
-        <a href="{{ route('manager.associations.show', $association) }}" class="text-sm text-gray-600 hover:text-gray-900">{{ __('Back') }}</a>
+        <h2 class="text-xl font-bold text-gray-800">{{ $tr('تعديل', 'Edit') }} — {{ $association->name }}</h2>
+        <a href="{{ route('manager.associations.show', $association) }}" class="text-sm text-gray-600 hover:text-gray-900">{{ $tr('رجوع', 'Back') }}</a>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-3xl">
@@ -12,58 +16,58 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Name') }} (AR)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الاسم', 'Name') }} (AR)</label>
                     <input type="text" name="name_ar" value="{{ old('name_ar', $association->getRawOriginal('name_ar')) }}" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Name') }} (EN)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الاسم', 'Name') }} (EN)</label>
                     <input type="text" name="name_en" value="{{ old('name_en', $association->getRawOriginal('name_en')) }}" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Established Date') }}</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('تاريخ التأسيس', 'Established Date') }}</label>
                     <input type="date" name="established_date" value="{{ old('established_date', $association->established_date?->format('Y-m-d')) }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Monthly Fee per Unit') }}</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الرسوم الشهرية لكل وحدة', 'Monthly Fee per Unit') }}</label>
                     <input type="number" step="0.01" name="monthly_fee_per_unit" value="{{ old('monthly_fee_per_unit', $association->monthly_fee_per_unit) }}" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Description') }} (AR)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الوصف', 'Description') }} (AR)</label>
                     <textarea name="description_ar" rows="3" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">{{ old('description_ar', $association->getRawOriginal('description_ar')) }}</textarea>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Description') }} (EN)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الوصف', 'Description') }} (EN)</label>
                     <textarea name="description_en" rows="3" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">{{ old('description_en', $association->getRawOriginal('description_en')) }}</textarea>
                 </div>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Status') }}</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الحالة', 'Status') }}</label>
                 <select name="status" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                    <option value="active" @selected($association->status==='active')>{{ __('Active') }}</option>
-                    <option value="inactive" @selected($association->status==='inactive')>{{ __('Inactive') }}</option>
+                    <option value="active" @selected($association->status==='active')>{{ $tr('نشط', 'Active') }}</option>
+                    <option value="inactive" @selected($association->status==='inactive')>{{ $tr('غير نشط', 'Inactive') }}</option>
                 </select>
             </div>
 
             <div class="border-t border-dashed border-gray-200 pt-4">
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{{ __('Utility Account Numbers') }}</p>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{{ $tr('أرقام حسابات المرافق', 'Utility Account Numbers') }}</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             <span class="inline-flex items-center gap-1">
                                 <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                                {{ __('Electricity Account No.') }}
+                                {{ $tr('رقم حساب الكهرباء', 'Electricity Account No.') }}
                             </span>
                         </label>
                         <input type="text" name="electricity_account_number"
                                value="{{ old('electricity_account_number', $association->electricity_account_number) }}"
-                               placeholder="{{ __('Optional') }}"
+                               placeholder="{{ $tr('اختياري', 'Optional') }}"
                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                         @error('electricity_account_number')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
@@ -71,28 +75,27 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">
                             <span class="inline-flex items-center gap-1">
                                 <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 22s8-6 8-12a8 8 0 1 0-16 0c0 6 8 12 8 12z"/></svg>
-                                {{ __('Water Account No.') }}
+                                {{ $tr('رقم حساب الماء', 'Water Account No.') }}
                             </span>
                         </label>
                         <input type="text" name="water_account_number"
                                value="{{ old('water_account_number', $association->water_account_number) }}"
-                               placeholder="{{ __('Optional') }}"
+                               placeholder="{{ $tr('اختياري', 'Optional') }}"
                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                         @error('water_account_number')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                 </div>
             </div>
 
-            {{-- Documents --}}
             <div class="border-t border-dashed border-gray-200 pt-4">
-                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{{ __('Documents') }}</p>
+                <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{{ $tr('المستندات', 'Documents') }}</p>
                 @php
                     $docs = [
-                        'no_objection_certificate' => ['label' => __('No Objection Certificate'),       'col' => 'no_objection_certificate_path'],
-                        'sketch'                   => ['label' => __('Sketch'),                         'col' => 'sketch_path'],
-                        'association_certificate'  => ['label' => __('Owners Association Certificate'), 'col' => 'association_certificate_path'],
-                        'personal_id'              => ['label' => __('Personal ID'),                    'col' => 'personal_id_path'],
-                        'manager_id'               => ['label' => __("Association Manager's ID"),       'col' => 'manager_id_path'],
+                        'no_objection_certificate' => ['label' => $tr('شهادة عدم الممانعة', 'No Objection Certificate'),       'col' => 'no_objection_certificate_path'],
+                        'sketch'                   => ['label' => $tr('المخطط', 'Sketch'),                                     'col' => 'sketch_path'],
+                        'association_certificate'  => ['label' => $tr('شهادة جمعية الملاك', 'Owners Association Certificate'), 'col' => 'association_certificate_path'],
+                        'personal_id'              => ['label' => $tr('الهوية الشخصية', 'Personal ID'),                       'col' => 'personal_id_path'],
+                        'manager_id'               => ['label' => $tr('هوية مدير الجمعية', "Association Manager's ID"),        'col' => 'manager_id_path'],
                     ];
                 @endphp
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -105,16 +108,16 @@
                             <a href="{{ asset('storage/' . $association->{$doc['col']}) }}" target="_blank" class="text-xs text-green-700 hover:text-green-900 truncate flex-1">
                                 {{ basename($association->{$doc['col']}) }}
                             </a>
-                            <form method="POST" action="{{ route('manager.associations.documents.delete', [$association, $doc['col']]) }}" onsubmit="return confirm('{{ __('Delete this document?') }}')">
+                            <form method="POST" action="{{ route('manager.associations.documents.delete', [$association, $doc['col']]) }}" onsubmit="return confirm('{{ $tr('حذف هذا المستند؟', 'Delete this document?') }}')">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="text-red-500 hover:text-red-700 text-xs">{{ __('Delete') }}</button>
+                                <button type="submit" class="text-red-500 hover:text-red-700 text-xs">{{ $tr('حذف', 'Delete') }}</button>
                             </form>
                         </div>
                         @endif
                         <input type="file" name="{{ $inputName }}" accept=".pdf,.jpg,.jpeg,.png"
                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100 file:text-gray-700">
                         <p class="text-xs text-gray-400 mt-1">
-                            {{ $association->{$doc['col']} ? __('Upload new file to replace') : 'PDF, JPG, PNG — '.__('Max').' 5MB' }}
+                            {{ $association->{$doc['col']} ? $tr('ارفع ملفاً جديداً للاستبدال', 'Upload new file to replace') : 'PDF, JPG, PNG — '.$tr('الحد الأقصى', 'Max').' 5MB' }}
                         </p>
                         @error($inputName)<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
@@ -123,15 +126,15 @@
             </div>
 
             <div class="flex gap-2 pt-3">
-                <button class="bg-blue-900 hover:bg-blue-800 text-white px-5 py-2 rounded-lg text-sm font-medium">{{ __('Update') }}</button>
-                <a href="{{ route('manager.associations.show', $association) }}" class="text-gray-600 px-3 py-2 text-sm">{{ __('Cancel') }}</a>
+                <button class="bg-blue-900 hover:bg-blue-800 text-white px-5 py-2 rounded-lg text-sm font-medium">{{ $tr('تحديث', 'Update') }}</button>
+                <a href="{{ route('manager.associations.show', $association) }}" class="text-gray-600 px-3 py-2 text-sm">{{ $tr('إلغاء', 'Cancel') }}</a>
             </div>
         </form>
 
         <form method="POST" action="{{ route('manager.associations.destroy', $association) }}" class="mt-8 pt-6 border-t border-red-100"
-              onsubmit="return confirm('Delete?')">
+              onsubmit="return confirm('{{ $tr('هل أنت متأكد؟', 'Are you sure?') }}')">
             @csrf @method('DELETE')
-            <button class="text-red-600 hover:text-red-800 text-sm">{{ __('Delete') }}</button>
+            <button class="text-red-600 hover:text-red-800 text-sm">{{ $tr('حذف', 'Delete') }}</button>
         </form>
     </div>
 </x-app-layout>

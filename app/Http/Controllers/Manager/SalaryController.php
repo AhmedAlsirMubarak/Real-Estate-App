@@ -87,13 +87,16 @@ class SalaryController extends Controller
 
         $employees = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['employee', 'accountant']))->get();
 
+        $alreadyHasSalary = Salary::where('period_month', $month)
+            ->where('period_year', $year)
+            ->whereIn('employee_id', $employees->pluck('id'))
+            ->pluck('employee_id')
+            ->flip()
+            ->all();
+
         $created = 0;
         foreach ($employees as $employee) {
-            $existing = Salary::where('employee_id', $employee->id)
-                ->where('period_month', $month)
-                ->where('period_year', $year)
-                ->exists();
-            if ($existing) continue;
+            if (isset($alreadyHasSalary[$employee->id])) continue;
 
             $base = (float) ($employee->base_salary ?? 0);
 

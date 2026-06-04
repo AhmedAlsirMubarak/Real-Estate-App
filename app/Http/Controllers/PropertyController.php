@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Property;
+use App\Models\WebsiteSection;
 use Illuminate\Http\Request;
 
 class PropertyController extends Controller
@@ -97,14 +98,18 @@ class PropertyController extends Controller
             ->sort()
             ->values();
 
-        return view('properties.index', compact('properties', 'cities'));
+        $contactPhone = WebsiteSection::where('page', 'home')->where('key', 'contact')
+            ->with(['activeItems' => fn($q) => $q->where('icon', 'phone')])
+            ->first()?->activeItems?->first()?->body_ar ?? '';
+
+        return view('properties.index', compact('properties', 'cities', 'contactPhone'));
     }
 
     public function show(Property $property)
     {
         abort_if($property->status !== 'active', 404);
 
-        $property->load('images');
+        $property->load(['images' => fn($q) => $q->orderByDesc('is_primary')->orderBy('sort_order')]);
         $property->loadCount([
             'units',
             'units as available_units_count' => fn($q) => $q->where('status', 'available'),
@@ -121,9 +126,29 @@ class PropertyController extends Controller
         $minSalePrice   = $availableUnits->whereNotNull('sale_price')->min('sale_price');
         $maxSalePrice   = $availableUnits->whereNotNull('sale_price')->max('sale_price');
 
+        // Similar properties — same type, excluding current, max 4
+        $similar = Property::where('status', 'active')
+            ->where('id', '!=', $property->id)
+            ->where('type', $property->type)
+            ->with(['images' => fn($q) => $q->orderByDesc('is_primary')->limit(1)])
+            ->withCount('units')
+            ->with(['units' => fn($q) => $q->select('id','property_id','listing_type','rent_price','sale_price','bedrooms','bathrooms','area')])
+            ->latest()
+            ->take(4)
+            ->get();
+
+        // Contact info from website CMS
+        $contactSection = WebsiteSection::where('page', 'home')->where('key', 'contact')
+            ->with('activeItems')
+            ->first();
+        $contactPhone = $contactSection?->activeItems?->firstWhere('icon', 'phone')?->body_ar ?? '';
+        $contactEmail = $contactSection?->activeItems?->firstWhere('icon', 'email')?->body_ar ?? '';
+        $waNum        = preg_replace('/\D/', '', $contactPhone);
+
         return view('properties.show', compact(
             'property', 'units', 'availableUnits',
-            'minRentPrice', 'maxRentPrice', 'minSalePrice', 'maxSalePrice'
+            'minRentPrice', 'maxRentPrice', 'minSalePrice', 'maxSalePrice',
+            'similar', 'contactPhone', 'contactEmail', 'waNum'
         ));
     }
 }

@@ -38,6 +38,8 @@ class Property extends Model
         'status',
         'electricity_account_number',
         'water_account_number',
+        'latitude',
+        'longitude',
     ];
 
     public function owner()

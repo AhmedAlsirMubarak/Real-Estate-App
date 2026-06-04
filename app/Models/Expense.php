@@ -38,6 +38,11 @@ class Expense extends Model
         return $this->morphTo();
     }
 
+    public function invoices()
+    {
+        return $this->hasMany(ExpenseInvoice::class);
+    }
+
     public function paidByUser()
     {
         return $this->belongsTo(User::class, 'paid_by');

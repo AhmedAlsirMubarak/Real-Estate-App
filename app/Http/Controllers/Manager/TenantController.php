@@ -93,7 +93,7 @@ class TenantController extends Controller
             'water_account_number'       => $validated['water_account_number'] ?? null,
         ]);
 
-        Unit::find($validated['unit_id'])->update(['status' => 'rented']);
+        Unit::where('id', $validated['unit_id'])->update(['status' => 'rented']);
 
         return redirect()->route('manager.tenants.index')
             ->with('success', app()->getLocale() === 'en' ? 'Tenant created successfully.' : 'تم إضافة المستأجر بنجاح');
@@ -163,8 +163,8 @@ class TenantController extends Controller
             $contract = $tenant->activeContract;
             if ($contract) {
                 if ($contract->unit_id != $validated['unit_id']) {
-                    Unit::find($contract->unit_id)?->update(['status' => 'available']);
-                    Unit::find($validated['unit_id'])?->update(['status' => 'rented']);
+                    Unit::where('id', $contract->unit_id)->update(['status' => 'available']);
+                    Unit::where('id', $validated['unit_id'])->update(['status' => 'rented']);
                 }
                 $contract->update([
                     'unit_id'                    => $validated['unit_id'],
@@ -187,7 +187,7 @@ class TenantController extends Controller
                     'electricity_account_number' => $validated['electricity_account_number'] ?? null,
                     'water_account_number'       => $validated['water_account_number'] ?? null,
                 ]);
-                Unit::find($validated['unit_id'])?->update(['status' => 'rented']);
+                Unit::where('id', $validated['unit_id'])->update(['status' => 'rented']);
             }
         }
 

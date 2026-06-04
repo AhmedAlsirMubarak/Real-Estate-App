@@ -1,1033 +1,1314 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" id="html-root">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ثروة | Tharwa — Real Estate Management</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;700;800;900&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --navy: #0f2444;
-            --navy-mid: #1a3a6b;
-            --gold: #c9a84c;
-            --gold-light: #e8c96e;
-            --text-dark: #1a2437;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-            --bg-section: #f8fafc;
-        }
-        [lang="ar"] * { font-family: 'Cairo', sans-serif; }
-        [lang="en"] * { font-family: 'Sora', sans-serif; }
-        html { scroll-behavior: smooth; }
-        body { background: #ffffff; color: var(--text-dark); overflow-x: hidden; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ثروة | Tharwa — Real Estate</title>
+@vite(['resources/css/app.css','resources/js/app.js'])
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Prevent horizontal scrolling on small devices */
+html, body { overflow-x: hidden !important }
 
-        /* Navbar */
-        #navbar { transition: all 0.3s ease; }
-        #navbar.scrolled {
-            background: rgba(255,255,255,0.97) !important;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
-        }
-        .nav-link {
-            position: relative; color: rgba(255,255,255,0.8);
-            font-size: 0.875rem; font-weight: 500; transition: color 0.2s;
-        }
-        .nav-link:hover { color: #fff; }
-        .nav-link::after {
-            content: ''; position: absolute; bottom: -4px; right: 0; left: 0;
-            width: 0; height: 2px; background: var(--gold);
-            transition: width 0.3s ease; margin: 0 auto;
-        }
-        .nav-link:hover::after { width: 100%; }
-        #navbar.scrolled .nav-link { color: #475569; }
-        #navbar.scrolled .nav-link:hover { color: var(--navy); }
+:root{
+  --navy:#0f2444; --navy-mid:#1a3a6b; --navy-light:#1e4d8c;
+  --gold:#c9a84c;  --gold-light:#e8c96e;
+  --white:#ffffff; --off:#f5f7fa; --border:#e8ecf0;
+  --text:#1a2437;  --muted:#64748b;
+}
+[lang="ar"]*{font-family:'Cairo',sans-serif}
+[lang="en"]*{font-family:'Sora',sans-serif}
+html{scroll-behavior:smooth}
+body{background:#fff;color:var(--text);overflow-x:hidden}
 
-        /* Hero */
-        .hero-bg {
-            background:
-                linear-gradient(130deg, rgba(9, 24, 44, 0.93) 0%, rgba(18, 53, 95, 0.88) 52%, rgba(31, 82, 136, 0.84) 100%),
-                url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1800&q=80');
-            background-size: cover;
-            background-position: center;
-        }
+/* ── TOP BAR ── */
+#top-bar{background:var(--navy);border-bottom:1px solid rgba(255,255,255,.08)}
 
-        .hero-visual {
-            position: relative;
-            width: min(100%, 530px);
-            min-height: 470px;
-        }
-        .hero-main-card {
-            position: relative;
-            border-radius: 28px;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.18);
-            box-shadow: 0 35px 70px rgba(5, 13, 25, 0.45);
-        }
-        .hero-main-card::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to top, rgba(5,10,18,0.7), rgba(5,10,18,0.08));
-        }
-        .hero-main-card img {
-            width: 100%;
-            height: 440px;
-            object-fit: cover;
-            transition: transform 0.8s ease;
-        }
-        .hero-main-card:hover img { transform: scale(1.05); }
+/* ── NAVBAR ── */
+#navbar{background:#fff;border-bottom:1px solid var(--border);transition:box-shadow .3s}
+#navbar.shadow{box-shadow:0 4px 24px rgba(15,36,68,.10)}
+.nav-link{color:var(--text);font-size:.875rem;font-weight:600;position:relative;transition:color .2s}
+.nav-link:hover,.nav-link.active-link{color:var(--navy)}
+.nav-link::after{content:'';position:absolute;bottom:-4px;left:0;right:0;width:0;height:2px;background:var(--gold);border-radius:2px;margin:0 auto;transition:width .3s}
+.nav-link:hover::after,.nav-link.active-link::after{width:100%}
 
-        .hero-chip {
-            position: absolute;
-            z-index: 2;
-            right: 20px;
-            left: 20px;
-            bottom: 20px;
-            border-radius: 18px;
-            padding: 12px 14px;
-            background: rgba(15,36,68,0.7);
-            border: 1px solid rgba(255,255,255,0.16);
-            backdrop-filter: blur(8px);
-        }
-        .hero-mini-card {
-            position: absolute;
-            background: #fff;
-            border-radius: 18px;
-            overflow: hidden;
-            box-shadow: 0 20px 45px rgba(9, 20, 38, 0.3);
-            border: 1px solid rgba(201,168,76,0.3);
-            animation: float 6s ease-in-out infinite;
-        }
-        .hero-mini-card img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .hero-mini-card-1 {
-            width: 165px;
-            height: 130px;
-            top: -22px;
-            left: -30px;
-            animation-delay: 0.2s;
-        }
-        .hero-mini-card-2 {
-            width: 178px;
-            height: 142px;
-            bottom: -26px;
-            left: -34px;
-            animation-delay: 0.8s;
-        }
+/* ── HERO ── */
+.hero-section{min-height:100vh;position:relative;display:flex;flex-direction:column;justify-content:center;background-size:cover;background-position:center}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(160deg,rgba(9,24,44,.85) 0%,rgba(15,36,68,.75) 50%,rgba(10,28,58,.65) 100%)}
 
-        .property-media {
-            position: relative;
-            height: 13.5rem;
-            overflow: hidden;
-        }
-        .property-media::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to top, rgba(9, 22, 42, 0.65), rgba(9, 22, 42, 0.06));
-        }
-        .property-media img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.7s ease;
-        }
-        .property-card:hover .property-media img { transform: scale(1.08); }
-        .property-pill {
-            position: absolute;
-            z-index: 2;
-            top: 12px;
-            right: 12px;
-            background: rgba(255,255,255,0.92);
-            color: var(--navy);
-            border-radius: 999px;
-            font-size: 0.72rem;
-            font-weight: 800;
-            padding: 4px 11px;
-        }
-        .property-feature {
-            position: absolute;
-            z-index: 2;
-            left: 12px;
-            bottom: 12px;
-            background: rgba(9, 24, 44, 0.75);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #fff;
-            font-size: 0.7rem;
-            font-weight: 600;
-            border-radius: 999px;
-            padding: 4px 10px;
-        }
+/* Ensure hero doesn't cause horizontal overflow on mobile */
+.hero-section{overflow-x:hidden}
 
-        .about-visual-grid {
-            position: relative;
-            display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            grid-template-rows: 170px 170px;
-            gap: 12px;
-            margin-bottom: 18px;
-        }
-        .about-main-photo {
-            grid-row: span 2;
-            border-radius: 22px;
-            overflow: hidden;
-            position: relative;
-            box-shadow: 0 20px 48px rgba(15,36,68,0.22);
-        }
-        .about-main-photo::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to top, rgba(5,12,22,0.5), rgba(5,12,22,0));
-        }
-        .about-main-photo img,
-        .about-thumb img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .about-thumb {
-            border-radius: 18px;
-            overflow: hidden;
-            border: 1px solid rgba(201,168,76,0.28);
-            box-shadow: 0 12px 30px rgba(15,36,68,0.16);
-        }
-        .about-floating-badge {
-            position: absolute;
-            z-index: 2;
-            bottom: 14px;
-            right: 14px;
-            background: rgba(255,255,255,0.94);
-            color: var(--navy);
-            border-radius: 14px;
-            padding: 10px 12px;
-            font-size: 0.75rem;
-            font-weight: 800;
-            line-height: 1.3;
-            box-shadow: 0 10px 24px rgba(9,22,42,0.2);
-        }
-        .value-card { transition: all 0.3s ease; }
-        .value-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 14px 30px rgba(15,36,68,0.11);
-            border-color: rgba(201,168,76,0.45) !important;
-        }
+/* Global mobile safety: prevent any element exceeding viewport */
+html, body, #app, .hero-section, .type-slider-outer, .type-slider-track { max-width:100vw; overflow-x:hidden; box-sizing:border-box; }
 
-        /* Buttons */
-        .btn-gold { background: var(--gold); color: var(--navy); font-weight: 700; transition: all 0.3s ease; }
-        .btn-gold:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(201,168,76,0.35); }
-        .btn-outline-white { border: 2px solid rgba(255,255,255,0.35); color: #fff; font-weight: 600; transition: all 0.3s ease; }
-        .btn-outline-white:hover { border-color: var(--gold); color: var(--gold); }
-        .btn-navy { background: var(--navy); color: #fff; font-weight: 700; transition: all 0.3s ease; }
-        .btn-navy:hover { background: var(--navy-mid); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15,36,68,0.25); }
+/* Allow city tabs to wrap on small screens to avoid horizontal overflow */
+@media(max-width:640px){
+  .city-tab{white-space:normal;padding-inline:10px}
+}
 
-        /* Heading line */
-        .heading-line { display: inline-block; width: 48px; height: 3px; background: var(--gold); border-radius: 2px; margin-bottom: 1rem; }
+/* ── SEARCH BAR ── */
+.search-bar{background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(15,36,68,.25);overflow:hidden;box-sizing:border-box;max-width:980px;margin:0 auto;padding-inline:12px}
+.search-tab{padding:12px 20px;font-weight:700;font-size:.85rem;border-bottom:3px solid transparent;transition:all .2s;cursor:pointer;color:var(--muted)}
+.search-tab.active{color:var(--navy);border-bottom-color:var(--gold)}
+.search-select,.search-input{border:none;background:#f8fafc;border-radius:10px;padding:12px 16px;font-size:.875rem;color:var(--text);outline:none;width:100%;transition:background .2s}
+.search-select:focus,.search-input:focus{background:#eef2ff}
+.btn-search{background:var(--navy);color:#fff;font-weight:700;border-radius:12px;padding:12px 28px;font-size:.875rem;transition:all .2s;white-space:nowrap}
+.btn-search:hover{background:var(--navy-mid);transform:translateY(-1px)}
 
-        /* Cards */
-        .service-card { border: 1px solid var(--border); background: #fff; transition: all 0.35s cubic-bezier(0.175,0.885,0.32,1.275); }
-        .service-card:hover { transform: translateY(-7px); box-shadow: 0 20px 45px rgba(15,36,68,0.1); border-color: var(--gold); }
-        .service-icon { width: 52px; height: 52px; background: #f0f4f8; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; transition: background 0.3s; }
-        .service-card:hover .service-icon { background: var(--navy); }
-        .service-card:hover .service-icon svg { color: var(--gold) !important; }
+/* ── STATS ── */
+.stat-card{text-align:center;padding:32px 20px}
+.stat-num{font-size:2.5rem;font-weight:900;color:var(--navy);line-height:1}
+.stat-num span{color:var(--gold)}
 
-        .property-card { border: 1px solid var(--border); background: #fff; transition: all 0.3s ease; }
-        .property-card:hover { transform: translateY(-5px); box-shadow: 0 16px 40px rgba(15,36,68,0.1); border-color: rgba(201,168,76,0.4); }
+/* ── PROPERTY CARDS ── */
+.prop-card{background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:all .3s;display:flex;flex-direction:column}
+.prop-card:hover{transform:translateY(-6px);box-shadow:0 20px 50px rgba(15,36,68,.14);border-color:rgba(201,168,76,.4)}
+.prop-img{position:relative;height:220px;overflow:hidden;flex-shrink:0}
+.prop-img img{width:100%;height:100%;object-fit:cover;transition:transform .6s}
+.prop-card:hover .prop-img img{transform:scale(1.07)}
+.prop-badge{position:absolute;top:14px;right:14px;padding:5px 13px;border-radius:999px;font-size:.72rem;font-weight:800;background:var(--gold);color:var(--navy)}
+.prop-purpose{position:absolute;top:14px;left:14px;padding:5px 13px;border-radius:999px;font-size:.72rem;font-weight:700;background:rgba(15,36,68,.75);color:#fff;backdrop-filter:blur(4px)}
+.prop-price{position:absolute;bottom:14px;right:14px;padding:6px 14px;border-radius:12px;font-size:.8rem;font-weight:900;background:rgba(255,255,255,.95);color:var(--navy);backdrop-filter:blur(8px)}
+.prop-meta{display:flex;align-items:center;gap:14px;font-size:.78rem;color:var(--muted)}
+.prop-meta-item{display:flex;align-items:center;gap:4px}
+.btn-wa{display:flex;align-items:center;gap:6px;background:#25d366;color:#fff;font-size:.78rem;font-weight:700;padding:8px 14px;border-radius:10px;transition:all .2s}
+.btn-wa:hover{background:#20b858;transform:translateY(-1px)}
+.btn-call{display:flex;align-items:center;gap:6px;background:var(--off);color:var(--navy);font-size:.78rem;font-weight:700;padding:8px 14px;border-radius:10px;border:1px solid var(--border);transition:all .2s}
+.btn-call:hover{background:var(--navy);color:#fff}
 
-        /* Stats */
-        .stats-bar { background: var(--navy); }
+/* ── SERVICE CARDS ── */
+.svc-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:28px 24px;transition:all .3s}
+.svc-card:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(15,36,68,.1);border-color:var(--gold)}
+.svc-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;background:rgba(15,36,68,.07);transition:background .3s}
+.svc-card:hover .svc-icon{background:var(--navy)}
+.svc-card:hover .svc-icon svg{color:var(--gold)!important}
 
-        /* Contact inputs */
-        .input-field { border: 1px solid var(--border); background: #fff; color: var(--text-dark); transition: all 0.3s ease; }
-        .input-field:focus { border-color: var(--navy-mid); box-shadow: 0 0 0 3px rgba(26,58,107,0.1); outline: none; }
-        .input-field::placeholder { color: #94a3b8; }
+/* ── TYPE CARDS ── */
+.type-card{position:relative;border-radius:20px;overflow:hidden;text-decoration:none;display:block;width:300px;height:380px;flex-shrink:0;cursor:pointer;box-shadow:0 4px 18px rgba(15,36,68,.10);transition:transform .3s,box-shadow .3s}
+.type-card:hover{transform:translateY(-8px);box-shadow:0 20px 40px rgba(15,36,68,.22)}
+.type-card-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s}
+.type-card:hover .type-card-img{transform:scale(1.07)}
+.type-card-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#0f2444 0%,#1e4d8c 100%)}
+.type-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(10,22,45,.85) 0%,rgba(10,22,45,.3) 55%,transparent 100%);transition:background .3s}
+.type-card:hover .type-card-overlay{background:linear-gradient(to top,rgba(10,22,45,.92) 0%,rgba(10,22,45,.5) 60%,rgba(10,22,45,.1) 100%)}
+.type-card-body{position:absolute;bottom:0;left:0;right:0;padding:20px 18px 18px;text-align:center}
+.type-card-icon{position:absolute;top:18px;right:18px;width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,.18);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center}
+.type-card-body{position:absolute;bottom:0;left:0;right:0;padding:28px 22px 24px;text-align:center}
+.type-label{color:#fff;font-size:1.15rem;font-weight:800;letter-spacing:.01em;display:block;margin-bottom:8px}
+.type-count{display:inline-block;background:var(--gold);color:#0f2444;font-size:.8rem;font-weight:700;padding:4px 14px;border-radius:99px}
+.type-explore{color:rgba(255,255,255,.65);font-size:.8rem;font-weight:500}
 
-        /* Animations */
-        .fade-in { opacity: 0; transform: translateY(24px); transition: all 0.65s ease; }
-        .fade-in.visible { opacity: 1; transform: translateY(0); }
-        .floating { animation: float 5s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+/* ── TYPE SLIDER ── */
+.type-slider-outer{position:relative;padding:0 20px}
+.type-slider-track{
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  border-radius:4px;
+}
+.type-slider-track::-webkit-scrollbar{display:none}
+.type-slider{display:flex;gap:20px}
+.type-card{
+  scroll-snap-align:start;
+  flex-shrink:0;
+  width:min(300px,78vw)!important;
+  height:380px!important;
+}
+.type-arrow{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:10;
+  width:44px;height:44px;border-radius:50%;background:#fff;
+  border:1.5px solid var(--border);display:flex;align-items:center;
+  justify-content:center;cursor:pointer;
+  box-shadow:0 4px 16px rgba(0,0,0,.12);transition:all .2s;color:var(--navy);
+}
+.type-arrow:hover{background:var(--navy);color:#fff;border-color:var(--navy);box-shadow:0 6px 20px rgba(15,36,68,.25)}
+.type-arrow-prev{left:0}
+.type-arrow-next{right:0}
+@media(max-width:640px){
+  .type-slider-outer{padding:0 12px}
+  .type-arrow{width:36px;height:36px}
+}
+.type-dots{display:flex;justify-content:center;gap:7px;margin-top:20px}
+.type-dot{width:8px;height:8px;border-radius:50%;background:var(--border);border:none;cursor:pointer;transition:all .25s;padding:0}
+.type-dot.active{width:24px;border-radius:99px;background:var(--navy)}
 
-        @media (max-width: 1024px) {
-            .hero-visual {
-                width: 100%;
-                min-height: auto;
-                margin-top: 12px;
-            }
-            .hero-main-card img { height: 330px; }
-            .hero-mini-card {
-                width: 135px;
-                height: 110px;
-            }
-            .hero-mini-card-1 { top: -14px; left: -8px; }
-            .hero-mini-card-2 { bottom: -15px; left: -10px; }
-            .about-visual-grid {
-                grid-template-columns: 1fr;
-                grid-template-rows: 250px 140px 140px;
-            }
-            .about-main-photo { grid-row: span 1; }
-        }
+/* ── COMMUNITY CARDS ── */
+.community-card{position:relative;border-radius:18px;overflow:hidden;height:220px;cursor:pointer}
+.community-card img{width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.community-card:hover img{transform:scale(1.08)}
+.community-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(9,24,44,.8) 0%,rgba(9,24,44,.1) 60%)}
+.community-info{position:absolute;bottom:0;left:0;right:0;padding:18px}
 
-        /* Mobile menu */
-        #mobile-menu { transition: all 0.3s ease; }
+/* ── CTA SECTION ── */
+.cta-section{background:var(--navy);position:relative;overflow:hidden}
+.cta-section::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5z' fill='%23ffffff' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");opacity:.5}
 
-        /* Language toggle */
-        .lang-btn { border: 1.5px solid rgba(255,255,255,0.3); color: rgba(255,255,255,0.85); transition: all 0.2s; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; }
-        .lang-btn:hover { border-color: var(--gold); color: var(--gold); }
-        #navbar.scrolled .lang-btn { border-color: rgba(15,36,68,0.3); color: var(--navy); }
-        #navbar.scrolled .lang-btn:hover { border-color: var(--gold); color: var(--gold); }
+/* ── TESTIMONIAL ── */
+.testi-card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:28px;transition:all .3s}
+.testi-card:hover{box-shadow:0 16px 40px rgba(15,36,68,.1);border-color:rgba(201,168,76,.4)}
 
-        footer { background: var(--navy); }
+/* ── SECTION HEADING ── */
+.section-tag{display:inline-flex;align-items:center;gap:8px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:var(--gold);font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:6px 16px;border-radius:999px;margin-bottom:12px}
+.section-tag::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--gold);display:inline-block}
 
-        /* RTL/LTR nav line fix */
-        [dir="ltr"] .nav-link::after { right: 0; left: 0; }
-        [dir="rtl"] .nav-link::after { right: 0; left: 0; }
+/* ── FOOTER ── */
+footer{background:var(--navy)}
 
-        /* Smooth lang transition */
-        [data-ar], [data-en] { transition: opacity 0.2s ease; }
-    </style>
+/* ── ANIMATIONS ── */
+.fade-up{opacity:0;transform:translateY(28px);transition:all .65s ease}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+
+.btn-gold{background:var(--gold);color:var(--navy);font-weight:700;transition:all .25s}
+.btn-gold:hover{background:var(--gold-light);transform:translateY(-2px);box-shadow:0 8px 20px rgba(201,168,76,.35)}
+.btn-navy{background:var(--navy);color:#fff;font-weight:700;transition:all .25s}
+.btn-navy:hover{background:var(--navy-mid)}
+.input-field{border:1px solid var(--border);background:#fff;color:var(--text);transition:all .2s;outline:none}
+.input-field:focus{border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(26,58,107,.1)}
+
+@media(max-width:768px){
+  .hero-section{min-height:100svh}
+  .stat-num{font-size:2rem}
+}
+</style>
 </head>
 <body>
 
-{{-- ======= NAVBAR ======= --}}
-<nav id="navbar" class="fixed top-0 right-0 left-0 z-50 py-3 px-4 sm:px-6 bg-transparent">
-    <div class="max-w-7xl mx-auto flex items-center justify-between">
-        {{-- Logo --}}
-        <a href="#home" class="flex items-center gap-2.5 flex-shrink-0 mt-6 mb-6">
-            <div class="w-20 h-20 rounded-xl flex items-center justify-center shadow flex-shrink-0" style="background-color: #fff;">
-                <img src="{{ asset('img/logo.png') }}" alt="logo" class="h-[72px] w-auto">
-            </div>
-         
-        </a>
+@php
+$s = fn(string $key) => $sections[$key] ?? null;
 
-        {{-- Desktop Nav links --}}
-        <div class="hidden lg:flex items-center gap-6 xl:gap-8">
-            <a href="#home"       class="nav-link" data-ar-text="الرئيسية"     data-en-text="Home">الرئيسية</a>
-            <a href="#services"   class="nav-link" data-ar-text="خدماتنا"      data-en-text="Services">خدماتنا</a>
-            <a href="{{ route('properties.index') }}" class="nav-link" data-ar-text="العقارات"     data-en-text="Properties">العقارات</a>
-            <a href="#about"      class="nav-link" data-ar-text="عن الشركة"    data-en-text="About">عن الشركة</a>
-            <a href="#contact"    class="nav-link" data-ar-text="تواصل معنا"   data-en-text="Contact">تواصل معنا</a>
-        </div>
+$iconSvg = [
+  'building' =>'<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/>',
+  'key'     =>'<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z"/>',
+  'users'   =>'<path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0z"/>',
+  'star'    =>'<path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"/>',
+  'wrench'  =>'<path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437 1.745-1.437m6.615 8.206L15.75 15.75"/>',
+  'chart'   =>'<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5z"/>',
+  'employee'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>',
+  'portal'  =>'<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 8.25h3"/>',
+  'check'   =>'<path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/>',
+  'apartment'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/>',
+  'villa'   =>'<path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/>',
+  'office'  =>'<path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 0 0 .75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 0 0-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0 1 12 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 0 1-.673-.38m0 0A2.18 2.18 0 0 1 3 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 0 1 3.413-.387m7.5 0V5.25A2.25 2.25 0 0 0 13.5 3h-3a2.25 2.25 0 0 0-2.25 2.25v.894m7.5 0a48.667 48.667 0 0 0-7.5 0M12 12.75h.008v.008H12v-.008Z"/>',
+  'shop'    =>'<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349M3.75 21V9.349m0 0a3.001 3.001 0 0 0 3.75-.615A2.993 2.993 0 0 0 9.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 0 0 2.25 1.016 2.993 2.993 0 0 0 2.25-1.016 3.001 3.001 0 0 0 3.75.614m-16.5 0a3.004 3.004 0 0 1-.621-4.72l1.189-1.19A1.5 1.5 0 0 1 5.378 3h13.243a1.5 1.5 0 0 1 1.06.44l1.19 1.189a3 3 0 0 1-.621 4.72"/>',
+  'studio'  =>'<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819"/>',
+  'land'    =>'<path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/>',
+  'location'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/>',
+  'phone'   =>'<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25z"/>',
+  'email'   =>'<path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>',
+  'clock'   =>'<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>',
+  'default' =>'<path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/>',
+];
+$ico = fn(string $k, string $cls='w-6 h-6') =>
+  '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="'.$cls.'">'.($iconSvg[$k] ?? $iconSvg['default']).'</svg>';
 
-        {{-- Right side: Lang + Login + Hamburger --}}
-        <div class="flex items-center gap-2 sm:gap-3">
-            {{-- Language Toggle --}}
-            <button onclick="toggleLang()" class="lang-btn hidden sm:block" id="lang-btn">EN</button>
+$contactItems  = $s('contact')?->activeItems ?? collect();
+$phone         = $contactItems->firstWhere('icon','phone')?->body_ar ?? '';
+$email         = $contactItems->firstWhere('icon','email')?->body_ar ?? '';
+$socials       = $footer?->extra ?? [];
+$waPhoneClean  = preg_replace('/\D/', '', $phone);
+$waRaw         = $socials['whatsapp'] ?? null;
+$waDigits      = $waRaw ? preg_replace('/\D/', '', $waRaw) : null;
+$waHref        = $waDigits
+    ? 'https://api.whatsapp.com/send?phone=' . $waDigits
+    : ($waPhoneClean ? 'https://api.whatsapp.com/send?phone=' . $waPhoneClean : null);
 
-            {{-- Login Button --}}
-            <a href="{{ route('login') }}" class="btn-gold px-4 py-2 rounded-xl text-sm flex items-center gap-1.5 shadow-sm flex-shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"/></svg>
-                <span data-ar>دخول</span><span data-en class="hidden">Login</span>
-            </a>
+$heroBg = $s('hero')?->imageUrl()
+  ?? 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1920&q=80';
+@endphp
 
-            {{-- Mobile Hamburger --}}
-            <button id="hamburger" class="lg:hidden text-white p-1.5 rounded-lg hover:bg-white/10 transition" onclick="toggleMobileMenu()">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path id="hamburger-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
+@include('_partials.public-nav')
+
+{{-- ══════════ HERO ══════════ --}}
+<section id="home" class="hero-section" style="background-image:url('{{ $heroBg }}')">
+  <div class="hero-overlay"></div>
+  <div class="relative z-10 flex-1 flex flex-col justify-center max-w-7xl mx-auto w-full px-4 sm:px-6 pt-10 pb-36 sm:pb-44">
+
+    <div class="max-w-2xl fade-up">
+      <div class="inline-flex items-center gap-2 mb-5 bg-white/10 backdrop-blur border border-white/20 text-white/80 text-xs font-semibold px-4 py-2 rounded-full">
+        <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+        <span data-ar>{{ $s('hero')?->extra['badge_ar'] ?? 'الرائد في إدارة العقارات' }}</span>
+        <span data-en class="hidden">{{ $s('hero')?->extra['badge_en'] ?? 'Leading Real Estate Agency' }}</span>
+      </div>
+
+      @php
+        $heroTitleAr = $s('hero')?->title_ar ?? 'اعثر على عقار أحلامك';
+        $heroTitleEn = $s('hero')?->title_en ?? 'Find Your Dream Property';
+        // Split at midpoint so the gold line gets a balanced chunk (not just one word)
+        $arWords  = explode(' ', $heroTitleAr);
+        $enWords  = explode(' ', $heroTitleEn);
+        $arMid    = (int) ceil(count($arWords) / 2);
+        $enMid    = (int) ceil(count($enWords) / 2);
+        $heroAr1  = implode(' ', array_slice($arWords, 0, $arMid));
+        $heroAr2  = implode(' ', array_slice($arWords, $arMid));
+        $heroEn1  = implode(' ', array_slice($enWords, 0, $enMid));
+        $heroEn2  = implode(' ', array_slice($enWords, $enMid));
+      @endphp
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-5" style="line-height:1.3">
+        <span data-ar>{{ $heroAr1 }}<br><span style="color:var(--gold)">{{ $heroAr2 }}</span></span>
+        <span data-en class="hidden">{{ $heroEn1 }}<br><span style="color:var(--gold)">{{ $heroEn2 }}</span></span>
+      </h1>
+
+      <p class="text-white/65 text-base sm:text-lg leading-relaxed max-w-xl">
+        <span data-ar>{{ $s('hero')?->body_ar ?? '' }}</span>
+        <span data-en class="hidden">{{ $s('hero')?->body_en ?? '' }}</span>
+      </p>
+    </div>
+  </div>
+
+  {{-- Search bar floating at hero bottom --}}
+  <div class="relative z-10 max-w-5xl mx-auto w-full px-4 sm:px-6 -mb-14 sm:-mb-16">
+    <div class="search-bar fade-up mx-auto" style="max-width:980px">
+      {{-- Tabs --}}
+      <div class="flex justify-center gap-2 border-b border-gray-100 px-2">
+        <button onclick="setTab('rent')" id="tab-rent" class="search-tab active">
+          <span data-ar>للإيجار</span><span data-en class="hidden">For Rent</span>
+        </button>
+        <button onclick="setTab('sale')" id="tab-sale" class="search-tab">
+          <span data-ar>للبيع</span><span data-en class="hidden">For Sale</span>
+        </button>
+        <button onclick="setTab('both')" id="tab-both" class="search-tab">
+          <span data-ar>الكل</span><span data-en class="hidden">All</span>
+        </button>
+      </div>
+      {{-- Fields --}}
+      <form action="{{ route('properties.index') }}" method="GET">
+        <input type="hidden" name="purpose" id="purpose-input" value="rent">
+        <div class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5">
+              <span data-ar>نوع العقار</span><span data-en class="hidden">Property Type</span>
+            </label>
+            <select name="type" class="search-select">
+              <option value="" data-ar="جميع الأنواع" data-en="All Types">جميع الأنواع</option>
+              @foreach([
+                ['apartment','شقة','Apartment'],
+                ['villa','فيلا','Villa'],
+                ['office','مكتب','Office'],
+                ['shop','محل','Shop'],
+                ['studio','استوديو','Studio'],
+                ['apartment_building','عمارة','Building'],
+              ] as [$v,$ar,$en])
+              <option value="{{ $v }}" data-ar="{{ $ar }}" data-en="{{ $en }}">{{ $ar }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5">
+              <span data-ar>المدينة / الموقع</span><span data-en class="hidden">City / Location</span>
+            </label>
+            <input type="text" name="search" placeholder-ar="ابحث بالمدينة أو الاسم..." placeholder-en="Search by city or name..."
+              class="search-input" placeholder="ابحث بالمدينة أو الاسم...">
+          </div>
+          <div>
+            <button type="submit" class="btn-search w-full flex items-center justify-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z"/></svg>
+              <span data-ar>بحث</span><span data-en class="hidden">Search</span>
             </button>
+          </div>
         </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+{{-- ══════════ STATS ══════════ --}}
+<section class="pt-24 sm:pt-28 pb-10 sm:pb-14 bg-white border-b border-gray-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-0 divide-x divide-gray-100 rtl:divide-x-reverse">
+      @foreach($s('stats')?->activeItems ?? collect() as $stat)
+      <div class="stat-card fade-up">
+        <div class="stat-num">{!! preg_replace('/\d+/', '<span>$0</span>', e($stat->value)) !!}</div>
+        <p class="text-sm text-gray-500 mt-2 font-medium">
+          <span data-ar>{{ $stat->title_ar }}</span>
+          <span data-en class="hidden">{{ $stat->title_en }}</span>
+        </p>
+      </div>
+      @endforeach
+    </div>
+  </div>
+</section>
+
+{{-- ══════════ FEATURED PROPERTIES ══════════ --}}
+@php
+$waNum = $s('contact')?->activeItems->firstWhere('icon','phone')?->body_ar ?? '';
+$phoneNum = $s('contact')?->activeItems->firstWhere('icon','phone')?->body_ar ?? '';
+$firstCity = $cities->first() ?? null;
+@endphp
+
+<section id="properties" class="py-16 sm:py-20 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+
+    {{-- Section header (CMS-controlled) --}}
+    <div class="text-center mb-2 fade-up">
+      @if($s('featured_properties')?->subtitle_ar)
+      <div class="section-tag mx-auto mb-2" style="width:fit-content">
+        <span data-ar>{{ $s('featured_properties')->subtitle_ar }}</span>
+        <span data-en class="hidden">{{ $s('featured_properties')->subtitle_en ?? $s('featured_properties')->subtitle_ar }}</span>
+      </div>
+      @endif
+      <h2 class="text-2xl sm:text-3xl font-black" style="color:var(--navy)">
+        <span data-ar>{{ $s('featured_properties')?->title_ar ?? 'اعثر على أفضل العقارات المتاحة' }}</span>
+        <span data-en class="hidden">{{ $s('featured_properties')?->title_en ?? 'Find The Best Available Properties' }}</span>
+      </h2>
+      <p class="mt-2 text-sm" style="color:var(--muted)">
+        <span data-ar>{{ $s('featured_properties')?->body_ar ?? '' }}</span>
+        <span data-en class="hidden">{{ $s('featured_properties')?->body_en ?? '' }}</span>
+      </p>
     </div>
 
-    {{-- Mobile Menu --}}
-    <div id="mobile-menu" class="hidden lg:hidden mt-3 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden mx-0">
-        <div class="p-4 space-y-1">
-            <a href="#home"       onclick="closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 text-gray-700 font-medium text-sm transition">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 flex-shrink-0" style="color:var(--gold)"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
-                <span data-ar-text="الرئيسية" data-en-text="Home">الرئيسية</span>
-            </a>
-            <a href="#services"   onclick="closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 text-gray-700 font-medium text-sm transition">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 flex-shrink-0" style="color:var(--gold)"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg>
-                <span data-ar-text="خدماتنا" data-en-text="Services">خدماتنا</span>
-            </a>
-            <a href="{{ route('properties.index') }}" onclick="closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 text-gray-700 font-medium text-sm transition">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 flex-shrink-0" style="color:var(--gold)"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>
-                <span data-ar-text="العقارات" data-en-text="Properties">العقارات</span>
-            </a>
-            <a href="#about"      onclick="closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 text-gray-700 font-medium text-sm transition">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 flex-shrink-0" style="color:var(--gold)"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
-                <span data-ar-text="عن الشركة" data-en-text="About">عن الشركة</span>
-            </a>
-            <a href="#contact"    onclick="closeMobileMenu()" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 text-gray-700 font-medium text-sm transition">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 flex-shrink-0" style="color:var(--gold)"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg>
-                <span data-ar-text="تواصل معنا" data-en-text="Contact">تواصل معنا</span>
-            </a>
-            <div class="border-t border-gray-100 pt-3 mt-2 flex items-center gap-3">
-                <a href="{{ route('login') }}" class="btn-navy flex-1 py-2.5 rounded-xl text-sm text-center">
-                    <span data-ar>تسجيل الدخول</span><span data-en class="hidden">Login</span>
-                </a>
-                <button onclick="toggleLang()" class="px-4 py-2.5 rounded-xl text-sm font-bold border border-gray-200 hover:border-yellow-400 hover:text-yellow-600 text-gray-600 transition" id="lang-btn-mobile">EN</button>
-            </div>
-        </div>
+    {{-- Location tabs --}}
+    @if($cities->count() > 0)
+    <div class="flex items-center justify-center border-b mb-8 overflow-x-auto" style="border-color:var(--border)">
+      @foreach($cities as $cityObj)
+      @php $citySlugTab = Str::slug($cityObj->city_en ?: $cityObj->city); @endphp
+      <button
+        onclick="switchCity('{{ $citySlugTab }}')"
+        id="city-tab-{{ $citySlugTab }}"
+        class="city-tab flex items-center gap-1.5 px-5 py-4 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all border-b-2 -mb-px"
+        style="border-color:transparent;color:var(--muted)">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/></svg>
+        <span data-ar>{{ $cityObj->city_ar ?: $cityObj->city }}</span>
+        <span data-en class="hidden">{{ $cityObj->city_en ?: $cityObj->city }}</span>
+      </button>
+      @endforeach
+      {{-- All tab --}}
+      <button
+        onclick="switchCity('all')"
+        id="city-tab-all"
+        class="city-tab flex items-center gap-1.5 px-5 py-4 text-xs font-bold uppercase tracking-widest whitespace-nowrap transition-all border-b-2 -mb-px"
+        style="border-color:var(--gold);color:var(--navy)">
+        <span data-ar>الكل</span><span data-en class="hidden">All</span>
+      </button>
     </div>
-</nav>
+    @endif
 
-{{-- ======= HERO ======= --}}
-<section id="home" class="hero-bg min-h-screen flex items-center relative overflow-hidden pt-16 sm:pt-20">
-    <div class="absolute inset-0 opacity-[0.04]"
-         style="background-image:url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\");"></div>
+    {{-- Properties grid per city --}}
+    @foreach($propertiesByCity as $city => $cityProps)
+    @php
+      $cityObj  = $cities->firstWhere('city', $city);
+      $citySlug = Str::slug($cityObj?->city_en ?: $cityObj?->city ?: $city);
+    @endphp
+    <div id="city-grid-{{ $citySlug }}" class="city-grid hidden">
+      @include('_partials.property-cards', [
+        'properties'  => $cityProps,
+        'waNum'       => $waNum,
+        'phoneNum'    => $phoneNum,
+        'initialShow' => 4,
+        'gridId'      => 'featured-grid-'.$citySlug,
+      ])
+      @if($cityProps->count() > 4)
+      <div class="text-center mt-8" id="feat-more-wrap-{{ $citySlug }}">
+        <button onclick="loadMoreFeatured('{{ $citySlug }}')"
+                class="inline-flex items-center gap-2 px-7 py-3 rounded-xl font-bold text-sm border-2 transition"
+                style="border-color:var(--gold);color:var(--gold);background:transparent"
+                onmouseover="this.style.background='var(--gold)';this.style.color='var(--navy)'"
+                onmouseout="this.style.background='transparent';this.style.color='var(--gold)'">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          <span data-ar>عرض المزيد</span><span data-en class="hidden">Load More</span>
+          <span class="text-xs opacity-70">({{ $cityProps->count() - 4 }})</span>
+        </button>
+      </div>
+      @endif
+    </div>
+    @endforeach
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-10 lg:gap-14 items-center w-full py-12 lg:py-0">
-        <div class="fade-in text-white">
-            {{-- Badge --}}
-            <div class="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6 text-sm font-medium"
-                 style="background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.3); color: var(--gold-light);">
-                <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                <span data-ar>الرائد في إدارة العقارات</span>
-                <span data-en class="hidden">Leading Real Estate Management</span>
-            </div>
-
-            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight mb-5">
-                <span data-ar>إدارة عقارية<br><span style="color:var(--gold);">ذكية ومتكاملة</span></span>
-                <span data-en class="hidden">Smart &amp; Integrated<br><span style="color:var(--gold);">Property Management</span></span>
-            </h1>
-
-            <p class="text-white/70 text-base sm:text-lg leading-relaxed mb-8 max-w-xl">
-                <span data-ar>نقدم حلولاً متطورة لإدارة العقارات والمباني السكنية والتجارية. من المستأجر إلى الإدارة، كل شيء في منصة واحدة قوية.</span>
-                <span data-en class="hidden">We provide advanced solutions for managing residential and commercial properties. From tenants to administration — everything in one powerful platform.</span>
-            </p>
-
-            <div class="flex flex-wrap gap-3 mb-10">
-                <a href="{{ route('login') }}" class="btn-gold px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl flex items-center gap-2 text-sm sm:text-base shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 0 0 6.16-12.12A14.98 14.98 0 0 0 9.631 8.41m5.96 5.96a14.926 14.926 0 0 1-5.841 2.58m-.119-8.54a6 6 0 0 0-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 0 0-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 0 1-2.448-2.448 14.9 14.9 0 0 1 .06-.312m-2.24 2.39a4.493 4.493 0 0 0-1.757 4.306 4.493 4.493 0 0 0 4.306-1.758M16.5 9a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/></svg>
-                    <span data-ar>ابدأ الآن</span><span data-en class="hidden">Get Started</span>
-                </a>
-                <a href="#about" class="btn-outline-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl flex items-center gap-2 text-sm sm:text-base">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
-                    <span data-ar>تعرف علينا</span><span data-en class="hidden">Learn More</span>
-                </a>
-            </div>
-
-            <div class="flex items-center gap-6 sm:gap-10 flex-wrap">
-                <div>
-                    <p class="text-2xl sm:text-3xl font-black" style="color:var(--gold);">50+</p>
-                    <p class="text-white/50 text-xs mt-1"><span data-ar>مبنى تحت الإدارة</span><span data-en class="hidden">Buildings Managed</span></p>
-                </div>
-                <div class="w-px h-8 sm:h-10 bg-white/15"></div>
-                <div>
-                    <p class="text-2xl sm:text-3xl font-black" style="color:var(--gold);">500+</p>
-                    <p class="text-white/50 text-xs mt-1"><span data-ar>وحدة مدارة</span><span data-en class="hidden">Units Managed</span></p>
-                </div>
-                <div class="w-px h-8 sm:h-10 bg-white/15"></div>
-                <div>
-                    <p class="text-2xl sm:text-3xl font-black" style="color:var(--gold);">98%</p>
-                    <p class="text-white/50 text-xs mt-1"><span data-ar>نسبة رضا العملاء</span><span data-en class="hidden">Client Satisfaction</span></p>
-                </div>
-            </div>
-        </div>
-
-        {{-- Hero Visual --}}
-        <div class="flex justify-center items-center">
-            <div class="hero-visual fade-in">
-                <div class="hero-main-card">
-                    <img src="https://images.unsplash.com/photo-1460317442991-0ec209397118?auto=format&fit=crop&w=1400&q=80"
-                         loading="lazy"
-                         alt="Luxury tower skyline">
-                    <div class="hero-chip text-white">
-                        <p class="text-xs uppercase tracking-[0.22em] text-white/70 mb-1">
-                            <span data-ar>فرص استثمارية</span>
-                            <span data-en class="hidden">Investment Opportunities</span>
-                        </p>
-                        <p class="font-bold text-sm sm:text-base">
-                            <span data-ar>إدارة احترافية لمحفظة عقارية متنوعة</span>
-                            <span data-en class="hidden">Professional management for a diverse property portfolio</span>
-                        </p>
-                    </div>
-                </div>
-
-                <div class="hero-mini-card hero-mini-card-1">
-                    <img src="https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=900&q=80"
-                         loading="lazy"
-                         alt="Modern apartment facade">
-                </div>
-
-                <div class="hero-mini-card hero-mini-card-2">
-                    <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=900&q=80"
-                         loading="lazy"
-                         alt="Elegant building lobby">
-                </div>
-            </div>
-        </div>
+    {{-- All properties grid (hidden by default) --}}
+    <div id="city-grid-all" class="city-grid">
+      @include('_partials.property-cards', [
+        'properties'  => $featured,
+        'waNum'       => $waNum,
+        'phoneNum'    => $phoneNum,
+        'initialShow' => 4,
+        'gridId'      => 'featured-grid-all',
+      ])
+      @if($featured->count() > 4)
+      <div class="text-center mt-8" id="feat-more-wrap-all">
+        <button onclick="loadMoreFeatured('all')"
+                class="inline-flex items-center gap-2 px-7 py-3 rounded-xl font-bold text-sm border-2 transition"
+                style="border-color:var(--gold);color:var(--gold);background:transparent"
+                onmouseover="this.style.background='var(--gold)';this.style.color='var(--navy)'"
+                onmouseout="this.style.background='transparent';this.style.color='var(--gold)'">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          <span data-ar>عرض المزيد</span><span data-en class="hidden">Load More</span>
+          <span class="text-xs opacity-70">({{ $featured->count() - 4 }})</span>
+        </button>
+      </div>
+      @endif
     </div>
 
-    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce hidden sm:block">
-        <a href="#services" class="text-white/40 hover:text-white/80 transition">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+    {{-- View all button (CMS-controlled) --}}
+    <div class="text-center mt-10">
+    </div>
+  </div>
+</section>
+
+{{-- ══════════ PROPERTY TYPES ══════════ --}}
+@if($s('property_types') && $s('property_types')->activeItems->count())
+<section id="types" class="py-16 sm:py-20 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-10 fade-up">
+      <div class="section-tag mx-auto" style="width:fit-content">
+        <span data-ar>{{ $s('property_types')?->subtitle_ar ?? 'أنواع العقارات' }}</span>
+        <span data-en class="hidden">{{ $s('property_types')?->subtitle_en ?? 'Property Types' }}</span>
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-black mt-2" style="color:var(--navy)">
+        <span data-ar>{{ $s('property_types')?->title_ar ?? 'تصفح حسب النوع' }}</span>
+        <span data-en class="hidden">{{ $s('property_types')?->title_en ?? 'Browse by Type' }}</span>
+      </h2>
+    </div>
+
+    {{-- Slider --}}
+    <div class="type-slider-outer mx-auto px-0 sm:px-8" style="max-width:1240px">
+
+      <button class="type-arrow type-arrow-prev" id="typePrev" aria-label="Previous">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+      </button>
+
+      <div class="type-slider-track">
+      <div class="type-slider" id="typeSlider">
+        @foreach($s('property_types')->activeItems as $type)
+        @php $typeCount = $typeCounts[$type->value] ?? 0; @endphp
+        <a href="{{ route('properties.index', ['type' => $type->value]) }}" class="type-card" style="flex-shrink:0">
+
+          @if($type->imageUrl())
+            <img src="{{ $type->imageUrl() }}" alt="{{ $type->title_ar }}" class="type-card-img">
+          @else
+            <div class="type-card-fallback">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1"
+                   stroke="rgba(255,255,255,.2)" style="width:110px;height:110px">
+                {!! $iconSvg[$type->icon ?? 'building'] ?? $iconSvg['default'] !!}
+              </svg>
+            </div>
+          @endif
+
+          <div class="type-card-overlay"></div>
+
+          <div class="type-card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                 stroke="#fff" style="width:22px;height:22px">
+              {!! $iconSvg[$type->icon ?? 'building'] ?? $iconSvg['default'] !!}
+            </svg>
+          </div>
+
+          <div class="type-card-body">
+            <span class="type-label">
+              <span data-ar>{{ $type->title_ar }}</span>
+              <span data-en class="hidden">{{ $type->title_en }}</span>
+            </span>
+            @if($typeCount)
+              <span class="type-count">
+                {{ $typeCount }} {{ app()->getLocale()==='ar' ? 'عقار' : ($typeCount===1?'property':'properties') }}
+              </span>
+            @else
+              <span class="type-explore">{{ app()->getLocale()==='ar' ? 'استكشف' : 'Explore' }}</span>
+            @endif
+          </div>
+
         </a>
-    </div>
+        @endforeach
+      </div>
+
+      </div>{{-- /.type-slider-track --}}
+
+      <button class="type-arrow type-arrow-next" id="typeNext" aria-label="Next">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+      </button>
+    </div>{{-- /.type-slider-outer --}}
+
+    {{-- Dots --}}
+    <div class="type-dots" id="typeDots"></div>
+
+
+    <script>
+    (function(){
+      var track   = document.getElementById('typeSlider').parentElement; // .type-slider-track
+      var slider  = document.getElementById('typeSlider');
+      var dotsWrap= document.getElementById('typeDots');
+      if (!slider || !track) return;
+
+      var cards   = Array.from(slider.querySelectorAll('.type-card'));
+      var total   = cards.length;
+      var current = 0;
+      var timer   = null;
+
+      function gap(){ return 20; }
+      function cardW(){ return (cards[0] ? cards[0].offsetWidth : 300) + gap(); }
+
+      // Build dots
+      cards.forEach(function(_, i){
+        var d = document.createElement('button');
+        d.className = 'type-dot' + (i === 0 ? ' active' : '');
+        d.setAttribute('aria-label', 'Slide ' + (i+1));
+        d.addEventListener('click', function(){ goTo(i); resetTimer(); });
+        dotsWrap.appendChild(d);
+      });
+
+      function updateDots(){
+        dotsWrap.querySelectorAll('.type-dot').forEach(function(d, i){
+          d.classList.toggle('active', i === current);
+        });
+      }
+
+      function goTo(idx){
+        current = ((idx % total) + total) % total;
+        // Use native scrollTo on the overflow track — works on all devices
+        track.scrollTo({ left: current * cardW(), behavior: 'smooth' });
+        updateDots();
+      }
+
+      document.getElementById('typePrev').addEventListener('click', function(){ goTo(current - 1); resetTimer(); });
+      document.getElementById('typeNext').addEventListener('click', function(){ goTo(current + 1); resetTimer(); });
+
+      // Sync dot highlight when user swipes natively
+      track.addEventListener('scrollend', function(){
+        var idx = Math.round(track.scrollLeft / cardW());
+        current = ((idx % total) + total) % total;
+        updateDots();
+      });
+      // Fallback for browsers without scrollend
+      track.addEventListener('scroll', function(){
+        clearTimeout(track._st);
+        track._st = setTimeout(function(){
+          var idx = Math.round(track.scrollLeft / cardW());
+          current = ((idx % total) + total) % total;
+          updateDots();
+        }, 120);
+      });
+
+      // Auto-play
+      function startTimer(){ timer = setInterval(function(){ goTo(current + 1); }, 3500); }
+      function resetTimer(){ clearInterval(timer); startTimer(); }
+      track.addEventListener('mouseenter', function(){ clearInterval(timer); });
+      track.addEventListener('mouseleave', startTimer);
+      track.addEventListener('touchstart', function(){ clearInterval(timer); }, {passive:true});
+      track.addEventListener('touchend',   function(){ resetTimer(); }, {passive:true});
+      startTimer();
+
+      window.addEventListener('resize', function(){ goTo(current); });
+    })();
+    </script>
+  </div>
 </section>
+@endif
 
-{{-- ======= SERVICES ======= --}}
-<section id="services" class="py-16 sm:py-24 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6">
-        <div class="text-center mb-12 sm:mb-16 fade-in">
-            <div class="heading-line mx-auto"></div>
-            <p class="text-xs sm:text-sm font-semibold uppercase tracking-widest mb-2" style="color:var(--gold);">
-                <span data-ar>ما نقدمه</span><span data-en class="hidden">What We Offer</span>
-            </p>
-            <h2 class="text-3xl sm:text-4xl font-black" style="color:var(--navy);">
-                <span data-ar>خدماتنا المتميزة</span><span data-en class="hidden">Our Premium Services</span>
-            </h2>
-            <p class="mt-3 max-w-xl mx-auto text-sm sm:text-base" style="color:var(--text-muted);">
-                <span data-ar>منظومة متكاملة من الخدمات العقارية الذكية لضمان أفضل تجربة إدارية</span>
-                <span data-en class="hidden">A comprehensive suite of smart real estate services for the best management experience</span>
-            </p>
+
+
+
+
+{{-- ══════════ ABOUT ══════════ --}}
+<section id="about" class="py-16 sm:py-20 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      {{-- Image side --}}
+      <div class="relative fade-up order-2 lg:order-1">
+        <div class="rounded-2xl overflow-hidden shadow-2xl" style="height:420px">
+          @if($s('about')?->imageUrl())
+          <img src="{{ $s('about')->imageUrl() }}" class="w-full h-full object-cover" alt="">
+          @else
+          <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80" class="w-full h-full object-cover" alt="">
+          @endif
         </div>
+        {{-- floating badge --}}
+        @if($s('about')?->extra['badge_ar'] ?? null)
+        <div class="absolute -bottom-5 -right-5 sm:-bottom-6 sm:-right-6 bg-white rounded-2xl shadow-xl p-4 border border-gray-100">
+          <p class="text-2xl font-black" style="color:var(--navy)">{{ $s('stats')?->activeItems->first()?->value ?? '50+' }}</p>
+          <p class="text-xs font-semibold mt-0.5" style="color:var(--muted)">
+            <span data-ar>{{ $s('about')->extra['badge_ar'] }}</span>
+            <span data-en class="hidden">{{ $s('about')->extra['badge_en'] ?? $s('about')->extra['badge_ar'] }}</span>
+          </p>
+        </div>
+        @endif
+        {{-- decorative block --}}
+        <div class="absolute -top-5 -left-5 sm:-top-6 sm:-left-6 w-24 h-24 rounded-2xl -z-10" style="background:var(--gold);opacity:.25"></div>
+      </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-7">
-            @php
-            $svgStroke = 'xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"';
-            $services = [
-                ['svg'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/>',  'ar_title'=>'إدارة المباني',       'en_title'=>'Building Management',      'ar_desc'=>'إدارة شاملة لجميع المباني والوحدات السكنية والتجارية مع تتبع دقيق.', 'en_desc'=>'Comprehensive management of residential and commercial buildings with precise tracking.'],
-                ['svg'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0z"/>',      'ar_title'=>'إدارة المستأجرين',    'en_title'=>'Tenant Management',         'ar_desc'=>'نظام متكامل لإدارة عقود الإيجار وبيانات المستأجرين مع إشعارات الدفع.', 'en_desc'=>'Complete system for managing lease contracts and tenant data with payment notifications.'],
-                ['svg'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437 1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z"/>',      'ar_title'=>'الصيانة والإصلاحات',  'en_title'=>'Maintenance & Repairs',     'ar_desc'=>'بوابة إلكترونية لتقديم طلبات الصيانة ومتابعة حالتها بشكل فوري.', 'en_desc'=>'Online portal to submit and track maintenance requests in real time.'],
-                ['svg'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5z"/>',  'ar_title'=>'التقارير المالية',     'en_title'=>'Financial Reports',         'ar_desc'=>'تقارير مالية تفصيلية قابلة للطباعة لكل مبنى تشمل الإيرادات والمصروفات.', 'en_desc'=>'Detailed printable financial reports per building covering revenue and expenses.'],
-                ['svg'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>',   'ar_title'=>'إدارة الموظفين',      'en_title'=>'Staff Management',          'ar_desc'=>'توزيع المهام بين الموظفين وإسناد المباني وتتبع الأداء بكل سهولة.', 'en_desc'=>'Assign tasks and buildings to employees and track performance effortlessly.'],
-                ['svg'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 8.25h3"/>',  'ar_title'=>'بوابة المستأجر',      'en_title'=>'Tenant Portal',             'ar_desc'=>'واجهة خاصة للمستأجر لعرض إشعارات الدفع وتقديم الطلبات من أي مكان.', 'en_desc'=>'A dedicated interface for tenants to view payment notices and submit requests anywhere.'],
-            ];
-            @endphp
+      {{-- Text side --}}
+      <div class="fade-up order-1 lg:order-2">
+        <div class="section-tag">
+          <span data-ar>{{ $s('about')?->subtitle_ar ?? 'من نحن' }}</span>
+          <span data-en class="hidden">{{ $s('about')?->subtitle_en ?? 'About Us' }}</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-black mt-3 mb-5" style="color:var(--navy)">
+          <span data-ar>{{ $s('about')?->title_ar ?? 'شركة ثروة للعقارات' }}</span>
+          <span data-en class="hidden">{{ $s('about')?->title_en ?? 'Tharwa Real Estate' }}</span>
+        </h2>
+        <p class="text-sm sm:text-base leading-relaxed mb-6" style="color:var(--muted)">
+          <span data-ar>{{ $s('about')?->body_ar ?? '' }}</span>
+          <span data-en class="hidden">{{ $s('about')?->body_en ?? '' }}</span>
+        </p>
 
-            @foreach($services as $s)
-            <div class="service-card rounded-2xl p-6 sm:p-7 fade-in">
-                <div class="service-icon">
-                    <svg {!! $svgStroke !!} class="w-6 h-6" style="color:var(--navy-mid);">{!! $s['svg'] !!}</svg>
-                </div>
-                <h3 class="text-base sm:text-lg font-bold mb-2" style="color:var(--navy);">
-                    <span data-ar>{{ $s['ar_title'] }}</span>
-                    <span data-en class="hidden">{{ $s['en_title'] }}</span>
-                </h3>
-                <p class="text-sm leading-relaxed" style="color:var(--text-muted);">
-                    <span data-ar>{{ $s['ar_desc'] }}</span>
-                    <span data-en class="hidden">{{ $s['en_desc'] }}</span>
-                </p>
+        @if($s('about') && $s('about')->activeItems->count())
+        <div class="space-y-3 mb-7">
+          @foreach($s('about')->activeItems as $f)
+          <div class="flex items-center gap-3">
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(201,168,76,.15)">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5" style="color:var(--gold)"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
             </div>
-            @endforeach
-        </div>
-    </div>
-</section>
-
-{{-- ======= STATS ======= --}}
-<section class="stats-bar py-14 sm:py-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6">
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 text-center text-white">
-            @foreach([
-                ['50+',  'مبنى تحت إدارتنا',      'Buildings Under Management'],
-                ['500+', 'وحدة مؤجرة',             'Units Leased'],
-                ['200+', 'مستأجر سعيد',            'Happy Tenants'],
-                ['98%',  'نسبة رضا العملاء',       'Client Satisfaction Rate'],
-            ] as $stat)
-            <div class="fade-in">
-                <p class="text-4xl sm:text-5xl font-black mb-2" style="color:var(--gold);">{{ $stat[0] }}</p>
-                <p class="text-white/60 text-xs sm:text-sm">
-                    <span data-ar>{{ $stat[1] }}</span>
-                    <span data-en class="hidden">{{ $stat[2] }}</span>
-                </p>
-            </div>
-            @endforeach
-        </div>
-    </div>
-</section>
-
-{{-- ======= PROPERTIES ======= --}}
-<section id="properties" class="py-16 sm:py-24" style="background:var(--bg-section);">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6">
-        <div class="text-center mb-12 sm:mb-16 fade-in">
-            <div class="heading-line mx-auto"></div>
-            <p class="text-xs sm:text-sm font-semibold uppercase tracking-widest mb-2" style="color:var(--gold);">
-                <span data-ar>محفظتنا</span><span data-en class="hidden">Our Portfolio</span>
-            </p>
-            <h2 class="text-3xl sm:text-4xl font-black" style="color:var(--navy);">
-                <span data-ar>أبرز عقاراتنا</span><span data-en class="hidden">Featured Properties</span>
-            </h2>
-            <p class="mt-3 max-w-xl mx-auto text-sm sm:text-base" style="color:var(--text-muted);">
-                <span data-ar>نمتلك محفظة متنوعة من العقارات الراقية في أفضل المواقع</span>
-                <span data-en class="hidden">We hold a diverse portfolio of premium properties in the best locations</span>
-            </p>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-7">
-            @forelse($featured as $p)
-            @php $img = $p->images->first(); @endphp
-            <a href="{{ route('properties.show', $p) }}" class="property-card rounded-2xl overflow-hidden fade-in block">
-                <div class="property-media">
-                    @if($img)
-                    <img src="{{ $img->url() }}" loading="lazy" alt="{{ $p->name }}">
-                    @else
-                    <div class="w-full h-full" style="background:linear-gradient(135deg,#0f2444 0%,#1a3a6b 100%);display:flex;align-items:center;justify-content:center;">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" style="width:3rem;height:3rem;opacity:.2;color:#fff;"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M12 3.75h.008v.008H12V3.75z"/></svg>
-                    </div>
-                    @endif
-                    <span class="property-pill">{{ $p->typeLabel() }}</span>
-                    <span class="property-feature">{{ $p->purposeLabel() }}</span>
-                </div>
-                <div class="p-5 sm:p-6">
-                    <h3 class="text-base sm:text-lg font-bold mb-1" style="color:var(--navy);">{{ $p->name }}</h3>
-                    @if($p->city || $p->address)
-                    <div class="flex items-center gap-2 text-sm mb-4" style="color:var(--text-muted);">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5 flex-shrink-0" style="color:var(--gold);"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/></svg>
-                        <span class="truncate">{{ implode('، ', array_filter([$p->city, $p->address])) }}</span>
-                    </div>
-                    @endif
-                    <div class="flex items-center justify-between pt-4 border-t" style="border-color:var(--border);">
-                        <div class="flex items-center gap-2 text-sm" style="color:var(--text-muted);">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4" style="color:var(--navy-mid);"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25zM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25z"/></svg>
-                            {{ $p->units_count }} <span data-ar>وحدة</span><span data-en class="hidden">Units</span>
-                        </div>
-                        <span class="text-xs font-semibold px-3 py-1 rounded-full" style="background:#e8f5e9; color:#2e7d32;">
-                            <span class="inline-block w-1.5 h-1.5 rounded-full bg-green-600 me-1 align-middle"></span>
-                            <span data-ar>نشط</span><span data-en class="hidden">Active</span>
-                        </span>
-                    </div>
-                </div>
-            </a>
-            @empty
-            <div class="col-span-3 text-center py-12" style="color:var(--text-muted);">
-                <span data-ar>لا توجد عقارات متاحة حالياً</span>
-                <span data-en class="hidden">No properties available yet</span>
-            </div>
-            @endforelse
-        </div>
-
-        {{-- View All button --}}
-        <div class="text-center mt-10 sm:mt-12">
-            <a href="{{ route('properties.index') }}"
-               class="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-2xl font-bold text-sm transition-all duration-300"
-               style="background:var(--navy); color:#fff;"
-               onmouseover="this.style.background='var(--navy-mid)'" onmouseout="this.style.background='var(--navy)'">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25zM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25z"/></svg>
-                <span data-ar>عرض جميع العقارات</span>
-                <span data-en class="hidden">View All Properties</span>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4" style="color:var(--gold);"><path stroke-linecap="round" stroke-linejoin="round" d="m15.75 19.5-7.5-7.5 7.5-7.5"/></svg>
-            </a>
-        </div>
-    </div>
-</section>
-
-{{-- ======= ABOUT ======= --}}
-<section id="about" class="py-16 sm:py-24 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6">
-        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {{-- Text --}}
-            <div class="fade-in">
-                <div class="heading-line"></div>
-                <p class="text-xs sm:text-sm font-semibold uppercase tracking-widest mb-2" style="color:var(--gold);">
-                    <span data-ar>من نحن</span><span data-en class="hidden">About Us</span>
-                </p>
-                <h2 class="text-3xl sm:text-4xl font-black mb-5" style="color:var(--navy);">
-                    <span data-ar>شركة ثروة للعقارات</span>
-                    <span data-en class="hidden">Tharwa Real Estate Co.</span>
-                </h2>
-                <p class="leading-relaxed mb-4 text-base sm:text-lg" style="color:#374151;">
-                    <span data-ar>شركة ثروة للعقارات رائدة في قطاع إدارة العقارات بالمملكة العربية السعودية. نقدم خدمات إدارية متكاملة للمباني السكنية والتجارية بأعلى معايير الجودة والاحترافية.</span>
-                    <span data-en class="hidden">Tharwa Real Estate is a leader in property management in Saudi Arabia. We provide comprehensive management services for residential and commercial buildings with the highest standards of quality and professionalism.</span>
-                </p>
-                <p class="leading-relaxed mb-8 text-sm sm:text-base" style="color:var(--text-muted);">
-                    <span data-ar>يجمعنا شغف حقيقي بتطوير قطاع العقارات وتسهيل التعاملات بين ملاك العقارات والمستأجرين من خلال منصتنا الرقمية المتطورة.</span>
-                    <span data-en class="hidden">We share a genuine passion for advancing the real estate sector and simplifying dealings between property owners and tenants through our advanced digital platform.</span>
-                </p>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-                    @foreach([
-                        ['ar'=>'خبرة تزيد عن 10 سنوات', 'en'=>'Over 10 years of experience'],
-                        ['ar'=>'فريق متخصص ومحترف',     'en'=>'Specialized professional team'],
-                        ['ar'=>'دعم فني على مدار الساعة','en'=>'24/7 technical support'],
-                        ['ar'=>'أسعار تنافسية وشفافة',  'en'=>'Competitive & transparent pricing'],
-                    ] as $f)
-                    <div class="flex items-center gap-3">
-                        <div class="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0" style="background:rgba(201,168,76,0.15);">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3 h-3" style="color:var(--gold);"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
-                        </div>
-                        <span class="text-sm" style="color:#374151;">
-                            <span data-ar>{{ $f['ar'] }}</span>
-                            <span data-en class="hidden">{{ $f['en'] }}</span>
-                        </span>
-                    </div>
-                    @endforeach
-                </div>
-                <a href="#contact" class="btn-navy px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl inline-flex items-center gap-2 text-sm sm:text-base">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg>
-                    <span data-ar>تواصل معنا</span><span data-en class="hidden">Contact Us</span>
-                </a>
-            </div>
-
-            {{-- Visual + Value Cards --}}
-            <div class="fade-in">
-                <div class="about-visual-grid">
-                    <div class="about-main-photo">
-                        <img src="https://images.unsplash.com/photo-1501183638710-841dd1904471?auto=format&fit=crop&w=1200&q=80"
-                             loading="lazy"
-                             alt="Modern residential community">
-                        <div class="about-floating-badge">
-                            <span data-ar>معدل إشغال 97%</span>
-                            <span data-en class="hidden">97% Occupancy Rate</span>
-                        </div>
-                    </div>
-                    <div class="about-thumb">
-                        <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=900&q=80"
-                             loading="lazy"
-                             alt="Villa entrance">
-                    </div>
-                    <div class="about-thumb">
-                        <img src="https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=900&q=80"
-                             loading="lazy"
-                             alt="Luxury apartment interior">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                @foreach([
-                    ['svg'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 0 0 2.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0"/>', 'ar_title'=>'جودة عالية',    'en_title'=>'High Quality',    'ar_desc'=>'معايير عالمية في جميع خدماتنا', 'en_desc'=>'World-class standards in all our services'],
-                    ['svg'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M10.05 4.575a1.575 1.575 0 1 0-3.15 0v3m3.15-3v-1.5a1.575 1.575 0 0 1 3.15 0v1.5m-3.15 0 .075 5.925m3.075.75V4.575m0 0a1.575 1.575 0 0 1 3.15 0V15M6.9 7.575a1.575 1.575 0 1 0-3.15 0v8.175a6.75 6.75 0 0 0 6.75 6.75h2.018a5.25 5.25 0 0 0 3.712-1.538l1.732-1.732a5.25 5.25 0 0 0 1.538-3.712l.003-2.024a.668.668 0 0 1 .198-.471 1.575 1.575 0 1 0-2.228-2.228 3.818 3.818 0 0 0-1.12 2.687M6.9 7.575V12m6.27 4.318A4.49 4.49 0 0 1 16.35 15m.002 0h-.002"/>', 'ar_title'=>'شراكة موثوقة',  'en_title'=>'Trusted Partner',  'ar_desc'=>'علاقات طويلة الأمد مع عملائنا',  'en_desc'=>'Long-term relationships with our clients'],
-                    ['svg'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25z"/>', 'ar_title'=>'أمان وخصوصية',  'en_title'=>'Security & Privacy','ar_desc'=>'حماية كاملة لبيانات العملاء',  'en_desc'=>'Full protection of client data'],
-                    ['svg'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155"/>', 'ar_title'=>'دعم متواصل',    'en_title'=>'Continuous Support','ar_desc'=>'نحن دائماً بجانبك لمساعدتك',   'en_desc'=>'We are always here to help you'],
-                ] as $v)
-                <div class="value-card rounded-2xl p-5 sm:p-6 border" style="border-color:var(--border); background:var(--bg-section);">
-                    <div class="w-10 sm:w-11 h-10 sm:h-11 rounded-xl flex items-center justify-center mb-3 sm:mb-4" style="background:rgba(15,36,68,0.07);">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5" style="color:var(--navy-mid);">{!! $v['svg'] !!}</svg>
-                    </div>
-                    <h4 class="font-bold text-xs sm:text-sm mb-1" style="color:var(--navy);">
-                        <span data-ar>{{ $v['ar_title'] }}</span>
-                        <span data-en class="hidden">{{ $v['en_title'] }}</span>
-                    </h4>
-                    <p class="text-xs" style="color:var(--text-muted);">
-                        <span data-ar>{{ $v['ar_desc'] }}</span>
-                        <span data-en class="hidden">{{ $v['en_desc'] }}</span>
-                    </p>
-                </div>
-                @endforeach
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-{{-- ======= CONTACT ======= --}}
-<section id="contact" class="py-16 sm:py-24" style="background:var(--bg-section);">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6">
-        <div class="text-center mb-10 sm:mb-14 fade-in">
-            <div class="heading-line mx-auto"></div>
-            <p class="text-xs sm:text-sm font-semibold uppercase tracking-widest mb-2" style="color:var(--gold);">
-                <span data-ar>تواصل معنا</span><span data-en class="hidden">Contact Us</span>
-            </p>
-            <h2 class="text-3xl sm:text-4xl font-black" style="color:var(--navy);">
-                <span data-ar>نسعد بخدمتك</span><span data-en class="hidden">We're Happy to Help</span>
-            </h2>
-            <p class="mt-3 max-w-lg mx-auto text-sm sm:text-base" style="color:var(--text-muted);">
-                <span data-ar>هل لديك سؤال أو تحتاج إلى مزيد من المعلومات؟ تواصل معنا وسنرد عليك في أقرب وقت</span>
-                <span data-en class="hidden">Have a question or need more information? Contact us and we'll reply as soon as possible</span>
-            </p>
-        </div>
-
-        @if(session('contact_success'))
-        <div class="max-w-xl mx-auto mb-8 rounded-2xl p-5 flex items-center gap-4 fade-in" style="background:#e8f5e9; border:1px solid #a5d6a7;">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 flex-shrink-0" style="color:#2e7d32;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-            <p class="font-semibold" style="color:#1b5e20;">{{ session('contact_success') }}</p>
+            <span class="text-sm font-medium" style="color:var(--text)">
+              <span data-ar>{{ $f->title_ar }}</span><span data-en class="hidden">{{ $f->title_en }}</span>
+            </span>
+          </div>
+          @endforeach
         </div>
         @endif
 
-        <div class="grid lg:grid-cols-5 gap-8 lg:gap-10">
-            {{-- Info --}}
-            <div class="lg:col-span-2 fade-in space-y-4 sm:space-y-5">
-                <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border" style="border-color:var(--border);">
-                    <h3 class="font-bold text-sm sm:text-base mb-4 sm:mb-5" style="color:var(--navy);">
-                        <span data-ar>معلومات التواصل</span><span data-en class="hidden">Contact Information</span>
-                    </h3>
-                    <div class="space-y-4">
-                        @foreach([
-                            ['svg'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/>', 'ar_label'=>'العنوان',      'en_label'=>'Address',      'ar_val'=>'الرياض، المملكة العربية السعودية', 'en_val'=>'Riyadh, Saudi Arabia'],
-                            ['svg'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25z"/>', 'ar_label'=>'الهاتف',       'en_label'=>'Phone',        'ar_val'=>'+966 50 000 0000',                 'en_val'=>'+966 50 000 0000'],
-                            ['svg'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>', 'ar_label'=>'البريد',        'en_label'=>'Email',        'ar_val'=>'info@tharwa.com',                  'en_val'=>'info@tharwa.com'],
-                            ['svg'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>', 'ar_label'=>'أوقات العمل',  'en_label'=>'Working Hours','ar_val'=>'الأحد - الخميس، 8ص - 5م',          'en_val'=>'Sun–Thu, 8AM–5PM'],
-                        ] as $c)
-                        <div class="flex items-start gap-3">
-                            <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(15,36,68,0.07);">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4" style="color:var(--navy-mid);">{!! $c['svg'] !!}</svg>
-                            </div>
-                            <div>
-                                <p class="text-xs mb-0.5" style="color:var(--text-muted);">
-                                    <span data-ar>{{ $c['ar_label'] }}</span><span data-en class="hidden">{{ $c['en_label'] }}</span>
-                                </p>
-                                <p class="text-sm font-medium" style="color:var(--text-dark);">
-                                    <span data-ar>{{ $c['ar_val'] }}</span><span data-en class="hidden">{{ $c['en_val'] }}</span>
-                                </p>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border" style="border-color:var(--border);">
-                    <p class="text-sm mb-4" style="color:var(--text-muted);">
-                        <span data-ar>تابعنا على وسائل التواصل</span>
-                        <span data-en class="hidden">Follow us on social media</span>
-                    </p>
-                    <div class="flex gap-3">
-                        @foreach([
-                        ['path'=>'<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>', 'fill'=>true],
-                        ['path'=>'<path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>', 'fill'=>true],
-                        ['path'=>'<path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>', 'fill'=>true],
-                        ['path'=>'<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>', 'fill'=>true],
-                    ] as $social)
-                    <a href="#" class="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:scale-110"
-                       style="background:var(--bg-section); border:1px solid var(--border); color:var(--navy-mid);">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">{!! $social['path'] !!}</svg>
-                    </a>
-                    @endforeach
-                    </div>
-                </div>
-            </div>
-
-            {{-- Form --}}
-            <div class="lg:col-span-3 fade-in">
-                <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border" style="border-color:var(--border);">
-                    <h3 class="font-bold text-base sm:text-lg mb-5 sm:mb-6" style="color:var(--navy);">
-                        <span data-ar>أرسل لنا رسالة</span><span data-en class="hidden">Send Us a Message</span>
-                    </h3>
-                    <form method="POST" action="{{ route('contact.store') }}" class="space-y-4 sm:space-y-5">
-                        @csrf
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold mb-2" style="color:var(--text-dark);">
-                                    <span data-ar>الاسم الكامل</span><span data-en class="hidden">Full Name</span>
-                                    <span style="color:var(--gold);">*</span>
-                                </label>
-                                <input type="text" name="name" value="{{ old('name') }}"
-                                    placeholder-ar="أحمد محمد" placeholder-en="John Smith"
-                                    class="input-field w-full rounded-xl px-4 py-3 text-sm @error('name') !border-red-400 @enderror">
-                                @error('name')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold mb-2" style="color:var(--text-dark);">
-                                    <span data-ar>رقم الجوال</span><span data-en class="hidden">Phone Number</span>
-                                </label>
-                                <input type="text" name="phone" value="{{ old('phone') }}"
-                                    placeholder-ar="05xxxxxxxx" placeholder-en="+966 5x xxx xxxx"
-                                    class="input-field w-full rounded-xl px-4 py-3 text-sm">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold mb-2" style="color:var(--text-dark);">
-                                <span data-ar>البريد الإلكتروني</span><span data-en class="hidden">Email Address</span>
-                                <span style="color:var(--gold);">*</span>
-                            </label>
-                            <input type="email" name="email" value="{{ old('email') }}" placeholder="example@email.com"
-                                class="input-field w-full rounded-xl px-4 py-3 text-sm @error('email') !border-red-400 @enderror">
-                            @error('email')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold mb-2" style="color:var(--text-dark);">
-                                <span data-ar>الموضوع</span><span data-en class="hidden">Subject</span>
-                                <span style="color:var(--gold);">*</span>
-                            </label>
-                            <select name="subject" class="input-field w-full rounded-xl px-4 py-3 text-sm @error('subject') !border-red-400 @enderror">
-                                <option value="" data-ar="-- اختر الموضوع --" data-en="-- Select Subject --">-- اختر الموضوع --</option>
-                                @foreach([
-                                    ['ar'=>'استفسار عام',       'en'=>'General Inquiry'],
-                                    ['ar'=>'طلب عرض سعر',      'en'=>'Price Quote Request'],
-                                    ['ar'=>'الإبلاغ عن مشكلة', 'en'=>'Report a Problem'],
-                                    ['ar'=>'طلب شراكة',        'en'=>'Partnership Request'],
-                                    ['ar'=>'أخرى',             'en'=>'Other'],
-                                ] as $opt)
-                                <option value="{{ $opt['ar'] }}"
-                                    data-ar="{{ $opt['ar'] }}" data-en="{{ $opt['en'] }}"
-                                    {{ old('subject') == $opt['ar'] ? 'selected' : '' }}>
-                                    {{ $opt['ar'] }}
-                                </option>
-                                @endforeach
-                            </select>
-                            @error('subject')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold mb-2" style="color:var(--text-dark);">
-                                <span data-ar>الرسالة</span><span data-en class="hidden">Message</span>
-                                <span style="color:var(--gold);">*</span>
-                            </label>
-                            <textarea name="message" rows="4"
-                                placeholder-ar="اكتب رسالتك هنا..." placeholder-en="Write your message here..."
-                                class="input-field w-full rounded-xl px-4 py-3 text-sm resize-none @error('message') !border-red-400 @enderror">{{ old('message') }}</textarea>
-                            @error('message')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                        </div>
-                        <button type="submit" class="btn-navy w-full py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm sm:text-base shadow-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12zm0 0h7.5"/></svg>
-                            <span data-ar>إرسال الرسالة</span><span data-en class="hidden">Send Message</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
+        <a href="{{ $s('about')?->button_url ?? '#contact' }}"
+          class="btn-navy inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl text-sm">
+          <span data-ar>{{ $s('about')?->button_text_ar ?? 'تواصل معنا' }}</span>
+          <span data-en class="hidden">{{ $s('about')?->button_text_en ?? 'Contact Us' }}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+        </a>
+      </div>
     </div>
+  </div>
 </section>
 
-{{-- ======= FOOTER ======= --}}
-<footer class="py-10 sm:py-12 border-t" style="border-color:rgba(255,255,255,0.06);">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 sm:gap-10 mb-8 sm:mb-10">
-            <div>
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-20 h-20 rounded-xl flex items-center justify-center" style="background:#fff;">
-                     <img src="{{ asset('img/logo.png') }}" alt="Tharwa Logo" class="w-12">
-                    </div>
-                 
-                </div>
-                <p class="text-sm leading-relaxed text-white/45">
-                    <span data-ar>منصة متكاملة لإدارة العقارات والمباني بأحدث التقنيات وأعلى معايير الجودة.</span>
-                    <span data-en class="hidden">An integrated platform for property and building management with the latest technology and highest quality standards.</span>
-                </p>
-            </div>
-            <div>
-                <h4 class="font-bold text-sm mb-4 text-white/60 uppercase tracking-widest">
-                    <span data-ar>روابط سريعة</span><span data-en class="hidden">Quick Links</span>
-                </h4>
-                <ul class="space-y-2">
-                    @foreach([
-                        ['ar'=>'الرئيسية','en'=>'Home','url'=>'#home'],
-                        ['ar'=>'خدماتنا','en'=>'Services','url'=>'#services'],
-                        ['ar'=>'العقارات','en'=>'Properties','url'=>route('properties.index')],
-                        ['ar'=>'عن الشركة','en'=>'About','url'=>'#about'],
-                        ['ar'=>'تواصل معنا','en'=>'Contact','url'=>'#contact'],
-                    ] as $link)
-                    <li>
-                        <a href="{{ $link['url'] }}" class="text-sm text-white/45 hover:text-white transition">
-                            <span data-ar>{{ $link['ar'] }}</span>
-                            <span data-en class="hidden">{{ $link['en'] }}</span>
-                        </a>
-                    </li>
-                    @endforeach
-                </ul>
-            </div>
-            <div>
-                <h4 class="font-bold text-sm mb-4 text-white/60 uppercase tracking-widest">
-                    <span data-ar>الدخول للنظام</span><span data-en class="hidden">System Access</span>
-                </h4>
-                <p class="text-sm text-white/45 mb-4">
-                    <span data-ar>هل أنت من فريق ثروة؟ سجل دخولك للوصول إلى لوحة التحكم.</span>
-                    <span data-en class="hidden">Are you a Tharwa team member? Log in to access your dashboard.</span>
-                </p>
-                <a href="{{ route('login') }}" class="btn-gold px-5 sm:px-6 py-2.5 rounded-xl inline-flex items-center gap-2 text-sm shadow">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"/></svg>
-                    <span data-ar>تسجيل الدخول</span><span data-en class="hidden">Login</span>
-                </a>
-            </div>
-        </div>
-        <div class="border-t pt-6 flex flex-col sm:flex-row items-center justify-between gap-3" style="border-color:rgba(255,255,255,0.08);">
-            <p class="text-xs text-white/30">
-                © {{ date('Y') }} <span data-ar>شركة ثروة للعقارات. جميع الحقوق محفوظة.</span>
-                <span data-en class="hidden">Tharwa Real Estate Co. All rights reserved.</span>
-            </p>
-            <div class="flex items-center gap-3">
-                <a href="https://www.instagram.com/mohamed_izeldeen/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" class="inline-flex items-center text-xs text-white/20 hover:text-white transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4" fill="white">
-                        <path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2Zm0 1.5A4.25 4.25 0 0 0 3.5 7.75v8.5a4.25 4.25 0 0 0 4.25 4.25h8.5a4.25 4.25 0 0 0 4.25-4.25v-8.5a4.25 4.25 0 0 0-4.25-4.25h-8.5Zm8.95 1.75a1.05 1.05 0 1 1 0 2.1 1.05 1.05 0 0 1 0-2.1ZM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/>
-                    </svg>
-                </a>
-                <a href="https://www.instagram.com/mohamed_izeldeen/" target="_blank" rel="noopener noreferrer" aria-label="Developer Instagram" class="inline-flex items-center text-xs text-white/20 hover:text-white transition">
-                    <p class="text-xs text-white">
-                        <span data-ar>تم التطوير بواسطة محمد عزالدين</span>
-                        <span data-en class="hidden">Developed by Mohamed Izeldeen</span>
-                    </p>
-                </a>
-            </div>
-        </div>
+{{-- ══════════ PARTNERS ══════════ --}}
+@if($s('partners'))
+<section id="partners" class="relative overflow-hidden" style="background:#f8fafc;padding:60px 0">
+
+  {{-- Decorative top border --}}
+  <div class="absolute top-0 left-0 right-0 h-px" style="background:linear-gradient(to right,transparent,var(--gold),transparent)"></div>
+  {{-- Decorative bottom border --}}
+  <div class="absolute bottom-0 left-0 right-0 h-px" style="background:linear-gradient(to right,transparent,var(--gold),transparent)"></div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+
+    {{-- Header --}}
+    <div class="text-center mb-10 fade-up">
+      <div class="inline-flex items-center gap-3 mb-3">
+        <div class="h-px w-12" style="background:var(--gold)"></div>
+        <p class="text-xs font-bold uppercase tracking-[.18em]" style="color:var(--gold)">
+          <span data-ar>{{ $s('partners')->subtitle_ar ?: 'شركاؤنا وعملاؤنا' }}</span>
+          <span data-en class="hidden">{{ $s('partners')->subtitle_en ?: 'Our Partners & Clients' }}</span>
+        </p>
+        <div class="h-px w-12" style="background:var(--gold)"></div>
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-black" style="color:var(--navy)">
+        <span data-ar>{{ $s('partners')->title_ar ?: 'شركاؤنا' }}</span>
+        <span data-en class="hidden">{{ $s('partners')->title_en ?: 'Our Partners' }}</span>
+      </h2>
     </div>
+
+    @if($s('partners')->activeItems->count())
+    <div class="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+      @foreach($s('partners')->activeItems as $partner)
+      <a href="{{ $partner->url ?? '#' }}"
+         {{ ($partner->url && $partner->url !== '#') ? 'target="_blank" rel="noopener"' : '' }}
+         title="{{ $partner->title_ar }}"
+         class="partner-logo-card group fade-up">
+        @if($partner->image)
+        <img src="{{ $partner->imageUrl() }}" alt="{{ $partner->title_ar }}"
+             class="h-16 sm:h-20 w-auto object-contain transition-all duration-300"
+             style="filter:grayscale(80%) opacity(0.6)"
+             onmouseover="this.style.filter='grayscale(0%) opacity(1)'"
+             onmouseout="this.style.filter='grayscale(80%) opacity(0.6)'">
+        @else
+        <span class="text-sm font-bold" style="color:var(--navy)">{{ $partner->title_ar }}</span>
+        @endif
+      </a>
+      @endforeach
+    </div>
+    @else
+    <div class="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+      @for($i = 0; $i < 5; $i++)
+      <div class="partner-logo-card">
+        <div class="h-10 w-28 rounded-lg animate-pulse" style="background:#e2e8f0"></div>
+      </div>
+      @endfor
+    </div>
+    <p class="text-center text-xs mt-6" style="color:var(--muted)">
+      <span data-ar>أضف شركاءك من لوحة التحكم ← محتوى الموقع ← شركاؤنا</span>
+      <span data-en class="hidden">Add partners from Dashboard → Website Content → Partners</span>
+    </p>
+    @endif
+
+  </div>
+</section>
+
+<style>
+.partner-logo-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid #e8ecf0;
+  border-radius: 16px;
+  padding: 24px 36px;
+  min-width: 180px;
+  min-height: 110px;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 4px rgba(15,36,68,.05);
+}
+.partner-logo-card:hover {
+  border-color: var(--gold);
+  box-shadow: 0 6px 24px rgba(201,168,76,.18);
+  transform: translateY(-3px);
+}
+
+@media(max-width:480px){
+  .partner-logo-card{padding:12px 14px;min-width:120px}
+}
+</style>
+@endif
+
+{{-- ══════════ CTA BANNER ══════════ --}}
+@if($s('cta'))
+<section class="cta-section py-16 sm:py-20 relative">
+  <div class="relative z-10 max-w-5xl mx-auto px-4 sm:px-6">
+    <div class="rounded-3xl overflow-hidden" style="background:linear-gradient(135deg,var(--navy-light),var(--navy));">
+      <div class="grid lg:grid-cols-2 gap-0 items-center">
+        <div class="p-10 sm:p-14">
+          <p class="text-xs font-bold uppercase tracking-widest mb-3" style="color:var(--gold)">
+            <span data-ar>عقارك يستحق الأفضل</span><span data-en class="hidden">Your Property Deserves the Best</span>
+          </p>
+          <h2 class="text-2xl sm:text-3xl font-black text-white mb-4 leading-snug">
+            <span data-ar>{{ $s('cta')?->title_ar ?? 'هل تريد تأجير أو بيع عقارك؟' }}</span>
+            <span data-en class="hidden">{{ $s('cta')?->title_en ?? 'Want to Sell or Rent Your Property?' }}</span>
+          </h2>
+          <p class="text-white/60 text-sm leading-relaxed mb-8">
+            <span data-ar>{{ $s('cta')?->body_ar ?? '' }}</span>
+            <span data-en class="hidden">{{ $s('cta')?->body_en ?? '' }}</span>
+          </p>
+          <a href="{{ $s('cta')?->button_url ?? '#contact' }}"
+            class="btn-gold inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl text-sm shadow-lg">
+            <span data-ar>{{ $s('cta')?->button_text_ar ?? 'تواصل معنا الآن' }}</span>
+            <span data-en class="hidden">{{ $s('cta')?->button_text_en ?? 'Contact Us Now' }}</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+          </a>
+        </div>
+        <div class="hidden lg:block h-full" style="min-height:280px;background:url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80') center/cover;opacity:.35;border-radius:0 1.5rem 1.5rem 0"></div>
+      </div>
+    </div>
+  </div>
+</section>
+@endif
+
+{{-- ══════════ LATEST NEWS ══════════ --}}
+<section id="news" class="py-16 sm:py-20 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-10 fade-up">
+      <div class="section-tag mx-auto" style="width:fit-content">
+        <span data-ar>أخبار ثروة</span><span data-en class="hidden">Tharwa News</span>
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-black mt-2" style="color:var(--navy)">
+        <span data-ar>آخر الأخبار</span><span data-en class="hidden">Latest News</span>
+      </h2>
+      <p class="mt-2 text-sm" style="color:var(--muted)">
+        <span data-ar>ابقَ على اطلاع بآخر مستجداتنا وأخبار السوق العقاري</span>
+        <span data-en class="hidden">Stay updated with our latest news and real estate market updates</span>
+      </p>
+    </div>
+    @if($latestNews->isEmpty())
+    <div class="text-center py-10" style="color:var(--muted)">
+      <p class="text-sm">
+        <span data-ar>لا توجد أخبار بعد. يمكنك إضافة مقالات من لوحة التحكم.</span>
+        <span data-en class="hidden">No news yet. Add articles from the manager dashboard.</span>
+      </p>
+    </div>
+    @else
+    @php
+      $newsCount = $latestNews->count();
+      $newsCols  = $newsCount === 1 ? 'grid-cols-1 max-w-lg mx-auto'
+                 : ($newsCount === 2 ? 'grid-cols-1 sm:grid-cols-2'
+                 : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3');
+      $newsImgH  = $newsCount <= 2 ? '280px' : '240px';
+    @endphp
+    <div class="grid {{ $newsCols }} gap-6">
+      @foreach($latestNews as $article)
+      <a href="{{ route('news.show', $article) }}" class="group block bg-white border rounded-2xl overflow-hidden fade-up"
+         style="border-color:var(--border);transition:all .3s"
+         onmouseover="this.style.transform='translateY(-5px)';this.style.boxShadow='0 20px 50px rgba(15,36,68,.12)';this.style.borderColor='rgba(201,168,76,.4)'"
+         onmouseout="this.style.transform='';this.style.boxShadow='';this.style.borderColor='var(--border)'">
+        <div class="overflow-hidden relative" style="height:{{ $newsImgH }}">
+          @if($article->imageUrl())
+          <img src="{{ $article->imageUrl() }}" loading="lazy" alt="{{ $article->title_ar }}"
+               style="width:100%;height:100%;object-fit:cover;transition:transform .5s"
+               class="group-hover:scale-105">
+          @else
+          <div style="width:100%;height:100%;background:linear-gradient(135deg,#0f2444,#1a3a6b);display:flex;align-items:center;justify-content:center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" style="width:3.5rem;height:3.5rem;opacity:.2;color:#fff"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25M16.5 7.5V18a2.25 2.25 0 0 0 2.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 0 0 2.25 2.25h13.5M6 7.5h3v3H6v-3Z"/></svg>
+          </div>
+          @endif
+          <div class="absolute bottom-3 start-3 flex items-center gap-1.5"
+               style="background:rgba(15,36,68,.75);color:#fff;font-size:.7rem;font-weight:700;padding:5px 12px;border-radius:999px;backdrop-filter:blur(4px)">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>
+            {{ $article->published_at?->format('d M Y') ?? $article->created_at->format('d M Y') }}
+          </div>
+        </div>
+        <div class="p-5">
+          <h3 style="font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5">
+            <span data-ar>{{ $article->title_ar }}</span>
+            <span data-en class="hidden">{{ $article->title_en ?: $article->title_ar }}</span>
+          </h3>
+          @if($article->excerpt_ar)
+          <p style="font-size:.82rem;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.6;margin-bottom:10px">
+            <span data-ar>{{ $article->excerpt_ar }}</span>
+            <span data-en class="hidden">{{ $article->excerpt_en ?: $article->excerpt_ar }}</span>
+          </p>
+          @endif
+          <div class="flex items-center gap-1 mt-3" style="font-size:.78rem;font-weight:700;color:var(--gold)">
+            <span data-ar>اقرأ المزيد</span><span data-en class="hidden">Read more</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+          </div>
+        </div>
+      </a>
+      @endforeach
+    </div>
+    @endif
+    <div class="text-center mt-10">
+      <a href="{{ route('news.index') }}"
+         class="inline-flex items-center gap-2 text-sm font-bold border-2 px-7 py-3 rounded-xl transition"
+         style="border-color:var(--gold);color:var(--gold)"
+         onmouseover="this.style.background='var(--gold)';this.style.color='var(--navy)'"
+         onmouseout="this.style.background='';this.style.color='var(--gold)'">
+        <span data-ar>عرض جميع الأخبار</span><span data-en class="hidden">View All News</span>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+{{-- ══════════ TESTIMONIALS ══════════ --}}
+@if($s('testimonials') && $s('testimonials')->activeItems->count())
+<section id="testimonials" class="py-16 sm:py-20" style="background:var(--off)">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-10 fade-up">
+      <div class="section-tag mx-auto" style="width:fit-content">
+        <span data-ar>{{ $s('testimonials')?->subtitle_ar ?? 'آراء العملاء' }}</span>
+        <span data-en class="hidden">{{ $s('testimonials')?->subtitle_en ?? 'Testimonials' }}</span>
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-black mt-2" style="color:var(--navy)">
+        <span data-ar>{{ $s('testimonials')?->title_ar ?? 'ماذا يقول عملاؤنا' }}</span>
+        <span data-en class="hidden">{{ $s('testimonials')?->title_en ?? 'What Our Clients Say' }}</span>
+      </h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      @foreach($s('testimonials')->activeItems as $t)
+      <div class="testi-card fade-up">
+        <div class="flex gap-1 mb-4">
+          @for($i=0;$i<5;$i++)
+          <svg viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-yellow-400"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 0 0-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 0 0-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 0 0 .951-.69l1.07-3.292Z"/></svg>
+          @endfor
+        </div>
+        <p class="text-sm leading-relaxed mb-5" style="color:var(--muted)">
+          <span data-ar>"{{ $t->body_ar }}"</span>
+          <span data-en class="hidden">"{{ $t->body_en ?? $t->body_ar }}"</span>
+        </p>
+        <div class="flex items-center gap-3 pt-4 border-t" style="border-color:var(--border)">
+          @if($t->image)
+          <img src="{{ $t->imageUrl() }}" class="w-10 h-10 rounded-full object-cover border-2" style="border-color:var(--gold)" alt="">
+          @else
+          <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm" style="background:linear-gradient(135deg,var(--navy),var(--navy-mid))">{{ mb_substr($t->title_ar ?? '؟',0,1) }}</div>
+          @endif
+          <div>
+            <p class="font-bold text-sm" style="color:var(--navy)">
+              <span data-ar>{{ $t->title_ar }}</span><span data-en class="hidden">{{ $t->title_en ?? $t->title_ar }}</span>
+            </p>
+            <p class="text-xs" style="color:var(--muted)">
+              <span data-ar>{{ $t->subtitle_ar }}</span><span data-en class="hidden">{{ $t->subtitle_en ?? $t->subtitle_ar }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+      @endforeach
+    </div>
+  </div>
+</section>
+@endif
+
+{{-- ══════════ CONTACT ══════════ --}}
+<section id="contact" class="py-16 sm:py-20" style="background:var(--off)">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6">
+    <div class="text-center mb-10 fade-up">
+      <div class="section-tag mx-auto" style="width:fit-content">
+        <span data-ar>{{ $s('contact')?->subtitle_ar ?? 'تواصل معنا' }}</span>
+        <span data-en class="hidden">{{ $s('contact')?->subtitle_en ?? 'Contact Us' }}</span>
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-black mt-2" style="color:var(--navy)">
+        <span data-ar>{{ $s('contact')?->title_ar ?? 'نسعد بخدمتك' }}</span>
+        <span data-en class="hidden">{{ $s('contact')?->title_en ?? "We're Happy to Help" }}</span>
+      </h2>
+      <p class="mt-2 text-sm max-w-lg mx-auto" style="color:var(--muted)">
+        <span data-ar>{{ $s('contact')?->body_ar ?? '' }}</span>
+        <span data-en class="hidden">{{ $s('contact')?->body_en ?? '' }}</span>
+      </p>
+    </div>
+
+    @if(session('contact_success'))
+    <div class="max-w-xl mx-auto mb-8 rounded-2xl p-4 flex items-center gap-3 bg-green-50 border border-green-200">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-green-600 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+      <p class="font-semibold text-green-800 text-sm">{{ session('contact_success') }}</p>
+    </div>
+    @endif
+
+    <div class="grid lg:grid-cols-5 gap-6 lg:gap-8">
+      {{-- Info cards --}}
+      <div class="lg:col-span-2 space-y-4 fade-up">
+        @foreach($s('contact')?->activeItems ?? collect() as $info)
+        <div class="bg-white rounded-2xl p-5 border flex items-start gap-4" style="border-color:var(--border)">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style="background:rgba(15,36,68,.07)">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5" style="color:var(--navy)">{!! $iconSvg[$info->icon ?? 'location'] ?? $iconSvg['location'] !!}</svg>
+          </div>
+          <div>
+            <p class="text-xs font-semibold mb-0.5" style="color:var(--muted)">
+              <span data-ar>{{ $info->title_ar }}</span><span data-en class="hidden">{{ $info->title_en ?? $info->title_ar }}</span>
+            </p>
+            <p class="text-sm font-semibold" style="color:var(--text)">
+              @php $isPhoneItem = in_array($info->icon ?? '', ['phone', 'mobile', 'tel']); @endphp
+              <span data-ar @if($isPhoneItem) dir="ltr" style="unicode-bidi:embed;" @endif>{{ $info->body_ar }}</span>
+              <span data-en class="hidden" @if($isPhoneItem) dir="ltr" style="unicode-bidi:embed;" @endif>{{ $info->body_en ?? $info->body_ar }}</span>
+            </p>
+          </div>
+        </div>
+        @endforeach
+      </div>
+
+      {{-- Form --}}
+      <div class="lg:col-span-3 fade-up">
+        <div class="bg-white rounded-2xl p-6 sm:p-8 border shadow-sm" style="border-color:var(--border)">
+          <h3 class="font-bold text-base mb-5" style="color:var(--navy)">
+            <span data-ar>أرسل لنا رسالة</span><span data-en class="hidden">Send Us a Message</span>
+          </h3>
+          <form method="POST" action="{{ route('contact.store') }}" class="space-y-4">
+            @csrf
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold mb-1.5" style="color:var(--text)">
+                  <span data-ar>الاسم الكامل</span><span data-en class="hidden">Full Name</span> <span style="color:var(--gold)">*</span>
+                </label>
+                <input type="text" name="name" value="{{ old('name') }}"
+                  placeholder-ar="أحمد محمد" placeholder-en="John Smith" placeholder="أحمد محمد"
+                  class="input-field w-full rounded-xl px-4 py-3 text-sm @error('name') border-red-400 @enderror">
+                @error('name')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+              </div>
+              <div>
+                <label class="block text-xs font-semibold mb-1.5" style="color:var(--text)">
+                  <span data-ar>رقم الجوال</span><span data-en class="hidden">Phone</span>
+                </label>
+                <input type="text" name="phone" value="{{ old('phone') }}"
+                  placeholder-ar="05xxxxxxxx" placeholder-en="+968 9x..." placeholder="05xxxxxxxx"
+                  class="input-field w-full rounded-xl px-4 py-3 text-sm">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1.5" style="color:var(--text)">
+                <span data-ar>البريد الإلكتروني</span><span data-en class="hidden">Email</span> <span style="color:var(--gold)">*</span>
+              </label>
+              <input type="email" name="email" value="{{ old('email') }}" placeholder="example@email.com"
+                class="input-field w-full rounded-xl px-4 py-3 text-sm @error('email') border-red-400 @enderror">
+              @error('email')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1.5" style="color:var(--text)">
+                <span data-ar>الموضوع</span><span data-en class="hidden">Subject</span> <span style="color:var(--gold)">*</span>
+              </label>
+              <select name="subject" class="input-field w-full rounded-xl px-4 py-3 text-sm @error('subject') border-red-400 @enderror">
+                <option value="" data-ar="-- اختر --" data-en="-- Select --">-- اختر --</option>
+                @foreach([['ar'=>'استفسار عام','en'=>'General Inquiry'],['ar'=>'طلب عرض سعر','en'=>'Quote Request'],['ar'=>'الإبلاغ عن مشكلة','en'=>'Report Issue'],['ar'=>'طلب شراكة','en'=>'Partnership'],['ar'=>'أخرى','en'=>'Other']] as $opt)
+                <option value="{{ $opt['ar'] }}" data-ar="{{ $opt['ar'] }}" data-en="{{ $opt['en'] }}" {{ old('subject') == $opt['ar'] ? 'selected' : '' }}>{{ $opt['ar'] }}</option>
+                @endforeach
+              </select>
+              @error('subject')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1.5" style="color:var(--text)">
+                <span data-ar>الرسالة</span><span data-en class="hidden">Message</span> <span style="color:var(--gold)">*</span>
+              </label>
+              <textarea name="message" rows="4" placeholder-ar="اكتب رسالتك..." placeholder-en="Write your message..." placeholder="اكتب رسالتك..."
+                class="input-field w-full rounded-xl px-4 py-3 text-sm resize-none @error('message') border-red-400 @enderror">{{ old('message') }}</textarea>
+              @error('message')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+            </div>
+            <button type="submit" class="btn-navy w-full py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm font-bold">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12zm0 0h7.5"/></svg>
+              <span data-ar>إرسال الرسالة</span><span data-en class="hidden">Send Message</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{{-- ══════════ FOOTER ══════════ --}}
+<footer class="py-12 sm:py-16" style="background:var(--navy)">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+
+    {{-- Main grid --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 pb-10 border-b" style="border-color:rgba(255,255,255,.08)">
+
+      {{-- Col 1+2: Logo + description + social icons --}}
+      <div class="lg:col-span-2">
+        <img src="{{ asset('img/logo.png') }}" alt="Tharwa" class="h-14 mb-4 brightness-0 invert opacity-90">
+        <p class="text-sm leading-relaxed mb-6" style="color:rgba(255,255,255,.45);max-width:22rem">
+          <span data-ar>{{ $footer?->body_ar ?? 'منصة متكاملة لإدارة العقارات السكنية والتجارية بأعلى معايير الجودة والاحترافية.' }}</span>
+          <span data-en class="hidden">{{ $footer?->body_en ?? 'An integrated platform for residential and commercial property management.' }}</span>
+        </p>
+
+        {{-- Social icons — always shown, greyed if no URL --}}
+        <div class="flex flex-wrap gap-2.5">
+          @php
+          $socialLinks = [
+            'whatsapp' => [
+              'href'  => $waHref,
+              'label' => 'WhatsApp',
+              'color' => '#25d366',
+              'svg'   => '<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>',
+            ],
+            'instagram' => [
+              'href'  => $socials['instagram'] ?? null,
+              'label' => 'Instagram',
+              'color' => '#e1306c',
+              'svg'   => '<path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>',
+            ],
+            'twitter' => [
+              'href'  => $socials['twitter'] ?? null,
+              'label' => 'X / Twitter',
+              'color' => '#ffffff',
+              'svg'   => '<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.259 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>',
+            ],
+            'facebook' => [
+              'href'  => $socials['facebook'] ?? null,
+              'label' => 'Facebook',
+              'color' => '#1877f2',
+              'svg'   => '<path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>',
+            ],
+            'linkedin' => [
+              'href'  => $socials['linkedin'] ?? null,
+              'label' => 'LinkedIn',
+              'color' => '#0a66c2',
+              'svg'   => '<path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>',
+            ],
+          ];
+          @endphp
+
+          @foreach($socialLinks as $net => $info)
+          @if($info['href'])
+          <a href="{{ $info['href'] }}" target="_blank" rel="noopener" title="{{ $info['label'] }}"
+             class="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
+             style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.55)"
+             onmouseover="this.style.background='{{ $info['color'] }}';this.style.color='#fff';this.style.borderColor='{{ $info['color'] }}'"
+             onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.color='rgba(255,255,255,.55)';this.style.borderColor='rgba(255,255,255,.1)'">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">{!! $info['svg'] !!}</svg>
+          </a>
+          @else
+          <span title="{{ $info['label'] }}"
+             class="w-9 h-9 rounded-xl flex items-center justify-center cursor-default"
+             style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.2)">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">{!! $info['svg'] !!}</svg>
+          </span>
+          @endif
+          @endforeach
+        </div>
+      </div>
+
+      {{-- Col 3: Quick links --}}
+      <div>
+        <h4 class="text-xs font-bold uppercase tracking-widest mb-5" style="color:rgba(255,255,255,.35)">
+          <span data-ar>روابط سريعة</span><span data-en class="hidden">Quick Links</span>
+        </h4>
+        <ul class="space-y-3">
+          @foreach([
+            ['#home',                    'الرئيسية',    'Home'],
+            ['#services',                'الخدمات',     'Services'],
+            [route('properties.index'),  'العقارات',    'Properties'],
+            ['#types',                   'أنواع العقارات','Property Types'],
+            ['#about',                   'عن الشركة',   'About Us'],
+            ['#contact',                 'تواصل معنا',  'Contact'],
+          ] as [$u, $ar, $en])
+          <li>
+            <a href="{{ $u }}" class="text-sm transition flex items-center gap-2 group"
+               style="color:rgba(255,255,255,.4)"
+               onmouseover="this.style.color='rgba(255,255,255,.9)'"
+               onmouseout="this.style.color='rgba(255,255,255,.4)'">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                   class="w-3 h-3 flex-shrink-0" style="color:var(--gold)">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/>
+              </svg>
+              <span data-ar>{{ $ar }}</span><span data-en class="hidden">{{ $en }}</span>
+            </a>
+          </li>
+          @endforeach
+        </ul>
+      </div>
+
+      {{-- Col 4: Contact info + WhatsApp --}}
+      <div>
+        <h4 class="text-xs font-bold uppercase tracking-widest mb-5" style="color:rgba(255,255,255,.35)">
+          <span data-ar>تواصل معنا</span><span data-en class="hidden">Contact Us</span>
+        </h4>
+
+        <div class="space-y-3">
+          {{-- Phone --}}
+          @if($phone)
+          <a href="tel:{{ preg_replace('/\D/','',$phone) }}"
+             class="flex items-center gap-3 text-sm transition"
+             style="color:rgba(255,255,255,.45)"
+             onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.45)'">
+            <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style="background:rgba(255,255,255,.08)">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25z"/>
+              </svg>
+            </span>
+            <span dir="ltr" style="unicode-bidi:embed;">{{ $phone }}</span>
+          </a>
+          @endif
+
+          {{-- Email --}}
+          @if($email)
+          <a href="mailto:{{ $email }}"
+             class="flex items-center gap-3 text-sm transition"
+             style="color:rgba(255,255,255,.45)"
+             onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,.45)'">
+            <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style="background:rgba(255,255,255,.08)">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>
+              </svg>
+            </span>
+            {{ $email }}
+          </a>
+          @endif
+
+          {{-- WhatsApp — below email --}}
+          @if($waHref)
+          <a href="{{ $waHref }}" target="_blank" rel="noopener"
+             class="flex items-center gap-3 text-sm transition"
+             style="color:rgba(255,255,255,.45)"
+             onmouseover="this.style.color='#25d366'" onmouseout="this.style.color='rgba(255,255,255,.45)'">
+            <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style="background:rgba(37,211,102,.15)">
+              <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4" style="color:#25d366">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
+              </svg>
+            </span>
+            <span data-ar>تواصل عبر واتساب</span>
+            <span data-en class="hidden">Chat on WhatsApp</span>
+          </a>
+          @endif
+        </div>
+
+      </div>
+    </div>
+
+    {{-- Bottom bar --}}
+    <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <p class="text-xs" style="color:rgba(255,255,255,.22)">
+        © {{ date('Y') }}
+        <span data-ar>{{ $footer?->title_ar ?? 'شركة ثروة للعقارات' }} — جميع الحقوق محفوظة.</span>
+        <span data-en class="hidden">{{ $footer?->title_en ?? 'Tharwa Real Estate' }} — All rights reserved.</span>
+      </p>
+      <p class="text-xs" style="color:rgba(255,255,255,.18)">
+        <span data-ar>منصة إدارة عقارية متكاملة</span>
+        <span data-en class="hidden">Integrated Real Estate Management Platform</span>
+      </p>
+    </div>
+
+  </div>
 </footer>
 
 <script>
-// ====== LANGUAGE SYSTEM ======
-const html    = document.getElementById('html-root');
-const langBtn = document.getElementById('lang-btn');
-const langBtnMobile = document.getElementById('lang-btn-mobile');
+// ── Language ──────────────────────────────
+let lang = localStorage.getItem('tharwa_lang') || 'ar';
+applyLang(lang);
+// Sync server session on every home page load so other pages render in the same language
+fetch('/locale/' + lang, { method: 'GET', credentials: 'same-origin' });
 
-let currentLang = localStorage.getItem('tharwa_lang') || 'ar';
-applyLang(currentLang, false);
-
-function toggleLang() {
-    currentLang = currentLang === 'ar' ? 'en' : 'ar';
-    localStorage.setItem('tharwa_lang', currentLang);
-    applyLang(currentLang, true);
+function toggleLang(){
+  lang = lang === 'ar' ? 'en' : 'ar';
+  localStorage.setItem('tharwa_lang', lang);
+  applyLang(lang);
+  fetch('/locale/' + lang, { method: 'GET', credentials: 'same-origin' });
+}
+function applyLang(l){
+  const isAr = l === 'ar';
+  const root = document.getElementById('html-root');
+  root.setAttribute('lang', l);
+  root.setAttribute('dir', isAr ? 'rtl' : 'ltr');
+  document.querySelectorAll('[data-ar]:not(option)').forEach(e => e.classList.toggle('hidden', !isAr));
+  document.querySelectorAll('[data-en]:not(option)').forEach(e => e.classList.toggle('hidden', isAr));
+  document.querySelectorAll('[data-ar-text]').forEach(e => e.textContent = isAr ? e.dataset.arText : e.dataset.enText);
+  document.querySelectorAll('[placeholder-ar]').forEach(e => e.placeholder = isAr ? e.getAttribute('placeholder-ar') : e.getAttribute('placeholder-en'));
+  document.querySelectorAll('select option[data-ar]').forEach(o => o.textContent = isAr ? o.dataset.ar : o.dataset.en);
+  const lbl = isAr ? 'EN' : 'عر';
+  ['lang-btn','lang-btn-mob'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el){ const sp = el.querySelector('#lang-label'); if(sp) sp.textContent = lbl; else el.textContent = lbl; }
+  });
 }
 
-function applyLang(lang, animate) {
-    const isAr = lang === 'ar';
+// ── Navbar shadow on scroll — handled by public-nav partial ──
 
-    // Direction & language attribute
-    html.setAttribute('lang', lang);
-    html.setAttribute('dir', isAr ? 'rtl' : 'ltr');
-
-    // Toggle data-ar / data-en elements
-    document.querySelectorAll('[data-ar]').forEach(el => el.classList.toggle('hidden', !isAr));
-    document.querySelectorAll('[data-en]').forEach(el => el.classList.toggle('hidden', isAr));
-
-    // Nav links text via data attributes
-    document.querySelectorAll('[data-ar-text]').forEach(el => {
-        el.textContent = isAr ? el.dataset.arText : el.dataset.enText;
-    });
-
-    // Placeholders
-    document.querySelectorAll('[placeholder-ar]').forEach(el => {
-        el.placeholder = isAr ? el.getAttribute('placeholder-ar') : el.getAttribute('placeholder-en');
-    });
-
-    // Select options
-    document.querySelectorAll('select option[data-ar]').forEach(opt => {
-        opt.textContent = isAr ? opt.dataset.ar : opt.dataset.en;
-    });
-
-    // Update lang toggle button labels
-    if (langBtn) langBtn.textContent = isAr ? 'EN' : 'عر';
-    if (langBtnMobile) langBtnMobile.textContent = isAr ? 'EN' : 'عر';
-
-    // Update scrolled nav link colors
-    const scrolled = window.scrollY > 60;
-    document.querySelectorAll('.nav-link').forEach(l => {
-        l.style.color = scrolled ? '#475569' : '';
-    });
+// ── Search tabs ───────────────────────────
+function setTab(val){
+  document.getElementById('purpose-input').value = val;
+  ['rent','sale','both'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t === val);
+  });
 }
 
-// ====== NAVBAR SCROLL ======
-const navbar   = document.getElementById('navbar');
-const logoText = document.getElementById('logo-text');
+// ── Featured load more ────────────────────
+function loadMoreFeatured(citySlug) {
+  var grid = document.getElementById('featured-grid-' + citySlug);
+  if (!grid) return;
+  grid.querySelectorAll('.featured-hidden').forEach(function(el) {
+    el.style.display = '';
+    el.classList.remove('featured-hidden');
+    setTimeout(function() { el.classList.add('visible'); }, 50);
+  });
+  var wrap = document.getElementById('feat-more-wrap-' + citySlug);
+  if (wrap) wrap.style.display = 'none';
+}
 
-window.addEventListener('scroll', () => {
-    const scrolled = window.scrollY > 60;
-    navbar.classList.toggle('scrolled', scrolled);
-    document.querySelectorAll('.nav-link').forEach(l => {
-        l.style.color = scrolled ? '#475569' : '';
-    });
-    const hamburger = document.getElementById('hamburger');
-    if (hamburger) {
-        hamburger.querySelector('svg').style.stroke = scrolled ? '#0f2444' : 'white';
-    }
+// ── City tabs ─────────────────────────────
+function switchCity(city) {
+  // hide all grids
+  document.querySelectorAll('.city-grid').forEach(g => g.classList.add('hidden'));
+  // show selected
+  const slug = city === 'all' ? 'all' : city.replace(/\s+/g,'-').replace(/[^\w\-]/g,'').toLowerCase();
+  const grid = document.getElementById('city-grid-' + slug);
+  if (grid) grid.classList.remove('hidden');
+  // update tab styles
+  document.querySelectorAll('.city-tab').forEach(t => {
+    t.style.borderColor = 'transparent';
+    t.style.color = 'var(--muted)';
+  });
+  const activeTab = city === 'all'
+    ? document.getElementById('city-tab-all')
+    : document.getElementById('city-tab-' + slug);
+  if (activeTab) {
+    activeTab.style.borderColor = 'var(--gold)';
+    activeTab.style.color = 'var(--navy)';
+  }
+}
+
+// ── mk-card hover ──────────────────────────
+document.querySelectorAll('.mk-card').forEach(c => {
+  c.addEventListener('mouseenter', () => {
+    c.style.boxShadow = '0 8px 30px rgba(15,36,68,.12)';
+    c.style.transform = 'translateY(-4px)';
+    const img = c.querySelector('img');
+    if (img) img.style.transform = 'scale(1.06)';
+  });
+  c.addEventListener('mouseleave', () => {
+    c.style.boxShadow = '';
+    c.style.transform = '';
+    const img = c.querySelector('img');
+    if (img) img.style.transform = '';
+  });
 });
 
-// ====== MOBILE MENU ======
-let menuOpen = false;
-function toggleMobileMenu() {
-    menuOpen = !menuOpen;
-    const menu = document.getElementById('mobile-menu');
-    const icon = document.getElementById('hamburger-icon');
-    if (menuOpen) {
-        menu.classList.remove('hidden');
-        icon.setAttribute('d', 'M6 18L18 6M6 6l12 12');
-    } else {
-        menu.classList.add('hidden');
-        icon.setAttribute('d', 'M4 6h16M4 12h16M4 18h16');
-    }
-}
-function closeMobileMenu() {
-    menuOpen = false;
-    document.getElementById('mobile-menu').classList.add('hidden');
-    document.getElementById('hamburger-icon').setAttribute('d', 'M4 6h16M4 12h16M4 18h16');
-}
-
-// ====== FADE-IN ON SCROLL ======
-const observer = new IntersectionObserver(
-    entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
-    { threshold: 0.1 }
+// ── Fade-up on scroll ─────────────────────
+const obs = new IntersectionObserver(
+  entries => entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }),
+  { threshold: 0.1 }
 );
-document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
 </script>
+
 </body>
 </html>

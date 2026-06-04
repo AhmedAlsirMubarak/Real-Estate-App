@@ -10,12 +10,13 @@ use App\Models\Owner;
 use App\Models\Property;
 use App\Models\PropertyImage;
 use App\Models\User;
+use App\Traits\StoresUploadedFiles;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class PropertyController extends Controller
 {
+    use StoresUploadedFiles;
     public function index(Request $request)
     {
         $search       = $request->input('search');
@@ -85,14 +86,15 @@ class PropertyController extends Controller
     {
         $request->validate(['images' => 'required', 'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048']);
 
-        $isFirst = $property->images()->count() === 0;
+        $existingCount = $property->images()->count();
+        $isFirst = $existingCount === 0;
         foreach ($request->file('images') as $i => $file) {
             $path = $this->storeUploadedFile($file, 'properties/' . $property->id);
             if (!$path) continue;
             $property->images()->create([
                 'path'       => $path,
                 'is_primary' => $isFirst && $i === 0,
-                'sort_order' => $property->images()->count(),
+                'sort_order' => $existingCount + $i,
             ]);
         }
 
@@ -101,7 +103,10 @@ class PropertyController extends Controller
 
     public function destroyImage(Property $property, PropertyImage $image)
     {
-        Storage::disk('public')->delete($image->path);
+        $file = public_path('storage' . DIRECTORY_SEPARATOR . $image->path);
+        if (file_exists($file)) {
+            @unlink($file);
+        }
         $wasPrimary = $image->is_primary;
         $image->delete();
 
@@ -163,31 +168,17 @@ class PropertyController extends Controller
 
         $request->validate(['images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048']);
 
-        $isFirst = $property->images()->count() === 0;
+        $existingCount = $property->images()->count();
+        $isFirst = $existingCount === 0;
         foreach ($request->file('images') as $i => $file) {
             $path = $this->storeUploadedFile($file, 'properties/' . $property->id);
             if (!$path) continue;
             $property->images()->create([
                 'path'       => $path,
                 'is_primary' => $isFirst && $i === 0,
-                'sort_order' => $property->images()->count(),
+                'sort_order' => $existingCount + $i,
             ]);
         }
-    }
-
-    private function storeUploadedFile(\Illuminate\Http\UploadedFile $file, string $directory): string|false
-    {
-        if (! $file->isValid()) {
-            return false;
-        }
-        $ext      = strtolower($file->getClientOriginalExtension() ?: 'jpg');
-        $filename = sha1(uniqid('', true) . microtime()) . '.' . $ext;
-        try {
-            $stored = Storage::disk('public')->putFileAs($directory, $file, $filename);
-        } catch (\Throwable) {
-            return false;
-        }
-        return $stored ?: false;
     }
 
     public function importForm()
@@ -293,6 +284,8 @@ class PropertyController extends Controller
             'status'      => 'nullable|in:active,sold,under_maintenance,archived',
             'electricity_account_number' => 'nullable|string|max:100',
             'water_account_number'       => 'nullable|string|max:100',
+            'latitude'                   => 'nullable|numeric|between:-90,90',
+            'longitude'                  => 'nullable|numeric|between:-180,180',
         ]);
     }
 

@@ -28,25 +28,25 @@
 
     <div class="bg-white rounded-xl border border-gray-100 p-5 mb-5">
         <h3 class="text-sm font-bold mb-3">{{ __('Owners') }}</h3>
-        <table class="w-full text-sm">
+        <div class="overflow-x-auto"><table class="w-full text-sm">
             <thead class="text-xs text-gray-500"><tr><th class="text-right py-2">{{ __('Name') }}</th><th class="text-right py-2">{{ __('Ownership %') }}</th><th class="text-right py-2">{{ __('Primary Owner') }}</th></tr></thead>
             <tbody class="divide-y divide-gray-100">
             @foreach($property->owners as $o)
             <tr><td class="py-2">{{ $o->user?->name }}</td><td class="py-2">{{ $o->pivot->ownership_percentage }}%</td><td class="py-2">{{ $o->pivot->is_primary ? '✓' : '' }}</td></tr>
             @endforeach
             </tbody>
-        </table>
+        </table></div>
     </div>
 
     <div class="bg-white rounded-xl border border-gray-100 p-5">
         <h3 class="text-sm font-bold mb-3">{{ __('Property') }} — {{ __('Properties') }}</h3>
-        <table class="w-full text-sm">
+        <div class="overflow-x-auto"><table class="w-full text-sm">
             <thead class="text-xs text-gray-500"><tr><th class="text-right py-2">#</th><th class="text-right py-2">{{ __('Status') }}</th><th class="text-right py-2">{{ __('Amount') }}</th></tr></thead>
             <tbody class="divide-y divide-gray-100">
             @foreach($property->units as $u)
             <tr><td class="py-2">{{ $u->unit_number ?? '—' }}</td><td class="py-2 text-xs">{{ $u->status }}</td><td class="py-2">{{ number_format($u->rent_price ?? $u->sale_price ?? 0, 0) }}</td></tr>
             @endforeach
             </tbody>
-        </table>
+        </table></div>
     </div>
 </x-app-layout>

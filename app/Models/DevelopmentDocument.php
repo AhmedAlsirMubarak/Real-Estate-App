@@ -31,6 +31,7 @@ class DevelopmentDocument extends Model
 
     public function url(): string
     {
+        if (blank($this->file_path)) return '';
         return Storage::disk('public')->url($this->file_path);
     }
 

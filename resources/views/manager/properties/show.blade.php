@@ -161,4 +161,132 @@
         </div>
     </div>
     @endif
+
+    {{-- ── Map & Directions ── --}}
+    @if($property->latitude && $property->longitude)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-5">
+        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-blue-700"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/></svg>
+                {{ $tr('موقع العقار', 'Property Location') }}
+                <span class="text-xs font-normal text-gray-400">{{ $property->latitude }}, {{ $property->longitude }}</span>
+            </h3>
+            <a href="https://www.google.com/maps/dir/?api=1&destination={{ $property->latitude }},{{ $property->longitude }}"
+               target="_blank" rel="noopener"
+               class="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg text-white bg-blue-900 hover:bg-blue-800 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3.5 h-3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/></svg>
+                {{ $tr('فتح الاتجاهات', 'Get Directions') }}
+            </a>
+        </div>
+        <div class="p-3">
+            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+            <div id="mgr-prop-map" style="height:300px;border-radius:10px;border:1px solid #e2e8f0;z-index:0"></div>
+            <script>
+            (function(){
+                var map = L.map('mgr-prop-map', { scrollWheelZoom: false })
+                    .setView([{{ $property->latitude }}, {{ $property->longitude }}], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                    maxZoom: 19
+                }).addTo(map);
+                @php
+                    $mgrPopup = '<strong>' . e($property->name) . '</strong>'
+                        . ($property->city ? '<br><span style="color:#64748b">' . e($property->city) . '</span>' : '');
+                @endphp
+                L.marker([{{ $property->latitude }}, {{ $property->longitude }}])
+                    .addTo(map)
+                    .bindPopup({!! json_encode($mgrPopup) !!})
+                    .openPopup();
+            })();
+            </script>
+        </div>
+    </div>
+    @elseif($property->city || $property->address)
+    <div class="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3 mt-5 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2 text-sm text-yellow-800">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/></svg>
+            {{ $tr('لم يتم تعيين إحداثيات لهذا العقار بعد', 'No map coordinates set for this property yet') }}
+        </div>
+        <a href="{{ route('manager.properties.edit', $property) }}"
+           class="text-xs font-bold text-yellow-800 underline hover:text-yellow-900 flex-shrink-0">
+            {{ $tr('إضافة إحداثيات', 'Add Coordinates') }} →
+        </a>
+    </div>
+    @endif
+
+    {{-- ── Image Gallery Management ── --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-5">
+        <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-blue-700"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/></svg>
+                {{ $tr('صور العقار', 'Property Images') }}
+                <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">{{ $property->images->count() }}</span>
+            </h3>
+        </div>
+
+        {{-- Upload form --}}
+        <div class="px-4 py-4 border-b border-gray-100 bg-gray-50">
+            <form method="POST" action="{{ route('manager.properties.images.store', $property) }}" enctype="multipart/form-data" class="flex items-center gap-3 flex-wrap">
+                @csrf
+                <label class="flex-1 min-w-0 cursor-pointer">
+                    <div class="border-2 border-dashed border-gray-300 hover:border-blue-400 rounded-xl px-4 py-3 text-center transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mx-auto mb-1 text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+                        <p class="text-xs text-gray-500" id="img-label-{{ $property->id }}">{{ $tr('اختر الصور (يمكن اختيار أكثر من صورة)', 'Choose images (multiple allowed)') }}</p>
+                    </div>
+                    <input type="file" name="images[]" multiple accept="image/*" class="hidden"
+                           onchange="document.getElementById('img-label-{{ $property->id }}').textContent = this.files.length + ' {{ $tr('صورة مختارة', 'image(s) selected') }}'">
+                </label>
+                <button type="submit" class="bg-blue-900 hover:bg-blue-800 text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+                    {{ $tr('رفع الصور', 'Upload') }}
+                </button>
+            </form>
+            @if(session('success'))
+            <p class="text-green-700 text-xs mt-2 font-medium">✓ {{ session('success') }}</p>
+            @endif
+        </div>
+
+        {{-- Images grid --}}
+        @if($property->images->isEmpty())
+        <div class="py-10 text-center text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-10 h-10 mx-auto mb-2 opacity-30"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Z"/></svg>
+            <p class="text-sm">{{ $tr('لا توجد صور بعد', 'No images yet') }}</p>
+        </div>
+        @else
+        <div class="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            @foreach($property->images->sortByDesc('is_primary') as $img)
+            <div class="relative group rounded-xl overflow-hidden border-2 {{ $img->is_primary ? 'border-yellow-400' : 'border-gray-200' }}" style="height:130px">
+                <img src="{{ $img->url() }}" class="w-full h-full object-cover" alt="">
+                @if($img->is_primary)
+                <span class="absolute top-1.5 start-1.5 bg-yellow-400 text-yellow-900 text-[10px] font-black px-1.5 py-0.5 rounded">
+                    {{ $tr('رئيسية', 'Primary') }}
+                </span>
+                @endif
+                {{-- Actions overlay --}}
+                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                    @if(!$img->is_primary)
+                    <form method="POST" action="{{ route('manager.properties.images.primary', [$property, $img]) }}">
+                        @csrf @method('PATCH')
+                        <button type="submit" title="{{ $tr('تعيين رئيسية', 'Set Primary') }}"
+                                class="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center hover:bg-yellow-300 transition">
+                            <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-yellow-900"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 0 0 .95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 0 0-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 0 0-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 0 0-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 0 0 .951-.69l1.519-4.674z"/></svg>
+                        </button>
+                    </form>
+                    @endif
+                    <form method="POST" action="{{ route('manager.properties.images.destroy', [$property, $img]) }}"
+                          onsubmit="return confirm('{{ $tr('حذف الصورة؟', 'Delete image?') }}')">
+                        @csrf @method('DELETE')
+                        <button type="submit" title="{{ $tr('حذف', 'Delete') }}"
+                                class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4 text-white"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            @endforeach
+        </div>
+        @endif
+    </div>
+
 </x-app-layout>

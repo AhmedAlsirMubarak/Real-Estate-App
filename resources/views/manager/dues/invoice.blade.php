@@ -1,196 +1,226 @@
+@php
+    $isAr  = app()->getLocale() === 'ar';
+    $dir   = $isAr ? 'rtl' : 'ltr';
+    $t     = fn(string $en, string $ar) => $isAr ? $ar : $en;
+    $start = $isAr ? 'right' : 'left';
+    $end   = $isAr ? 'left'  : 'right';
+
+    $statusLabels = [
+        'pending' => $t('PENDING', 'معلق'),
+        'paid'    => $t('PAID',    'مدفوع'),
+        'overdue' => $t('OVERDUE', 'متأخر'),
+        'waived'  => $t('WAIVED',  'معفو عنه'),
+    ];
+    $statusLabel = $statusLabels[$due->status] ?? strtoupper($due->status);
+    $dateFormat  = $isAr ? 'd/m/Y' : 'd M Y';
+
+    $logoPath   = public_path('img/logo.png');
+    $logoBase64 = file_exists($logoPath) ? base64_encode(file_get_contents($logoPath)) : null;
+    $companyName = $isAr ? 'شركة ثروة للعقارات' : str_replace('_', ' ', ucwords(config('app.name'), '_'));
+@endphp
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="{{ $isAr ? 'ar' : 'en' }}" dir="{{ $dir }}">
 <head>
 <meta charset="UTF-8">
-<title>Invoice #INV-{{ str_pad($due->id, 6, '0', STR_PAD_LEFT) }}</title>
+<title>{{ $t('Invoice', 'فاتورة') }} #INV-{{ str_pad($due->id, 6, '0', STR_PAD_LEFT) }}</title>
 <style>
-    * { margin: 0; padding: 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-        font-family: Arial, sans-serif;
-        font-size: 12px;
+        font-family: 'DejaVu Sans', sans-serif;
+        font-size: 11px;
         color: #1e293b;
-        background: #ffffff;
+        background: #fff;
+        direction: {{ $dir }};
     }
 
-    .page { padding: 38px 46px; }
+    .page { padding: 0; }
 
-    /* ── Header ── */
-    .header-table { width: 100%; border-collapse: collapse; }
-    .header-table td { vertical-align: middle; padding: 0; }
-    .company-name { font-size: 19px; font-weight: bold; color: #1e3a5f; }
-    .company-sub  { font-size: 10px; color: #64748b; margin-top: 3px; }
-    .invoice-word { font-size: 28px; font-weight: bold; color: #1e3a5f; text-align: right; }
-    .invoice-num  { font-size: 11px; color: #64748b; text-align: right; margin-top: 5px; }
+    /* ── Header bar ── */
+    .hdr { background: #1e3a5f; color: #fff; padding: 22px 36px; }
+    .hdr-tbl { width: 100%; border-collapse: collapse; }
+    .hdr-tbl td { vertical-align: middle; padding: 0; }
+    .hdr-logo { width: 52px; height: auto; background: #fff; border-radius: 5px; padding: 3px; }
+    .hdr-co-name { font-size: 13px; font-weight: bold; color: #fff; }
+    .hdr-co-sub  { font-size: 9px; color: #93c5fd; margin-top: 2px; }
+    .hdr-word    { font-size: 30px; font-weight: bold; color: #fff; text-align: {{ $end }}; letter-spacing: 1px; }
+    .hdr-num     { font-size: 10px; color: #93c5fd; text-align: {{ $end }}; margin-top: 4px; }
 
-    /* ── Accent bars ── */
-    .bar-thick { height: 3px; background: #1e3a5f; margin-top: 12px; }
-    .bar-thin  { height: 1px; background: #e2e8f0; margin-bottom: 20px; }
-
-    /* ── Meta cards (3 columns via table) ── */
-    .meta-outer { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
-    .meta-outer td { vertical-align: top; padding: 0; }
-    .meta-gap { width: 10px; }
-
-    .meta-card { padding: 12px 14px; background: #f8fafc; border: 1px solid #dde3ec; }
-    .meta-label {
-        font-size: 9px; font-weight: bold; color: #94a3b8;
-        text-transform: uppercase;
-        border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 8px;
-    }
-    .meta-val { font-size: 12px; color: #334155; line-height: 1.8; }
-    .meta-val b { color: #0f172a; }
-
-    /* ── Status badges ── */
-    .badge { padding: 2px 10px; font-size: 10px; font-weight: bold; border: 1px solid; }
+    /* ── Status strip ── */
+    .status-strip { background: #f1f5f9; border-bottom: 1px solid #e2e8f0; padding: 8px 36px; }
+    .status-strip-tbl { width: 100%; border-collapse: collapse; }
+    .badge { display: inline-block; padding: 3px 12px; font-size: 10px; font-weight: bold; border-radius: 3px; border: 1px solid; }
     .badge-pending { background: #fef9c3; color: #92400e; border-color: #fde68a; }
     .badge-paid    { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
     .badge-overdue { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
-    .badge-waived  { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+    .badge-waived  { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+
+    /* ── Body wrapper ── */
+    .body { padding: 28px 36px; }
+
+    /* ── Meta section ── */
+    .meta-tbl { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    .meta-tbl td { vertical-align: top; padding: 0; }
+    .meta-gap  { width: 14px; }
+
+    .meta-box { border: 1px solid #e2e8f0; border-radius: 4px; padding: 14px 16px; background: #f8fafc; }
+    .meta-box-title {
+        font-size: 8.5px; font-weight: bold; color: #94a3b8; text-transform: uppercase;
+        letter-spacing: .6px; border-bottom: 1px solid #e8edf3; padding-bottom: 6px; margin-bottom: 10px;
+    }
+    .meta-line { font-size: 11px; color: #475569; margin-bottom: 5px; }
+    .meta-line b { color: #0f172a; }
+    .meta-name { font-size: 14px; font-weight: bold; color: #0f172a; margin-bottom: 6px; }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: #e2e8f0; margin-bottom: 20px; }
 
     /* ── Items table ── */
-    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    .items-table thead tr { background: #1e3a5f; }
-    .items-table thead th {
-        color: #ffffff; font-size: 10px; font-weight: bold;
-        text-transform: uppercase; padding: 10px 14px; text-align: left; border: none;
+    .items { width: 100%; border-collapse: collapse; margin-bottom: 22px; border-radius: 4px; overflow: hidden; }
+    .items thead tr { background: #1e3a5f; }
+    .items thead th {
+        color: #fff; font-size: 9.5px; font-weight: bold; text-transform: uppercase;
+        letter-spacing: .5px; padding: 11px 14px; text-align: {{ $start }}; border: none;
     }
-    .items-table thead th.r { text-align: right; }
-    .items-table tbody tr { border-bottom: 1px solid #e2e8f0; }
-    .items-table tbody td { padding: 13px 14px; font-size: 12px; color: #334155; border: none; }
-    .items-table tbody td.r { text-align: right; font-weight: bold; color: #0f172a; }
-    .desc-title { font-weight: bold; color: #0f172a; }
-    .desc-sub   { font-size: 10px; color: #64748b; margin-top: 2px; }
+    .items thead th.col-end { text-align: {{ $end }}; }
+    .items tbody tr { border-bottom: 1px solid #f1f5f9; }
+    .items tbody tr:last-child { border-bottom: none; }
+    .items tbody td {
+        padding: 14px 14px; font-size: 11px; color: #334155; border: none;
+        text-align: {{ $start }};
+    }
+    .items tbody td.col-end { text-align: {{ $end }}; font-weight: bold; color: #0f172a; font-size: 12px; }
+    .item-title { font-weight: bold; color: #0f172a; font-size: 12px; }
+    .item-sub   { font-size: 9.5px; color: #64748b; margin-top: 3px; }
+    .unit-lbl   { font-size: 9px; color: #94a3b8; }
 
     /* ── Totals ── */
-    .totals-wrap { width: 100%; border-collapse: collapse; margin-bottom: 22px; }
-    .totals-wrap td { padding: 0; vertical-align: top; }
-    .totals-spacer { width: 54%; }
+    .totals-wrap { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    .totals-wrap td { vertical-align: top; padding: 0; }
 
-    .totals-box { width: 46%; }
-    .totals-inner { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; }
-    .totals-inner td { padding: 9px 15px; font-size: 12px; border-bottom: 1px solid #e2e8f0; }
-    .totals-inner td.lbl { color: #64748b; }
-    .totals-inner td.val { text-align: right; font-weight: bold; color: #1e293b; }
-    .totals-inner tr.total-row td { background: #1e3a5f; color: #ffffff; font-size: 14px; font-weight: bold; border-bottom: none; }
-    .totals-inner tr.total-row td.val { color: #ffffff; }
+    .totals-box  { width: 44%; }
+    .totals-inner { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 4px; }
+    .totals-inner td { padding: 10px 16px; font-size: 11px; border-bottom: 1px solid #f1f5f9; }
+    .totals-inner td.lbl { color: #64748b; text-align: {{ $start }}; white-space: nowrap; }
+    .totals-inner td.val { text-align: {{ $end }}; font-weight: bold; color: #1e293b; }
+    .total-row td { background: #1e3a5f !important; color: #fff !important; font-size: 13px; font-weight: bold; border-bottom: none !important; white-space: nowrap; }
+    .total-row td.val { color: #fff !important; }
 
     /* ── Notes ── */
-    .notes { border: 1px solid #e2e8f0; border-left: 3px solid #3b82f6; padding: 12px 15px; margin-bottom: 26px; background: #f8fafc; }
-    .notes-title { font-size: 9px; font-weight: bold; text-transform: uppercase; color: #94a3b8; margin-bottom: 6px; }
-    .notes-text  { font-size: 11px; color: #475569; line-height: 1.8; }
+    .notes {
+        border: 1px solid #e2e8f0; border-radius: 4px;
+        border-{{ $start }}: 3px solid #3b82f6;
+        padding: 13px 16px; margin-bottom: 28px; background: #f8fafc;
+    }
+    .notes-title { font-size: 8.5px; font-weight: bold; text-transform: uppercase; color: #94a3b8; letter-spacing: .5px; margin-bottom: 7px; }
+    .notes-text  { font-size: 11px; color: #475569; line-height: 1.9; }
 
     /* ── Footer ── */
-    .footer-bar   { height: 2px; background: #1e3a5f; margin-bottom: 12px; }
-    .footer-table { width: 100%; border-collapse: collapse; }
-    .footer-table td { font-size: 10px; color: #94a3b8; padding: 0; vertical-align: middle; }
-    .footer-left  { font-size: 12px; font-weight: bold; color: #1e3a5f; }
-    .footer-right { text-align: right; }
-
-    /* ── Print button ── */
-    /* .print-wrap { text-align: center; padding: 28px 0 4px; }
-    .print-btn {
-        background: #1e3a5f; color: #ffffff;
-        padding: 10px 32px; border: none;
-        font-size: 13px; font-weight: bold; cursor: pointer;
-        font-family: Arial, sans-serif;
-    } */
-
-    @media print { .no-print { display: none !important; } }
+    .footer-bar { height: 2px; background: #1e3a5f; margin-bottom: 10px; }
+    .footer-tbl { width: 100%; border-collapse: collapse; }
+    .footer-tbl td { font-size: 9.5px; color: #94a3b8; padding: 0; vertical-align: middle; }
+    .footer-thanks { font-size: 11px; font-weight: bold; color: #1e3a5f; text-align: {{ $start }}; }
+    .footer-right  { text-align: {{ $end }}; }
 </style>
 </head>
 <body>
 <div class="page">
 
 {{-- ══ HEADER ══ --}}
-<table class="header-table">
-    <tr>
-        <td style="width:68px;">
-            @php $logoPath = public_path('img/logo.png'); @endphp
-            @if(file_exists($logoPath))
-                <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logoPath)) }}"
-                     style="width:56px; height:auto;" alt="Logo">
-            @endif
-        </td>
-        <td style="padding-left:14px;">
-            <div class="company-name">{{ str_replace('_', ' ', ucwords(config('app.name'), '_')) }}</div>
-            <div class="company-sub">Real Estate &amp; Property Management</div>
-        </td>
-        <td style="width:160px; text-align:right;">
-            <div class="invoice-word">INVOICE</div>
-            <div class="invoice-num">#INV-{{ str_pad($due->id, 6, '0', STR_PAD_LEFT) }}</div>
-        </td>
-    </tr>
-</table>
+<div class="hdr">
+    <table class="hdr-tbl">
+        <tr>
+            {{-- Logo + Company (appears on RIGHT in RTL, LEFT in LTR) --}}
+            <td style="width:58px;">
+                @if($logoBase64)
+                    <img src="data:image/png;base64,{{ $logoBase64 }}" class="hdr-logo">
+                @endif
+            </td>
+            <td style="padding-{{ $start }}: 12px;">
+                <div class="hdr-co-name">{{ $companyName }}</div>
+                <div class="hdr-co-sub">{{ $t('Real Estate & Property Management', 'إدارة العقارات والممتلكات') }}</div>
+            </td>
+            {{-- Invoice word (appears on LEFT in RTL, RIGHT in LTR) --}}
+            <td style="width:160px;">
+                <div class="hdr-word">{{ $t('INVOICE', 'فاتورة') }}</div>
+                <div class="hdr-num">#INV-{{ str_pad($due->id, 6, '0', STR_PAD_LEFT) }}</div>
+            </td>
+        </tr>
+    </table>
+</div>
 
-<div class="bar-thick"></div>
-<div class="bar-thin"></div>
+{{-- ══ STATUS STRIP ══ --}}
+<div class="status-strip">
+    <table class="status-strip-tbl">
+        <tr>
+            <td style="text-align: {{ $start }};">
+                <span class="badge badge-{{ $due->status }}">{{ $statusLabel }}</span>
+                @if($due->paid_at)
+                    <span style="font-size:10px; color:#64748b; margin-{{ $start }}: 10px;">
+                        {{ $t('Paid on:', 'تاريخ الدفع:') }} {{ $due->paid_at->format($dateFormat) }}
+                    </span>
+                @endif
+            </td>
+            <td style="text-align: {{ $end }}; font-size:10px; color:#64748b;">
+                {{ $t('Issue Date:', 'تاريخ الإصدار:') }} {{ now()->format($dateFormat) }}
+                &nbsp;&bull;&nbsp;
+                {{ $t('Due Date:', 'تاريخ الاستحقاق:') }} <b style="color:#0f172a;">{{ $due->due_date->format($dateFormat) }}</b>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="body">
 
 {{-- ══ META ══ --}}
-<table class="meta-outer">
+<table class="meta-tbl">
     <tr>
-        <td style="width:33%;">
-            <div class="meta-card">
-                <div class="meta-label">Billed To</div>
-                <div class="meta-val">
-                    <b>{{ $ownerName }}</b><br>
-                    {{ $propertyName }}<br>
-                    @if($ownerPhone){{ $ownerPhone }}@endif
-                </div>
+        <td style="width:48%;">
+            <div class="meta-box">
+                <div class="meta-box-title">{{ $t('Billed To', 'فاتورة إلى') }}</div>
+                <div class="meta-name">{{ $ownerName }}</div>
+                <div class="meta-line">{{ $propertyName }}</div>
+                @if($ownerPhone)
+                    <div class="meta-line" style="color:#64748b;">{{ $ownerPhone }}</div>
+                @endif
             </div>
         </td>
         <td class="meta-gap"></td>
-        <td style="width:34%;">
-            <div class="meta-card">
-                <div class="meta-label">Invoice Details</div>
-                <div class="meta-val">
-                    Invoice No.: <b>#INV-{{ str_pad($due->id, 6, '0', STR_PAD_LEFT) }}</b><br>
-                    Issue Date: {{ now()->format('d M Y') }}<br>
-                    Due Date: {{ $due->due_date->format('d M Y') }}
-                </div>
-            </div>
-        </td>
-        <td class="meta-gap"></td>
-        <td style="width:32%;">
-            <div class="meta-card">
-                <div class="meta-label">Status</div>
-                <div class="meta-val" style="padding-top:3px;">
-                    <span class="badge badge-{{ $due->status }}">{{ strtoupper($due->status) }}</span>
-                    @if($due->paid_at)
-                        <br><span style="font-size:10px; color:#64748b; display:block; margin-top:5px;">
-                            Paid on: {{ $due->paid_at->format('d M Y') }}
-                        </span>
-                    @endif
-                </div>
+        <td style="width:48%;">
+            <div class="meta-box">
+                <div class="meta-box-title">{{ $t('Invoice Details', 'تفاصيل الفاتورة') }}</div>
+                <div class="meta-line">{{ $t('Invoice No.:', 'رقم الفاتورة:') }} <b>#INV-{{ str_pad($due->id, 6, '0', STR_PAD_LEFT) }}</b></div>
+                <div class="meta-line">{{ $t('Issue Date:', 'تاريخ الإصدار:') }} {{ now()->format($dateFormat) }}</div>
+                <div class="meta-line">{{ $t('Due Date:', 'تاريخ الاستحقاق:') }} <b>{{ $due->due_date->format($dateFormat) }}</b></div>
             </div>
         </td>
     </tr>
 </table>
 
 {{-- ══ ITEMS ══ --}}
-<table class="items-table">
+<table class="items">
     <thead>
         <tr>
-            <th style="width:42%;">Description</th>
-            <th style="width:20%;">Period</th>
-            <th style="width:14%;">Units</th>
-            <th class="r" style="width:24%;">Amount</th>
+            <th style="width:44%;">{{ $t('Description', 'الوصف') }}</th>
+            <th style="width:22%;">{{ $t('Period', 'الفترة') }}</th>
+            <th style="width:12%;">{{ $t('Units', 'الوحدات') }}</th>
+            <th class="col-end" style="width:22%;">{{ $t('Amount', 'المبلغ') }}</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td>
-                <div class="desc-title">Owners' Association Dues</div>
+                <div class="item-title">{{ $t("Owners' Association Dues", 'اشتراكات جمعية الملاك') }}</div>
                 @if($associationName)
-                    <div class="desc-sub">{{ $associationName }}</div>
+                    <div class="item-sub">{{ $associationName }}</div>
                 @endif
             </td>
             <td>{{ $due->periodLabel() }}</td>
             <td>
                 {{ $unitCount }}
-                <span style="font-size:10px; color:#94a3b8;">{{ $unitCount === 1 ? 'unit' : 'units' }}</span>
+                <span class="unit-lbl">{{ $t($unitCount === 1 ? 'unit' : 'units', $unitCount === 1 ? 'وحدة' : 'وحدات') }}</span>
             </td>
-            <td class="r">{{ number_format($due->amount, 2) }} {{ $currency }}</td>
+            <td class="col-end">{{ number_format($due->amount, 2) }} {{ $currency }}</td>
         </tr>
     </tbody>
 </table>
@@ -198,54 +228,57 @@
 {{-- ══ TOTALS ══ --}}
 <table class="totals-wrap">
     <tr>
-        <td class="totals-spacer"></td>
+        @if(!$isAr)<td style="width:56%;"></td>@endif
         <td class="totals-box">
             <table class="totals-inner">
                 <tr>
-                    <td class="lbl">Subtotal</td>
+                    <td class="lbl">{{ $t('Subtotal', 'المجموع الفرعي') }}</td>
                     <td class="val">{{ number_format($due->amount, 2) }} {{ $currency }}</td>
                 </tr>
                 <tr>
-                    <td class="lbl">Tax</td>
-                    <td class="val">N/A</td>
+                    <td class="lbl">{{ $t('Tax', 'الضريبة') }}</td>
+                    <td class="val" style="color:#94a3b8; font-weight:normal;">{{ $t('N/A', 'لا ينطبق') }}</td>
                 </tr>
                 <tr class="total-row">
-                    <td class="lbl">Total Due</td>
+                    <td class="lbl">{{ $t('Total Due', 'الإجمالي المستحق') }}</td>
                     <td class="val">{{ number_format($due->amount, 2) }} {{ $currency }}</td>
                 </tr>
             </table>
         </td>
+        @if($isAr)<td style="width:56%;"></td>@endif
     </tr>
 </table>
 
 {{-- ══ NOTES ══ --}}
 <div class="notes">
-    <div class="notes-title">Payment Terms &amp; Notes</div>
+    <div class="notes-title">{{ $t('Payment Terms & Notes', 'شروط الدفع والملاحظات') }}</div>
     <div class="notes-text">
-        Please arrange payment of <b>{{ number_format($due->amount, 2) }} {{ $currency }}</b>
-        before the due date of <b>{{ $due->due_date->format('d M Y') }}</b>
-        to avoid any late charges. For inquiries, please contact the association management office.
+        @if($isAr)
+            يرجى سداد مبلغ <b>{{ number_format($due->amount, 2) }} {{ $currency }}</b>
+            قبل تاريخ الاستحقاق <b>{{ $due->due_date->format($dateFormat) }}</b>
+            لتجنب أي رسوم تأخير. للاستفسار، يرجى التواصل مع مكتب إدارة الجمعية.
+        @else
+            Please arrange payment of <b>{{ number_format($due->amount, 2) }} {{ $currency }}</b>
+            before the due date of <b>{{ $due->due_date->format($dateFormat) }}</b>
+            to avoid any late charges. For inquiries, please contact the association management office.
+        @endif
     </div>
 </div>
 
 {{-- ══ FOOTER ══ --}}
 <div class="footer-bar"></div>
-<table class="footer-table">
+<table class="footer-tbl">
     <tr>
-        <td class="footer-left">Thank you for your cooperation</td>
+        <td class="footer-thanks">{{ $t('Thank you for your cooperation', 'شكراً لتعاونكم') }}</td>
         <td class="footer-right">
-            Official authorized document
+            {{ $t('Official authorized document', 'وثيقة رسمية معتمدة') }}
             &nbsp;&middot;&nbsp;
-            {{ str_replace('_', ' ', ucwords(config('app.name'), '_')) }}
+            {{ $companyName }}
         </td>
     </tr>
 </table>
 
 </div>
-
-{{-- <div class="no-print print-wrap">
-    <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
-</div> --}}
-
+</div>
 </body>
 </html>

@@ -1,11 +1,11 @@
 <x-app-layout>
     @php
         $isAr    = app()->getLocale() === 'ar';
-        $tr      = fn($ar, $en) => $isAr ? $ar : $en;
+        $tr      = fn(string $ar, string $en) => $isAr ? $ar : $en;
         $currency = $isAr ? 'ر.ع' : 'OMR';
         $fmt     = fn($v) => number_format((float)$v, 2);
     @endphp
-    <x-slot name="title">{{ __('Salaries') }} — {{ $salary->employee?->name }}</x-slot>
+    <x-slot name="title">{{ $tr('الرواتب', 'Salaries') }} — {{ $salary->employee?->name }}</x-slot>
 
     <div class="mb-5 flex items-center justify-between">
         <div>
@@ -14,18 +14,16 @@
         </div>
         <div class="flex gap-2">
             <a href="{{ route('manager.salaries.edit', $salary) }}"
-               class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">{{ __('Edit') }}</a>
+               class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">{{ $tr('تعديل', 'Edit') }}</a>
             <a href="{{ route('manager.salaries.index') }}"
-               class="text-sm text-gray-600 border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50">{{ __('Back') }}</a>
+               class="text-sm text-gray-600 border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50">{{ $tr('رجوع', 'Back') }}</a>
         </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-        {{-- Left column: salary breakdown --}}
         <div class="lg:col-span-2 space-y-4">
 
-            {{-- Earnings card --}}
             <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="px-5 py-3 bg-green-50 border-b border-green-100 flex items-center gap-2">
                     <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
@@ -33,7 +31,7 @@
                 </div>
                 <div class="divide-y divide-gray-50">
                     <div class="flex items-center justify-between px-5 py-3 text-sm">
-                        <span class="text-gray-600">{{ __('Base Salary') }}</span>
+                        <span class="text-gray-600">{{ $tr('الراتب الأساسي', 'Base Salary') }}</span>
                         <span class="font-semibold text-gray-800">{{ $fmt($salary->base_salary) }} {{ $currency }}</span>
                     </div>
                     @if((float)$salary->housing_allowance > 0)
@@ -62,14 +60,13 @@
                     @endif
                     @if((float)$salary->bonuses > 0)
                     <div class="flex items-center justify-between px-5 py-3 text-sm">
-                        <span class="text-gray-600">{{ __('Bonuses') }}</span>
+                        <span class="text-gray-600">{{ $tr('المكافآت', 'Bonuses') }}</span>
                         <span class="font-semibold text-emerald-700">{{ $fmt($salary->bonuses) }} {{ $currency }}</span>
                     </div>
                     @endif
                 </div>
             </div>
 
-            {{-- Deductions card --}}
             @if((float)$salary->deductions > 0)
             <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 <div class="px-5 py-3 bg-red-50 border-b border-red-100 flex items-center gap-2">
@@ -77,16 +74,15 @@
                     <h3 class="text-sm font-bold text-red-700">{{ $tr('الاستقطاعات', 'Deductions') }}</h3>
                 </div>
                 <div class="flex items-center justify-between px-5 py-3 text-sm">
-                    <span class="text-gray-600">{{ __('Deductions') }}</span>
+                    <span class="text-gray-600">{{ $tr('الاستقطاعات', 'Deductions') }}</span>
                     <span class="font-semibold text-red-600">{{ $fmt($salary->deductions) }} {{ $currency }}</span>
                 </div>
             </div>
             @endif
 
-            {{-- Net total --}}
             <div class="rounded-xl bg-gradient-to-r from-blue-900 to-indigo-800 text-white px-6 py-5 flex items-center justify-between shadow-lg">
                 <div>
-                    <p class="text-sm text-blue-200">{{ __('Net Paid') }}</p>
+                    <p class="text-sm text-blue-200">{{ $tr('صافي المدفوع', 'Net Paid') }}</p>
                     <p class="text-3xl font-black mt-0.5">{{ $fmt($salary->net_paid) }}</p>
                     <p class="text-xs text-blue-300 mt-0.5">{{ $currency }}</p>
                 </div>
@@ -103,19 +99,16 @@
                 </div>
             </div>
 
-            {{-- Notes --}}
             @if($salary->notes)
             <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{{ __('Notes') }}</p>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{{ $tr('ملاحظات', 'Notes') }}</p>
                 <p class="text-sm text-gray-700 whitespace-pre-line">{{ $salary->notes }}</p>
             </div>
             @endif
         </div>
 
-        {{-- Right column: info & actions --}}
         <div class="space-y-4">
 
-            {{-- Employee info --}}
             <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ $tr('بيانات الموظف', 'Employee Info') }}</p>
                 <div class="flex items-center gap-3 mb-3">
@@ -135,15 +128,14 @@
                 @endif
             </div>
 
-            {{-- Period & payment info --}}
             <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-3">
                 <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ $tr('تفاصيل الراتب', 'Salary Details') }}</p>
                 <div class="flex justify-between text-sm">
-                    <span class="text-gray-500">{{ __('Period') }}</span>
+                    <span class="text-gray-500">{{ $tr('الفترة', 'Period') }}</span>
                     <span class="font-semibold text-gray-800">{{ $salary->periodLabel() }}</span>
                 </div>
                 <div class="flex justify-between text-sm">
-                    <span class="text-gray-500">{{ __('Status') }}</span>
+                    <span class="text-gray-500">{{ $tr('الحالة', 'Status') }}</span>
                     <span class="font-semibold
                         @if($salary->status==='paid') text-green-700
                         @elseif($salary->status==='pending') text-yellow-700
@@ -151,7 +143,7 @@
                 </div>
                 @if($salary->paid_at)
                 <div class="flex justify-between text-sm">
-                    <span class="text-gray-500">{{ __('Paid At') }}</span>
+                    <span class="text-gray-500">{{ $tr('تاريخ الدفع', 'Paid At') }}</span>
                     <span class="font-semibold text-gray-800">{{ $salary->paid_at->format('Y-m-d') }}</span>
                 </div>
                 @endif
@@ -163,15 +155,14 @@
                 @endif
             </div>
 
-            {{-- Actions --}}
             <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-2">
-                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ __('Actions') }}</p>
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{{ $tr('إجراءات', 'Actions') }}</p>
 
                 @if($salary->status !== 'paid')
                 <form method="POST" action="{{ route('manager.salaries.pay', $salary) }}">
                     @csrf @method('PATCH')
                     <button class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                        {{ __('Pay Salary') }}
+                        {{ $tr('صرف الراتب', 'Pay Salary') }}
                     </button>
                 </form>
                 @endif
@@ -183,14 +174,14 @@
 
                 <a href="{{ route('manager.salaries.edit', $salary) }}"
                    class="w-full flex items-center justify-center gap-2 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-4 py-2 rounded-lg text-sm font-medium">
-                    {{ __('Edit') }}
+                    {{ $tr('تعديل', 'Edit') }}
                 </a>
 
                 <form method="POST" action="{{ route('manager.salaries.destroy', $salary) }}"
-                      onsubmit="return confirm('{{ __('Are you sure?') }}')">
+                      onsubmit="return confirm('{{ $tr('هل أنت متأكد؟', 'Are you sure?') }}')">
                     @csrf @method('DELETE')
                     <button class="w-full border border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-medium">
-                        {{ __('Delete') }}
+                        {{ $tr('حذف', 'Delete') }}
                     </button>
                 </form>
             </div>

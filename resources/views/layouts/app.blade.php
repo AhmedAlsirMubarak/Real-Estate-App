@@ -9,6 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
+        /* Prevent horizontal scrolling on small devices */
+        html, body { overflow-x: hidden !important; }
+
         :root {
             --admin-bg-1: #f8fafc;
             --admin-bg-2: #eef2ff;
@@ -63,7 +66,10 @@
             scrollbar-gutter: stable;
             transition: scrollbar-color 0.3s ease;
             scroll-behavior: smooth;
-            overscroll-behavior: contain;
+            /* allow scroll events to bubble to the page when nav can't scroll */
+            overscroll-behavior: auto;
+            -webkit-overflow-scrolling: touch;
+            touch-action: auto;
         }
         #sidebar:hover nav,
         #sidebar nav:focus-within {
@@ -132,7 +138,7 @@
         }
     </style>
 </head>
-<body class="text-gray-900">
+<body class="text-gray-900 overflow-x-hidden">
 @php
     $isAr = app()->getLocale() === 'ar';
     $tr = fn (string $ar, string $en) => $isAr ? $ar : $en;
@@ -161,10 +167,10 @@
 <div class="flex min-h-screen" dir="{{ $isAr ? 'rtl' : 'ltr' }}">
 
     {{-- ===== SIDEBAR ===== --}}
-    <aside id="sidebar"
-           class="text-white flex-shrink-0 flex flex-col fixed top-0 {{ $isAr ? 'right-0 translate-x-full' : 'left-0 -translate-x-full' }} z-30 h-full w-64
-                  lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:flex-shrink-0"
-           style="direction:{{ $isAr ? 'rtl' : 'ltr' }};">
+            <aside id="sidebar"
+                class="text-white flex-shrink-0 flex flex-col fixed inset-y-0 {{ $isAr ? 'right-0 translate-x-full' : 'left-0 -translate-x-full' }} z-30 w-64 pointer-events-none
+                    lg:translate-x-0 lg:sticky lg:top-0 lg:flex-shrink-0 lg:pointer-events-auto"
+                style="direction:{{ $isAr ? 'rtl' : 'ltr' }};">
 
         {{-- Logo --}}
         <div class="flex items-center justify-between px-4 py-4 border-b border-white/10">
@@ -186,7 +192,7 @@
         </div>
 
         {{-- Navigation --}}
-        <nav class="flex-1 py-4 overflow-y-auto">
+        <nav class="flex-1 py-4 overflow-y-auto pointer-events-auto touch-auto">
             @auth
                 @php $user = auth()->user(); @endphp
 
@@ -205,6 +211,12 @@
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-4.356-2.957M17 20H7m10 0v-2c0-.653-.084-1.286-.244-1.89M7 20H2v-2a3 3 0 014.356-2.957M7 20v-2c0-.653.084-1.286.244-1.89m0 0a5.002 5.002 0 019.512 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 2v6m3-3h-6"/></svg>
                         <span class="text-sm font-medium">{{ $tr('إدارة المستخدمين', 'User Management') }}</span>
                     </a>
+                    <a href="{{ route('manager.website.index') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.website.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('محتوى الموقع', 'Website Content') }}</span>
+                    </a>
+
                     <a href="{{ route('manager.contacts.index') }}"
                        class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.contacts.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
@@ -331,10 +343,10 @@
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         <span class="text-sm font-medium">{{ $tr('الاجتماعات', 'Meetings') }}</span>
                     </a>
-                    <a href="{{ route('manager.scheduled-reports.index') }}?section=hoa"
-                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.scheduled-reports.*') && request('section') === 'hoa' ? 'active' : '' }}">
+                    <a href="{{ route('manager.associations.report.create') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.associations.report.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        <span class="text-sm font-medium">{{ $tr('تقارير الجمعية', 'HOA Reports') }}</span>
+                        <span class="text-sm font-medium">{{ $tr('التقرير الشامل', 'Comprehensive Report') }}</span>
                     </a>
 
                     {{-- ===== SECTION 2: BUILDING MANAGEMENT ===== --}}
@@ -357,26 +369,12 @@
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                         <span class="text-sm font-medium">{{ $tr('المصروفات', 'Expenses') }}</span>
                     </a>
-                    <a href="{{ route('manager.reports.index') }}"
-                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.reports.*') ? 'active' : '' }}">
+                    <a href="{{ route('manager.properties.report.create') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.properties.report.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        <span class="text-sm font-medium">{{ $tr('تقارير المباني', 'Property Reports') }}</span>
-                    </a>
-                    <a href="{{ route('manager.scheduled-reports.index') }}?section=management"
-                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.scheduled-reports.*') && request('section') === 'management' ? 'active' : '' }}">
-                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span class="text-sm font-medium">{{ $tr('تقارير مجدولة', 'Scheduled Reports') }}</span>
+                        <span class="text-sm font-medium">{{ $tr('التقرير الشامل', 'Comprehensive Report') }}</span>
                     </a>
 
-                    {{-- ===== SECTION 3: EXTERNAL PROPERTIES ===== --}}
-                    <div class="px-3 mt-4 mb-2">
-                        <p class="text-xs text-yellow-400 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('٣. العقارات الخارجية', '3. External Properties') }}</p>
-                    </div>
-                    <a href="{{ route('manager.properties.index') }}?section=external"
-                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.properties.*') && request('section') === 'external' ? 'active' : '' }}">
-                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                        <span class="text-sm font-medium">{{ $tr('العقارات الخارجية', 'External Properties') }}</span>
-                    </a>
                 @endif
 
                 @if($user->hasRole('employee'))
@@ -521,7 +519,7 @@
 
         {{-- User info + Logout --}}
         @auth
-        <div class="border-t border-white/10 p-4">
+        <div class="mt-auto border-t border-white/10 p-4">
             <div class="flex items-center gap-3 mb-3">
                 <div class="w-9 h-9 rounded-full bg-yellow-400 flex items-center justify-center text-blue-900 font-black text-sm flex-shrink-0">
                     {{ mb_substr($displayUserName(auth()->user()), 0, 1) }}
@@ -673,6 +671,9 @@ function openSidebar() {
     const hiddenClass = document.documentElement.dir === 'rtl' ? 'translate-x-full' : '-translate-x-full';
     sidebar.classList.remove(hiddenClass);
     sidebar.classList.add('translate-x-0');
+    // allow pointer events when visible to enable clicking/scrolling inside the sidebar
+    sidebar.classList.remove('pointer-events-none');
+    sidebar.classList.add('pointer-events-auto');
     overlay.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
 }
@@ -682,6 +683,9 @@ function closeSidebar() {
     const hiddenClass = document.documentElement.dir === 'rtl' ? 'translate-x-full' : '-translate-x-full';
     sidebar.classList.add(hiddenClass);
     sidebar.classList.remove('translate-x-0');
+    // make sidebar ignore pointer events when hidden so it doesn't block page scroll
+    sidebar.classList.add('pointer-events-none');
+    sidebar.classList.remove('pointer-events-auto');
     overlay.classList.add('hidden');
     document.body.style.overflow = '';
 }

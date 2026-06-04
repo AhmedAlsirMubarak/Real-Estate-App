@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
-use App\Models\Association;
 use App\Models\Property;
 use App\Models\ScheduledReport;
 use App\Services\ScheduledReportRunner;
@@ -29,11 +28,10 @@ class ScheduledReportController extends Controller
 
     public function create(Request $request)
     {
-        $section     = $request->input('section', ScheduledReport::SECTION_MANAGEMENT);
-        $properties  = Property::orderBy('name_ar')->get();
-        $associations = Association::with('property')->orderBy('name_ar')->get();
+        $section    = ScheduledReport::SECTION_MANAGEMENT;
+        $properties = Property::orderBy('name_ar')->get();
 
-        return view('manager.scheduled-reports.create', compact('section', 'properties', 'associations'));
+        return view('manager.scheduled-reports.create', compact('section', 'properties'));
     }
 
     public function store(Request $request)
@@ -54,14 +52,12 @@ class ScheduledReportController extends Controller
 
     public function edit(ScheduledReport $scheduledReport)
     {
-        $properties   = Property::orderBy('name_ar')->get();
-        $associations = Association::with('property')->orderBy('name_ar')->get();
+        $properties = Property::orderBy('name_ar')->get();
 
         return view('manager.scheduled-reports.edit', [
-            'report'       => $scheduledReport,
-            'section'      => $scheduledReport->section,
-            'properties'   => $properties,
-            'associations' => $associations,
+            'report'     => $scheduledReport,
+            'section'    => ScheduledReport::SECTION_MANAGEMENT,
+            'properties' => $properties,
         ]);
     }
 
@@ -93,13 +89,20 @@ class ScheduledReportController extends Controller
             ->with('success', 'تم توليد التقرير. الملف: ' . basename($run->file_path));
     }
 
-    public function download(\App\Models\ScheduledReportRun $run)
+    public function download(\App\Models\ScheduledReportRun $run, Request $request)
     {
         abort_unless($run->file_path && Storage::disk('local')->exists($run->file_path), 404);
 
         $absolute = Storage::disk('local')->path($run->file_path);
         $name     = 'hoa-report-' . $run->scheduled_report_id
                     . '-' . ($run->period_start?->format('Y-m') ?? 'period') . '.pdf';
+
+        if ($request->boolean('preview')) {
+            return response()->file($absolute, [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $name . '"',
+            ]);
+        }
 
         return response()->download($absolute, $name, ['Content-Type' => 'application/pdf']);
     }

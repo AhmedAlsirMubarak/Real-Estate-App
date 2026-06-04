@@ -145,6 +145,9 @@ class AssociationController extends Controller
             'lessor_name'  => 'required|string|max:255',
             'lessor_phone' => 'required|string|max:30',
             'lessor_id'    => 'required|string|max:50',
+            'lessee_name'  => 'required|string|max:255',
+            'lessee_id'    => 'required|string|max:50',
+            'unit_number'  => 'nullable|string|max:50',
         ]);
 
         $association->load(['property', 'property.owners.user']);
@@ -312,6 +315,9 @@ class AssociationController extends Controller
     public function noSalePdf(Request $request, Association $association)
     {
         $validated = $request->validate([
+            'seller_name' => 'required|string|max:255',
+            'seller_id'   => 'required|string|max:50',
+            'unit_number' => 'nullable|string|max:50',
             'buyer_name'  => 'required|string|max:255',
             'buyer_phone' => 'required|string|max:30',
             'buyer_id'    => 'required|string|max:50',
@@ -331,11 +337,24 @@ class AssociationController extends Controller
 
         $uploadedLabels = array_keys(array_filter($docMap));
 
+        $seller = [
+            'seller_name' => $validated['seller_name'],
+            'seller_id'   => $validated['seller_id'],
+            'unit_number' => $validated['unit_number'] ?? '',
+        ];
+
+        $buyer = [
+            'buyer_name'  => $validated['buyer_name'],
+            'buyer_phone' => $validated['buyer_phone'],
+            'buyer_id'    => $validated['buyer_id'],
+        ];
+
         $prevLocale = app()->getLocale();
         app()->setLocale('ar');
         $html = view('manager.associations.no-objection-sale-pdf', [
             'association'    => $association,
-            'buyer'          => $validated,
+            'seller'         => $seller,
+            'buyer'          => $buyer,
             'refNumber'      => $refNumber,
             'documentLabels' => $uploadedLabels,
         ])->render();
@@ -431,6 +450,9 @@ class AssociationController extends Controller
             'association_id' => $association->id,
             'generated_by'   => $request->user()?->id,
             'ref_number'     => $refNumber,
+            'seller_name'    => $validated['seller_name'],
+            'seller_id'      => $validated['seller_id'],
+            'unit_number'    => $validated['unit_number'] ?? null,
             'buyer_name'     => $validated['buyer_name'],
             'buyer_phone'    => $validated['buyer_phone'],
             'buyer_id'       => $validated['buyer_id'],
@@ -459,6 +481,42 @@ class AssociationController extends Controller
         }
 
         return response()->download($abs, $filename, ['Content-Type' => 'application/pdf']);
+    }
+
+    public function deleteNoc(NoObjectionCertificate $noc)
+    {
+        $associationId = $noc->association_id;
+
+        if ($noc->file_path) {
+            $abs = storage_path('app/' . $noc->file_path);
+            if (file_exists($abs)) {
+                @unlink($abs);
+            }
+        }
+
+        $noc->delete();
+
+        return redirect()
+            ->route('manager.associations.show', $associationId)
+            ->with('success', __('Certificate deleted'));
+    }
+
+    public function deleteNocSale(NoObjectionSaleCertificate $noc)
+    {
+        $associationId = $noc->association_id;
+
+        if ($noc->file_path) {
+            $abs = storage_path('app/' . $noc->file_path);
+            if (file_exists($abs)) {
+                @unlink($abs);
+            }
+        }
+
+        $noc->delete();
+
+        return redirect()
+            ->route('manager.associations.show', $associationId)
+            ->with('success', __('Certificate deleted'));
     }
 
     private function handleDocumentUploads(Request $request, Association $association): void

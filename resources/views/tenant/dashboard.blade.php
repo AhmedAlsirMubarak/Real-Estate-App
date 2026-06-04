@@ -43,13 +43,13 @@
         @if($contract)
         <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl shadow p-6 mb-6">
             <h3 class="font-bold text-lg mb-4">{{ $tr('عقد الإيجار النشط', 'Active Rental Contract') }}</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <div><p class="text-blue-200 text-xs mb-1">{{ $tr('العقار', 'Property') }}</p><p class="font-semibold">{{ $contract->unit->property->name ?? '-' }}</p></div>
                 <div><p class="text-blue-200 text-xs mb-1">{{ $tr('رقم الوحدة', 'Unit Number') }}</p><p class="font-semibold">{{ $contract->unit->unit_number ?? '-' }}</p></div>
+                <div><p class="text-blue-200 text-xs mb-1">{{ $tr('نوع الوحدة', 'Unit Type') }}</p><p class="font-semibold">{{ ['apartment' => $tr('شقة', 'Apartment'), 'shop' => $tr('محل', 'Shop'), 'office' => $tr('مكتب', 'Office')] [$contract->unit->type ?? ''] ?? '-' }}</p></div>
                 <div><p class="text-blue-200 text-xs mb-1">{{ $tr('تاريخ البدء', 'Start Date') }}</p><p class="font-semibold">{{ $contract->start_date ? $contract->start_date->format('Y/m/d') : '-' }}</p></div>
                 <div><p class="text-blue-200 text-xs mb-1">{{ $tr('تاريخ الانتهاء', 'End Date') }}</p><p class="font-semibold">{{ $contract->end_date ? $contract->end_date->format('Y/m/d') : '-' }}</p></div>
                 <div><p class="text-blue-200 text-xs mb-1">{{ $tr('الإيجار الشهري', 'Monthly Rent') }}</p><p class="font-bold text-yellow-300 text-lg">{{ number_format($contract->monthly_rent) }} {{ $currency }}</p></div>
-                <div><p class="text-blue-200 text-xs mb-1">{{ $tr('نوع الوحدة', 'Unit Type') }}</p><p class="font-semibold">{{ ['apartment' => $tr('شقة', 'Apartment'), 'shop' => $tr('محل', 'Shop'), 'office' => $tr('مكتب', 'Office')] [$contract->unit->type ?? ''] ?? '-' }}</p></div>
             </div>
         </div>
         @else

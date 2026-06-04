@@ -4,7 +4,7 @@
     <h2 class="text-xl font-bold text-gray-800 mb-5">{{ __('My Meetings') }}</h2>
 
     <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        <table class="w-full text-sm">
+        <div class="overflow-x-auto"><table class="w-full text-sm">
             <thead class="bg-gray-50 text-xs text-gray-600 uppercase">
                 <tr>
                     <th class="px-4 py-3 text-right">{{ __('Title') }}</th>
@@ -27,7 +27,7 @@
             <tr><td colspan="5" class="py-10 text-center text-gray-400">{{ __('No data available') }}</td></tr>
             @endforelse
             </tbody>
-        </table>
+        </table></div>
         <div class="p-3 border-t border-gray-100">{{ $meetings->links() }}</div>
     </div>
 </x-app-layout>

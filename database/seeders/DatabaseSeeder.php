@@ -221,6 +221,8 @@ class DatabaseSeeder extends Seeder
         // ------- Salaries (last 2 months)
         $this->seedSalaries($manager, $accountant, $employee1, $employee2);
 
+        $this->call(WebsiteSeeder::class);
+
         $this->command->info('✅ تم إنشاء البيانات التجريبية الجديدة');
         $this->command->info('👤 Manager:    manager@tharwa.com');
         $this->command->info('👤 Employee:   employee1@tharwa.com');

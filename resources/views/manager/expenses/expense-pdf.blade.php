@@ -7,11 +7,14 @@
     @page { margin: 14mm 12mm 14mm 12mm; }
     body  { font-family: dejavusans, sans-serif; font-size: 8.5pt; color: #1e293b; direction: rtl; margin:0; padding:0; }
 
-    .hdr      { background:#7f1d1d; color:#fff; padding:14px 18px 12px; margin-bottom:12px; }
-    .hdr-tbl  { width:100%; border-collapse:collapse; }
-    .hdr-title{ font-size:15pt; font-weight:bold; margin:0 0 3px; }
-    .hdr-sub  { font-size:8.5pt; color:#fecaca; margin:0; }
-    .hdr-right{ font-size:8.5pt; color:#fecaca; text-align:left; vertical-align:top; white-space:nowrap; }
+    .hdr       { background:#fff; border-bottom:3px solid #7f1d1d; padding:14px 18px 12px; margin-bottom:14px; }
+    .hdr-tbl   { width:100%; border-collapse:collapse; }
+    .hdr-logo  { max-height:50px; max-width:70px; }
+    .hdr-title { font-size:15pt; font-weight:bold; color:#1e293b; margin:0 0 3px; }
+    .hdr-sub   { font-size:8.5pt; color:#64748b; margin:0; }
+    .hdr-right { font-size:8.5pt; color:#475569; text-align:left; vertical-align:middle; white-space:nowrap; }
+    .hdr-co    { font-size:9.5pt; font-weight:bold; color:#1e293b; margin-bottom:3px; }
+    .hdr-date  { font-size:7.5pt; color:#94a3b8; }
 
     .sec { font-size:11pt; font-weight:bold; color:#7f1d1d; border-bottom:2px solid #7f1d1d; padding-bottom:3px; margin:13px 0 8px; }
 
@@ -45,7 +48,11 @@
     .bold { font-weight:bold; }
     .sm   { font-size:7.5pt; }
 
-    .footer { margin-top:18px; text-align:center; font-size:7.5pt; color:#9ca3af; border-top:1px solid #e2e8f0; padding-top:8px; }
+    .footer     { margin-top:18px; border-top:1px solid #e2e8f0; padding-top:8px; }
+    .footer-tbl { width:100%; border-collapse:collapse; }
+    .footer-co  { font-size:8pt; font-weight:bold; color:#7f1d1d; }
+    .footer-txt { font-size:7pt; color:#9ca3af; margin-top:2px; }
+    .footer-logo{ max-height:26px; max-width:46px; opacity:.55; }
 </style>
 </head>
 <body>
@@ -64,7 +71,7 @@
 <div class="hdr">
     <table class="hdr-tbl">
         <tr>
-            <td>
+            <td style="vertical-align:middle; width:62%;">
                 <p class="hdr-title">تقرير المصروفات التفصيلي</p>
                 <p class="hdr-sub">
                     الفترة: {{ $periodLabel }}
@@ -74,8 +81,11 @@
                 </p>
             </td>
             <td class="hdr-right">
-                <div>شركة ثروة للعقارات</div>
-                <div style="margin-top:3px;">{{ now()->format('Y/m/d H:i') }}</div>
+                @if(file_exists(public_path('img/logo.png')))
+                <img src="{{ public_path('img/logo.png') }}" class="hdr-logo"><br>
+                @endif
+                <div class="hdr-co" style="margin-top:4px;">شركة ثروة للعقارات</div>
+                <div class="hdr-date">{{ now()->format('Y/m/d H:i') }}</div>
             </td>
         </tr>
     </table>
@@ -150,8 +160,12 @@
             <td class="neg bold">{{ $fmt($e->amount) }}</td>
             <td class="sm muted">{{ $e->paidByUser?->name ?? '—' }}</td>
             <td class="sm">
-                @if($e->receipt_path)
-                <span style="color:#1d4ed8;">✓ مرفقة</span>
+                @php
+                    $invCount = ($e->relationLoaded('invoices') ? $e->invoices->count() : 0)
+                              + ($e->receipt_path ? 1 : 0);
+                @endphp
+                @if($invCount > 0)
+                <span style="color:#1d4ed8;">✓ {{ $invCount }}</span>
                 @else
                 <span class="muted">—</span>
                 @endif
@@ -204,8 +218,19 @@
 @endif
 
 <div class="footer">
-    شركة ثروة للعقارات &mdash; تقرير المصروفات &mdash; الفترة: {{ $periodLabel }}
-    &mdash; تم التوليد في {{ now()->format('Y/m/d H:i') }}
+    <table class="footer-tbl">
+        <tr>
+            <td>
+                <div class="footer-co">شركة ثروة للعقارات</div>
+                <div class="footer-txt">تقرير المصروفات &mdash; الفترة: {{ $periodLabel }} &mdash; تم التوليد: {{ now()->format('Y/m/d H:i') }}</div>
+            </td>
+            @if(file_exists(public_path('img/logo.png')))
+            <td style="text-align:left; vertical-align:middle; width:56px;">
+                <img src="{{ public_path('img/logo.png') }}" class="footer-logo">
+            </td>
+            @endif
+        </tr>
+    </table>
 </div>
 </body>
 </html>

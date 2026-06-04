@@ -1,35 +1,39 @@
 <x-app-layout>
-    <x-slot name="title">{{ __('Company Assets') }}</x-slot>
+    @php
+        $isAr = app()->getLocale() === 'ar';
+        $tr   = fn(string $ar, string $en) => $isAr ? $ar : $en;
+    @endphp
+    <x-slot name="title">{{ $tr('أصول الشركة', 'Company Assets') }}</x-slot>
 
     <div class="mb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
-            <h2 class="text-xl font-bold text-gray-800">{{ __('Company Assets') }}</h2>
-            <p class="text-sm text-gray-500 mt-0.5">{{ $assets->total() }} {{ __('Total') }}</p>
+            <h2 class="text-xl font-bold text-gray-800">{{ $tr('أصول الشركة', 'Company Assets') }}</h2>
+            <p class="text-sm text-gray-500 mt-0.5">{{ $assets->total() }} {{ $tr('إجمالي', 'Total') }}</p>
         </div>
-        <a href="{{ route('manager.assets.create') }}" class="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm font-medium">{{ __('Add') }}</a>
+        <a href="{{ route('manager.assets.create') }}" class="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm font-medium">{{ $tr('إضافة', 'Add') }}</a>
     </div>
 
     <form method="GET" class="bg-white rounded-xl border border-gray-100 p-4 mb-5 grid grid-cols-1 md:grid-cols-4 gap-3">
         <select name="category" class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
-            <option value="">{{ __('Category') }}</option>
-            <option value="laptop"           @selected(request('category')==='laptop')>{{ __('Laptops') }}</option>
-            <option value="mobile"           @selected(request('category')==='mobile')>{{ __('Mobiles') }}</option>
-            <option value="office_equipment" @selected(request('category')==='office_equipment')>{{ __('Office Equipment') }}</option>
+            <option value="">{{ $tr('الفئة', 'Category') }}</option>
+            <option value="laptop"           @selected(request('category')==='laptop')>{{ $tr('أجهزة كمبيوتر محمول', 'Laptops') }}</option>
+            <option value="mobile"           @selected(request('category')==='mobile')>{{ $tr('هواتف', 'Mobiles') }}</option>
+            <option value="office_equipment" @selected(request('category')==='office_equipment')>{{ $tr('معدات مكتبية', 'Office Equipment') }}</option>
         </select>
         <select name="status" class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
-            <option value="">{{ __('Status') }}</option>
-            <option value="available"    @selected(request('status')==='available')>{{ __('Available') }}</option>
-            <option value="assigned"     @selected(request('status')==='assigned')>{{ __('Assigned') }}</option>
-            <option value="under_repair" @selected(request('status')==='under_repair')>{{ __('Under Repair') }}</option>
-            <option value="retired"      @selected(request('status')==='retired')>{{ __('Retired') }}</option>
+            <option value="">{{ $tr('الحالة', 'Status') }}</option>
+            <option value="available"    @selected(request('status')==='available')>{{ $tr('متاح', 'Available') }}</option>
+            <option value="assigned"     @selected(request('status')==='assigned')>{{ $tr('مخصص', 'Assigned') }}</option>
+            <option value="under_repair" @selected(request('status')==='under_repair')>{{ $tr('تحت الإصلاح', 'Under Repair') }}</option>
+            <option value="retired"      @selected(request('status')==='retired')>{{ $tr('متقاعد', 'Retired') }}</option>
         </select>
         <select name="assigned_to" class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
-            <option value="">{{ __('Employees') }}</option>
+            <option value="">{{ $tr('الموظفون', 'Employees') }}</option>
             @foreach($employees as $emp)
             <option value="{{ $emp->id }}" @selected(request('assigned_to')==$emp->id)>{{ $emp->name }}</option>
             @endforeach
         </select>
-        <button class="bg-blue-900 text-white px-4 py-2 rounded-lg text-sm">{{ __('Search') }}</button>
+        <button class="bg-blue-900 text-white px-4 py-2 rounded-lg text-sm">{{ $tr('بحث', 'Search') }}</button>
     </form>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -37,14 +41,14 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-600 text-xs uppercase">
                     <tr>
-                        <th class="px-4 py-3 text-right">{{ __('Name') }}</th>
-                        <th class="px-4 py-3 text-right">{{ __('Serial') }}</th>
-                        <th class="px-4 py-3 text-right">{{ __('Category') }}</th>
-                        <th class="px-4 py-3 text-right">{{ __('Assigned To') }}</th>
-                        <th class="px-4 py-3 text-right">{{ __('Purchase Date') }}</th>
-                        <th class="px-4 py-3 text-right">{{ __('Price') }}</th>
-                        <th class="px-4 py-3 text-right">{{ __('Status') }}</th>
-                        <th class="px-4 py-3 text-right">{{ __('Actions') }}</th>
+                        <th class="px-4 py-3 text-right">{{ $tr('الاسم', 'Name') }}</th>
+                        <th class="px-4 py-3 text-right">{{ $tr('الرقم التسلسلي', 'Serial') }}</th>
+                        <th class="px-4 py-3 text-right">{{ $tr('الفئة', 'Category') }}</th>
+                        <th class="px-4 py-3 text-right">{{ $tr('مخصص لـ', 'Assigned To') }}</th>
+                        <th class="px-4 py-3 text-right">{{ $tr('تاريخ الشراء', 'Purchase Date') }}</th>
+                        <th class="px-4 py-3 text-right">{{ $tr('السعر', 'Price') }}</th>
+                        <th class="px-4 py-3 text-right">{{ $tr('الحالة', 'Status') }}</th>
+                        <th class="px-4 py-3 text-right">{{ $tr('إجراءات', 'Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -67,16 +71,16 @@
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex gap-2 flex-wrap">
-                                <a href="{{ route('manager.assets.edit', $a) }}" class="text-indigo-600 hover:text-indigo-800 text-xs">{{ __('Edit') }}</a>
-                                <form method="POST" action="{{ route('manager.assets.destroy', $a) }}" onsubmit="return confirm('{{ __('Are you sure?') }}')">
+                                <a href="{{ route('manager.assets.edit', $a) }}" class="text-indigo-600 hover:text-indigo-800 text-xs">{{ $tr('تعديل', 'Edit') }}</a>
+                                <form method="POST" action="{{ route('manager.assets.destroy', $a) }}" onsubmit="return confirm('{{ $tr('هل أنت متأكد؟', 'Are you sure?') }}')">
                                     @csrf @method('DELETE')
-                                    <button class="text-red-600 hover:text-red-800 text-xs">{{ __('Delete') }}</button>
+                                    <button class="text-red-600 hover:text-red-800 text-xs">{{ $tr('حذف', 'Delete') }}</button>
                                 </form>
                             </div>
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="8" class="py-10 text-center text-gray-400">{{ __('No data available') }}</td></tr>
+                    <tr><td colspan="8" class="py-10 text-center text-gray-400">{{ $tr('لا توجد بيانات', 'No data available') }}</td></tr>
                     @endforelse
                 </tbody>
             </table>

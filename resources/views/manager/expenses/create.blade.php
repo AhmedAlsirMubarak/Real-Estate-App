@@ -45,12 +45,15 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الفئة', 'Category') }} <span class="text-red-500">*</span></label>
                     <select name="category" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                        <option value="utilities" @selected(old('category')==='utilities')>{{ $tr('مرافق (كهرباء، ماء، إنترنت)', 'Utilities (electricity, water, internet)') }}</option>
-                        <option value="maintenance" @selected(old('category')==='maintenance')>{{ $tr('صيانة دورية', 'Maintenance') }}</option>
-                        <option value="salaries" @selected(old('category')==='salaries')>{{ $tr('رواتب', 'Salaries') }}</option>
-                        <option value="marketing" @selected(old('category')==='marketing')>{{ $tr('تسويق وإعلانات', 'Marketing & Ads') }}</option>
-                        <option value="repairs" @selected(old('category')==='repairs')>{{ $tr('إصلاحات', 'Repairs') }}</option>
-                        <option value="other" @selected(old('category')==='other')>{{ $tr('أخرى', 'Other') }}</option>
+                        <option value="utilities"    @selected(old('category')==='utilities')>{{ $tr('مرافق (كهرباء، ماء، إنترنت)', 'Utilities') }}</option>
+                        <option value="maintenance"  @selected(old('category')==='maintenance')>{{ $tr('صيانة دورية', 'Maintenance') }}</option>
+                        <option value="salaries"     @selected(old('category')==='salaries')>{{ $tr('رواتب', 'Salaries') }}</option>
+                        <option value="marketing"    @selected(old('category')==='marketing')>{{ $tr('تسويق وإعلانات', 'Marketing & Ads') }}</option>
+                        <option value="taxes"        @selected(old('category')==='taxes')>{{ $tr('ضرائب ورسوم', 'Taxes & Fees') }}</option>
+                        <option value="supplies"     @selected(old('category')==='supplies')>{{ $tr('مستلزمات', 'Supplies') }}</option>
+                        <option value="insurance"    @selected(old('category')==='insurance')>{{ $tr('تأمين', 'Insurance') }}</option>
+                        <option value="legal"        @selected(old('category')==='legal')>{{ $tr('قانوني', 'Legal') }}</option>
+                        <option value="other"        @selected(old('category')==='other')>{{ $tr('أخرى', 'Other') }}</option>
                     </select>
                 </div>
 
@@ -102,24 +105,35 @@
                 </div>
             </div>
 
-            {{-- Invoice PDF --}}
-            <div x-data="{ fileName: '' }">
+            {{-- Invoice PDFs --}}
+            <div x-data="{ files: [] }">
                 <label class="block text-sm font-medium text-gray-700 mb-1">
-                    {{ $tr('فاتورة PDF', 'Invoice PDF') }}
-                    <span class="text-gray-400 font-normal text-xs">{{ $tr('(اختياري — حتى 10 ميجا)', '(optional — max 10 MB)') }}</span>
+                    {{ $tr('فواتير PDF', 'Invoice PDFs') }}
+                    <span class="text-gray-400 font-normal text-xs">{{ $tr('(اختياري — يمكن رفع أكثر من فاتورة)', '(optional — multiple files allowed)') }}</span>
                 </label>
-                @error('invoice') <p class="text-red-500 text-xs mb-1">{{ $message }}</p> @enderror
+                @error('invoices.*') <p class="text-red-500 text-xs mb-1">{{ $message }}</p> @enderror
                 <label class="flex items-center gap-3 border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-gray-50 rounded-xl px-4 py-4 cursor-pointer transition">
                     <svg class="w-8 h-8 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm text-gray-600" x-text="fileName || '{{ $tr('انقر لإرفاق فاتورة PDF', 'Click to attach a PDF invoice') }}'"></p>
-                        <p class="text-xs text-gray-400 mt-0.5">PDF — {{ $tr('بحد أقصى 10 ميجابايت', 'max 10 MB') }}</p>
+                        <p class="text-sm text-gray-600">
+                            <span x-show="files.length === 0">{{ $tr('انقر لإرفاق فواتير PDF', 'Click to attach PDF invoices') }}</span>
+                            <span x-show="files.length > 0" x-text="files.length + ' {{ $tr('ملف محدد', 'file(s) selected') }}'"></span>
+                        </p>
+                        <p class="text-xs text-gray-400 mt-0.5">PDF — {{ $tr('بحد أقصى 10 ميجابايت لكل ملف', 'max 10 MB per file') }}</p>
                     </div>
-                    <input type="file" name="invoice" accept="application/pdf,.pdf" class="hidden"
-                           @change="fileName = $event.target.files[0]?.name || ''">
+                    <input type="file" name="invoices[]" accept="application/pdf,.pdf" multiple class="hidden"
+                           @change="files = Array.from($event.target.files)">
                 </label>
+                <ul x-show="files.length > 0" class="mt-2 space-y-1">
+                    <template x-for="f in files" :key="f.name">
+                        <li class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded px-3 py-1.5">
+                            <svg class="w-3.5 h-3.5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <span x-text="f.name"></span>
+                        </li>
+                    </template>
+                </ul>
             </div>
 
             <div class="flex gap-2 pt-2">

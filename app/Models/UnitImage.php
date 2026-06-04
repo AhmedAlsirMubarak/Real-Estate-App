@@ -3,8 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
-
 class UnitImage extends Model
 {
     protected $fillable = ['unit_id', 'path', 'is_primary', 'sort_order'];
@@ -18,7 +16,7 @@ class UnitImage extends Model
 
     public function url(): string
     {
-        if (!$this->path) return '';
-        return Storage::disk('public')->url($this->path);
+        if (blank($this->path)) return '';
+        return asset('storage/' . $this->path);
     }
 }

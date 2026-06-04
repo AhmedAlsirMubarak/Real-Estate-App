@@ -2,12 +2,10 @@
     $isAr = app()->getLocale() === 'ar';
     $tr = fn (string $ar, string $en) => $isAr ? $ar : $en;
     $report = $report ?? null;
-    $sectionValue = old('section', $report->section ?? $section ?? 'management');
-    $defaults = $sectionValue === 'hoa'
-        ? \App\Models\ScheduledReport::DEFAULT_PERIODS_HOA
-        : \App\Models\ScheduledReport::DEFAULT_PERIODS_MANAGEMENT;
-    $periodValue = old('period_months', $report->period_months ?? $defaults[0]);
+    $sectionValue = 'management';
+    $periodValue = old('period_months', $report->period_months ?? \App\Models\ScheduledReport::DEFAULT_PERIODS_MANAGEMENT[0]);
 @endphp
+<input type="hidden" name="section" value="management">
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div class="md:col-span-2">
@@ -18,11 +16,11 @@
     </div>
 
     <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('القسم', 'Section') }} <span class="text-red-500">*</span></label>
-        <select name="section" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" onchange="syncDefaults(this.value)">
-            <option value="management" @selected($sectionValue === 'management')>{{ $tr('إدارة المباني', 'Building Management') }}</option>
-            <option value="hoa" @selected($sectionValue === 'hoa')>{{ $tr('جمعية الملاك', 'Owners Association') }}</option>
-        </select>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('القسم', 'Section') }}</label>
+        <p class="text-sm text-gray-500 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+            {{ $tr('إدارة المباني', 'Building Management') }}
+            <span class="text-xs text-gray-400 ms-2">{{ $tr('— تقارير جمعية الملاك متاحة من التقرير الشامل', '— HOA reports available via Comprehensive Report') }}</span>
+        </p>
     </div>
 
     <div>
@@ -47,27 +45,12 @@
     </div>
 
     <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('جمعية محددة (للجمعيات فقط)', 'Specific Association (HOA only)') }}</label>
-        <select name="association_id" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
-            <option value="">{{ $tr('— كل الجمعيات —', '— All associations —') }}</option>
-            @foreach($associations as $a)
-                <option value="{{ $a->id }}" @selected(old('association_id', $report->association_id ?? null) == $a->id)>
-                    {{ $a->name }} — {{ $a->property?->name }}
-                </option>
-            @endforeach
-        </select>
-    </div>
-
-    <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الفترة (بالأشهر)', 'Period (months)') }} <span class="text-red-500">*</span></label>
         <div class="flex items-center gap-2">
             <select id="periodPreset" class="border border-gray-200 rounded-lg px-3 py-2 text-sm" onchange="onPresetChange(this.value)">
                 <option value="">{{ $tr('قيمة مخصصة', 'Custom') }}</option>
                 @foreach(\App\Models\ScheduledReport::DEFAULT_PERIODS_MANAGEMENT as $p)
-                    <option value="{{ $p }}" data-section="management" @selected($sectionValue==='management' && (int)$periodValue===$p)>{{ $p }} {{ $tr('شهر', 'mo.') }} (BM)</option>
-                @endforeach
-                @foreach(\App\Models\ScheduledReport::DEFAULT_PERIODS_HOA as $p)
-                    <option value="{{ $p }}" data-section="hoa" @selected($sectionValue==='hoa' && (int)$periodValue===$p)>{{ $p }} {{ $tr('شهر', 'mo.') }} (HOA)</option>
+                    <option value="{{ $p }}" @selected((int)$periodValue===$p)>{{ $p }} {{ $tr('شهر', 'mo.') }}</option>
                 @endforeach
             </select>
             <input type="number" name="period_months" min="1" max="60"
@@ -91,13 +74,7 @@
 </div>
 
 <script>
-function syncDefaults(section) {
-    document.querySelectorAll('#periodPreset option[data-section]').forEach(o => {
-        o.style.display = o.dataset.section === section ? '' : 'none';
-    });
-}
 function onPresetChange(val) {
     if (val) document.querySelector('input[name=period_months]').value = val;
 }
-syncDefaults('{{ $sectionValue }}');
 </script>

@@ -8,11 +8,15 @@
     body  { font-family: dejavusans, sans-serif; font-size: 9pt; color: #1e293b; direction: rtl; margin:0; padding:0; }
 
     /* ── Header ── */
-    .hdr      { background:#1e3a8a; color:#fff; padding:16px 20px 13px; margin-bottom:14px; }
-    .hdr-tbl  { width:100%; border-collapse:collapse; }
-    .hdr-title{ font-size:16pt; font-weight:bold; margin:0 0 3px; }
-    .hdr-sub  { font-size:8.5pt; color:#bfdbfe; margin:0; }
-    .hdr-right{ font-size:8.5pt; color:#bfdbfe; text-align:left; vertical-align:top; white-space:nowrap; }
+    .hdr         { background:#fff; padding:0; margin-bottom:16px; border-bottom:3px solid #1e3a8a; }
+    .hdr-top     { padding:14px 18px 12px; }
+    .hdr-tbl     { width:100%; border-collapse:collapse; }
+    .hdr-logo    { max-height:52px; max-width:72px; }
+    .hdr-title   { font-size:15pt; font-weight:bold; color:#1e293b; margin:0 0 3px; }
+    .hdr-sub     { font-size:8pt; color:#64748b; margin:0; }
+    .hdr-right   { font-size:8pt; color:#475569; text-align:left; vertical-align:middle; white-space:nowrap; }
+    .hdr-co      { font-size:9.5pt; font-weight:bold; color:#1e293b; margin-bottom:3px; }
+    .hdr-date    { font-size:7.5pt; color:#94a3b8; }
 
     /* ── Section / Block titles ── */
     .sec      { font-size:11pt; font-weight:bold; color:#1e3a8a; border-bottom:2px solid #1e3a8a; padding-bottom:3px; margin:14px 0 9px; }
@@ -72,7 +76,11 @@
     .sep  { border-top:3px dashed #cbd5e1; margin:16px 0; }
 
     /* ── Footer ── */
-    .footer { margin-top:20px; text-align:center; font-size:7.5pt; color:#9ca3af; border-top:1px solid #e2e8f0; padding-top:8px; }
+    .footer     { margin-top:20px; border-top:1px solid #e2e8f0; padding-top:8px; }
+    .footer-tbl { width:100%; border-collapse:collapse; }
+    .footer-co  { font-size:8pt; font-weight:bold; color:#1e3a8a; }
+    .footer-txt { font-size:7pt; color:#9ca3af; margin-top:2px; }
+    .footer-pg  { font-size:7.5pt; color:#94a3b8; text-align:left; }
 </style>
 </head>
 <body>
@@ -81,18 +89,25 @@
      HEADER
 ══════════════════════════════════════════════ --}}
 <div class="hdr">
-    <table class="hdr-tbl">
-        <tr>
-            <td>
-                <p class="hdr-title">{{ $report->name }}</p>
-                <p class="hdr-sub">{{ $report->section === 'hoa' ? 'جمعية الملاك' : 'إدارة المباني' }} &mdash; تقرير دوري</p>
-            </td>
-            <td class="hdr-right">
-                <div>شركة ثروة للعقارات</div>
-                <div style="margin-top:3px;">{{ now()->format('Y/m/d H:i') }}</div>
-            </td>
-        </tr>
-    </table>
+    <div class="hdr-top">
+        <table class="hdr-tbl">
+            <tr>
+                <td style="vertical-align:middle;">
+                    @if(file_exists(public_path('img/logo.png')))
+                    <img src="{{ public_path('img/logo.png') }}" class="hdr-logo">
+                    @endif
+                </td>
+                <td style="padding-right:14px; vertical-align:middle;">
+                    <p class="hdr-title">{{ $report->name }}</p>
+                    <p class="hdr-sub">{{ $report->section === 'hoa' ? 'جمعية الملاك' : 'إدارة المباني' }} &mdash; تقرير دوري</p>
+                </td>
+                <td class="hdr-right">
+                    <div class="hdr-co">شركة ثروة للعقارات</div>
+                    <div class="hdr-date">{{ now()->format('Y/m/d H:i') }}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
 </div>
 
 {{-- ══════════════════════════════════════════════

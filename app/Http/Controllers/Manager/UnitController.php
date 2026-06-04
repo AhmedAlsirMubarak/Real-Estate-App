@@ -6,11 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Property;
 use App\Models\Unit;
 use App\Models\UnitImage;
+use App\Traits\StoresUploadedFiles;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class UnitController extends Controller
 {
+    use StoresUploadedFiles;
     public function create(Property $property)
     {
         return view('manager.units.create', compact('property'));
@@ -31,14 +32,15 @@ class UnitController extends Controller
     {
         $request->validate(['images' => 'required', 'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048']);
 
-        $isFirst = $unit->images()->count() === 0;
+        $existingCount = $unit->images()->count();
+        $isFirst = $existingCount === 0;
         foreach ($request->file('images') as $i => $file) {
             $path = $this->storeUploadedFile($file, 'units/' . $unit->id);
             if (!$path) continue;
             $unit->images()->create([
                 'path'       => $path,
                 'is_primary' => $isFirst && $i === 0,
-                'sort_order' => $unit->images()->count(),
+                'sort_order' => $existingCount + $i,
             ]);
         }
 
@@ -47,7 +49,10 @@ class UnitController extends Controller
 
     public function destroyImage(Property $property, Unit $unit, UnitImage $image)
     {
-        Storage::disk('public')->delete($image->path);
+        $file = public_path('storage' . DIRECTORY_SEPARATOR . $image->path);
+        if (file_exists($file)) {
+            @unlink($file);
+        }
         $wasPrimary = $image->is_primary;
         $image->delete();
 
@@ -111,18 +116,4 @@ class UnitController extends Controller
         return $request->validate($rules);
     }
 
-    private function storeUploadedFile(\Illuminate\Http\UploadedFile $file, string $directory): string|false
-    {
-        if (! $file->isValid()) {
-            return false;
-        }
-        $ext      = strtolower($file->getClientOriginalExtension() ?: 'jpg');
-        $filename = sha1(uniqid('', true) . microtime()) . '.' . $ext;
-        try {
-            $stored = Storage::disk('public')->putFileAs($directory, $file, $filename);
-        } catch (\Throwable) {
-            return false;
-        }
-        return $stored ?: false;
-    }
 }

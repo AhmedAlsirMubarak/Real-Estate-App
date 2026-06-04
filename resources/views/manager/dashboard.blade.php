@@ -47,7 +47,7 @@
                     </p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3 sm:gap-4 min-w-[250px]">
+                <div class="grid grid-cols-2 gap-3 sm:gap-4 w-full lg:w-auto lg:min-w-[250px]">
                     <div class="rounded-2xl bg-white/10 border border-white/20 p-4 backdrop-blur">
                         <p class="text-xs text-blue-100/80">{{ $tr('إيراد الشهر', 'Monthly Revenue') }}</p>
                         <p class="text-xl font-extrabold mt-1">{{ number_format($monthlyRevenue) }}</p>
