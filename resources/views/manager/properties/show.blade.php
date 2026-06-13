@@ -28,7 +28,7 @@
             <a href="{{ route('manager.properties.edit', $property) }}" class="bg-gray-100 text-gray-700 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm">
                 {{ $tr('تعديل', 'Edit') }}
             </a>
-            @if($property->type === 'apartment_building')
+            @if(in_array($property->type, ['apartment_building', 'land']) || $property->units->isEmpty())
             <a href="{{ route('manager.units.create', $property) }}" class="bg-blue-900 hover:bg-blue-800 text-white px-3 py-2 rounded-lg text-sm">
                 + {{ $tr('إضافة وحدة', 'Add Unit') }}
             </a>

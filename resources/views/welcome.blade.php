@@ -207,7 +207,7 @@ footer{background:var(--navy)}
   /* On mobile: auto-height so no empty dark space below text content */
   .hero-section{
     height: auto !important;
-    min-height: 420px !important;
+    min-height: 390px !important;
     max-height: none !important;
   }
   .stat-num{font-size:2rem}
@@ -325,10 +325,10 @@ if ($heroHasVideo && !$ytId && !$vimeoId) {
   <div class="hero-overlay"></div>
 
   {{-- Content (z-10, above overlay) --}}
-  <div class="relative z-10 flex-1 flex flex-col justify-center max-w-7xl mx-auto w-full px-4 sm:px-6 pt-24 sm:pt-28 pb-14 sm:pb-12">
+  <div class="relative z-10 flex-1 flex flex-col justify-center max-w-7xl mx-auto w-full px-4 sm:px-6 pt-20 sm:pt-28 pb-10 sm:pb-12">
 
     <div class="max-w-2xl fade-up">
-      <div class="inline-flex items-center gap-2 mb-5 bg-white/10 backdrop-blur border border-white/20 text-white/80 text-xs font-semibold px-4 py-2 rounded-full">
+      <div class="inline-flex items-center gap-2 mb-3 sm:mb-5 bg-white/10 backdrop-blur border border-white/20 text-white/80 text-xs font-semibold px-4 py-2 rounded-full">
         <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
         <span data-ar>{{ $s('hero')?->extra['badge_ar'] ?? 'الرائد في إدارة العقارات' }}</span>
         <span data-en class="hidden">{{ $s('hero')?->extra['badge_en'] ?? 'Leading Real Estate Agency' }}</span>
@@ -347,7 +347,7 @@ if ($heroHasVideo && !$ytId && !$vimeoId) {
         $heroEn1  = implode(' ', array_slice($enWords, 0, $enMid));
         $heroEn2  = implode(' ', array_slice($enWords, $enMid));
       @endphp
-      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-5" style="line-height:1.3">
+      <h1 class="text-2xl sm:text-4xl lg:text-6xl font-black text-white mb-3 sm:mb-5" style="line-height:1.3">
         <span data-ar>{{ $heroAr1 }}<br><span style="color:var(--gold)">{{ $heroAr2 }}</span></span>
         <span data-en class="hidden">{{ $heroEn1 }}<br><span style="color:var(--gold)">{{ $heroEn2 }}</span></span>
       </h1>
@@ -385,7 +385,7 @@ $phoneNum = $s('contact')?->activeItems->firstWhere('icon','phone')?->body_ar ??
 $firstCity = $cities->first() ?? null;
 @endphp
 
-<section id="properties" class="py-16 sm:py-20 bg-white">
+<section id="properties" class="py-10 sm:py-20 bg-white">
   <div class="max-w-7xl mx-auto px-4 sm:px-6">
 
     {{-- Section header (CMS-controlled) --}}
@@ -486,15 +486,12 @@ $firstCity = $cities->first() ?? null;
       @endif
     </div>
 
-    {{-- View all button (CMS-controlled) --}}
-    <div class="text-center mt-10">
-    </div>
   </div>
 </section>
 
 {{-- ══════════ PROPERTY TYPES ══════════ --}}
 @if($s('property_types') && $s('property_types')->activeItems->count())
-<section id="types" class="py-16 sm:py-20 bg-white">
+<section id="types" class="py-10 sm:py-20 bg-white">
   <div class="max-w-7xl mx-auto px-4 sm:px-6">
     <div class="text-center mb-10 fade-up">
       <div class="section-tag mx-auto" style="width:fit-content">
@@ -1307,7 +1304,7 @@ $firstCity = $cities->first() ?? null;
           <span data-en class="hidden">{{ $footer?->body_en ?? 'An integrated platform for residential and commercial property management.' }}</span>
         </p>
 
-        {{-- Social icons — always shown, greyed if no URL --}}
+        {{-- Social icons — only shown when a URL is set --}}
         <div class="flex flex-wrap gap-2.5">
           @php
           $socialLinks = [
@@ -1353,12 +1350,6 @@ $firstCity = $cities->first() ?? null;
              onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.color='rgba(255,255,255,.55)';this.style.borderColor='rgba(255,255,255,.1)'">
             <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">{!! $info['svg'] !!}</svg>
           </a>
-          @else
-          <span title="{{ $info['label'] }}"
-             class="w-9 h-9 rounded-xl flex items-center justify-center cursor-default"
-             style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:rgba(255,255,255,.2)">
-            <svg viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">{!! $info['svg'] !!}</svg>
-          </span>
           @endif
           @endforeach
         </div>
