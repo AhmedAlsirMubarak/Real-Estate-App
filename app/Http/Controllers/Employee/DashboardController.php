@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
-use App\Models\EmployeeCommission;
+use App\Models\EmployeeLeave;
 use App\Models\MaintenanceRequest;
 use App\Models\Payment;
 use App\Models\Property;
+use App\Models\RentalContract;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -76,45 +78,64 @@ class DashboardController extends Controller
             ];
         });
 
-        $yearCommissions = EmployeeCommission::query()
-            ->where('employee_id', $employee->id)
-            ->whereYear('recorded_at', $year)
-            ->get();
-
-        $commissionStats = [
-            'rent_collection' => (float) $yearCommissions->where('type', 'rent_collection')->sum('commission_amount'),
-            'property_sale' => (float) $yearCommissions->where('type', 'property_sale')->sum('commission_amount'),
-            'total' => (float) $yearCommissions->sum('commission_amount'),
-        ];
-
-        $recentCommissions = EmployeeCommission::query()
-            ->where('employee_id', $employee->id)
-            ->with(['property', 'payment'])
-            ->latest('recorded_at')
-            ->take(6)
-            ->get();
-
-        // Referral commission (properties this employee referred, filtered by year)
+        // Referral commission — properties this employee referred
         $referredProperties = Property::where('referral_employee_id', $employee->id)->get();
         $referralPropertyRevenue = collect();
-        $referralCommissionTotal = 0;
+        $propertyReferralCommissionTotal = 0;
 
         if ($referredProperties->isNotEmpty()) {
-            $referredIds = $referredProperties->pluck('id');
+            $referredPropertyIds = $referredProperties->pluck('id');
             $referralPropertyRevenue = DB::table('payments')
                 ->join('rental_contracts', 'payments.rental_contract_id', '=', 'rental_contracts.id')
                 ->join('units', 'rental_contracts.unit_id', '=', 'units.id')
                 ->where('payments.status', 'paid')
                 ->where('payments.year', $year)
-                ->whereIn('units.property_id', $referredIds)
+                ->whereIn('units.property_id', $referredPropertyIds)
                 ->selectRaw('units.property_id, SUM(payments.amount) as total_paid')
                 ->groupBy('units.property_id')
                 ->pluck('total_paid', 'property_id');
 
-            $referralCommissionTotal = $referredProperties->sum(
+            $propertyReferralCommissionTotal = $referredProperties->sum(
                 fn ($p) => ($p->referral_commission_rate ?? 0) / 100 * ($referralPropertyRevenue[$p->id] ?? 0)
             );
         }
+
+        // Referral commission — tenants this employee referred
+        $referredTenants = Tenant::where('referral_employee_id', $employee->id)
+            ->with('user')
+            ->get();
+        $referralTenantRevenue = collect();
+        $tenantReferralCommissionTotal = 0;
+
+        if ($referredTenants->isNotEmpty()) {
+            $referredTenantIds = $referredTenants->pluck('id');
+            $referralTenantRevenue = DB::table('payments')
+                ->where('status', 'paid')
+                ->where('year', $year)
+                ->whereIn('tenant_id', $referredTenantIds)
+                ->selectRaw('tenant_id, SUM(amount) as total_paid')
+                ->groupBy('tenant_id')
+                ->pluck('total_paid', 'tenant_id');
+
+            $tenantReferralCommissionTotal = $referredTenants->sum(
+                fn ($t) => ($t->referral_commission_rate ?? 0) / 100 * ($referralTenantRevenue[$t->id] ?? 0)
+            );
+        }
+
+        $referralCommissionTotal = $propertyReferralCommissionTotal + $tenantReferralCommissionTotal;
+
+        $myLeaves = EmployeeLeave::where('employee_id', $employee->id)
+            ->orderByDesc('start_date')
+            ->take(12)
+            ->get();
+
+        // Contracts expiring in the next 30 days for properties managed by this employee
+        $expiringContracts = RentalContract::where('status', 'active')
+            ->whereBetween('end_date', [now()->toDateString(), now()->addDays(30)->toDateString()])
+            ->whereHas('unit.property', fn($q) => $q->where('employee_id', $employee->id))
+            ->with(['tenant.user', 'unit.property'])
+            ->orderBy('end_date')
+            ->get();
 
         return view('employee.dashboard', compact(
             'stats',
@@ -122,12 +143,16 @@ class DashboardController extends Controller
             'pendingMaintenance',
             'pendingPayments',
             'propertyRentSummary',
-            'commissionStats',
-            'recentCommissions',
             'referredProperties',
             'referralPropertyRevenue',
+            'propertyReferralCommissionTotal',
+            'referredTenants',
+            'referralTenantRevenue',
+            'tenantReferralCommissionTotal',
             'referralCommissionTotal',
-            'year'
+            'year',
+            'myLeaves',
+            'expiringContracts'
         ));
     }
 }

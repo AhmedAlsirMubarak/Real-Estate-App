@@ -76,10 +76,28 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::get('tenants/import/template', [Manager\TenantController::class, 'downloadTemplate'])->name('tenants.import.template');
     Route::get('tenants/export', [Manager\TenantController::class, 'export'])->name('tenants.export');
     Route::resource('tenants', Manager\TenantController::class);
+    Route::post('tenants/{tenant}/payments/generate', [Manager\TenantController::class, 'generatePayment'])->name('tenants.payments.generate');
+    Route::patch('tenants/{tenant}/payments/{payment}/mark-paid', [Manager\TenantController::class, 'markPaymentPaid'])->name('tenants.payments.mark-paid');
+    Route::delete('tenants/{tenant}/payments/{payment}', [Manager\TenantController::class, 'destroyPayment'])->name('tenants.payments.destroy');
+    Route::get('tenants/{tenant}/payments/{payment}/invoice', [Manager\TenantController::class, 'paymentInvoice'])->name('tenants.payments.invoice');
     Route::post('rental-contracts/{contract}/upload-file', [Manager\RentalContractController::class, 'uploadFile'])->name('rental-contracts.upload-file');
     Route::delete('rental-contracts/{contract}/delete-file', [Manager\RentalContractController::class, 'deleteFile'])->name('rental-contracts.delete-file');
     Route::resource('employees', Manager\EmployeeController::class);
-    Route::resource('users', Manager\UserController::class)->only(['index', 'create', 'store', 'edit', 'update']);
+
+    // HR — Leaves
+    Route::get('hr/leaves', [Manager\HrLeaveController::class, 'index'])->name('hr.leaves.index');
+    Route::post('employees/{employee}/leaves', [Manager\HrLeaveController::class, 'store'])->name('employees.leaves.store');
+    Route::patch('employees/{employee}/leaves/{leave}/approve', [Manager\HrLeaveController::class, 'approve'])->name('employees.leaves.approve');
+    Route::patch('employees/{employee}/leaves/{leave}/reject', [Manager\HrLeaveController::class, 'reject'])->name('employees.leaves.reject');
+    Route::delete('employees/{employee}/leaves/{leave}', [Manager\HrLeaveController::class, 'destroy'])->name('employees.leaves.destroy');
+
+    // HR — Attendance
+    Route::get('hr/attendance', [Manager\HrAttendanceController::class, 'index'])->name('hr.attendance.index');
+    Route::post('employees/{employee}/attendance', [Manager\HrAttendanceController::class, 'store'])->name('employees.attendance.store');
+    Route::patch('employees/{employee}/attendance/{attendance}', [Manager\HrAttendanceController::class, 'update'])->name('employees.attendance.update');
+    Route::delete('employees/{employee}/attendance/{attendance}', [Manager\HrAttendanceController::class, 'destroy'])->name('employees.attendance.destroy');
+    Route::post('users/bulk-destroy', [Manager\UserController::class, 'bulkDestroy'])->name('users.bulk-destroy');
+    Route::resource('users', Manager\UserController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
     Route::patch('users/{user}/toggle-block', [Manager\UserController::class, 'toggleBlock'])->name('users.toggle-block');
 
     Route::get('reports', [Manager\ReportController::class, 'index'])->name('reports.index');
@@ -201,7 +219,23 @@ Route::middleware(['auth', 'role:employee'])->prefix('employee')->name('employee
     Route::patch('payments/{payment}/confirm', [Employee\PaymentController::class, 'confirm'])->name('payments.confirm');
     Route::patch('payments/{payment}/overdue', [Employee\PaymentController::class, 'markOverdue'])->name('payments.overdue');
 
+    Route::get('tenants', [Employee\TenantController::class, 'index'])->name('tenants.index');
+    Route::get('tenants/create', [Employee\TenantController::class, 'create'])->name('tenants.create');
+    Route::post('tenants', [Employee\TenantController::class, 'store'])->name('tenants.store');
+    Route::get('tenants/{tenant}', [Employee\TenantController::class, 'show'])->name('tenants.show');
+    Route::post('tenants/{tenant}/payments', [Employee\TenantController::class, 'generatePayment'])->name('tenants.payments.generate');
+    Route::patch('tenants/{tenant}/payments/{payment}/paid', [Employee\TenantController::class, 'markPaymentPaid'])->name('tenants.payments.mark-paid');
+    Route::delete('tenants/{tenant}/payments/{payment}', [Employee\TenantController::class, 'destroyPayment'])->name('tenants.payments.destroy');
+    Route::get('tenants/{tenant}/payments/{payment}/invoice', [Employee\TenantController::class, 'paymentInvoice'])->name('tenants.payments.invoice');
+
+    Route::get('properties', [Employee\PropertyController::class, 'index'])->name('properties.index');
+    Route::get('properties/create', [Employee\PropertyController::class, 'create'])->name('properties.create');
+    Route::post('properties', [Employee\PropertyController::class, 'store'])->name('properties.store');
     Route::patch('properties/{property}/mark-sold', [Employee\PropertyController::class, 'markSold'])->name('properties.mark-sold');
+
+    Route::get('leaves', [Employee\LeaveController::class, 'index'])->name('leaves.index');
+    Route::get('leaves/create', [Employee\LeaveController::class, 'create'])->name('leaves.create');
+    Route::post('leaves', [Employee\LeaveController::class, 'store'])->name('leaves.store');
 });
 
 // Accountant routes

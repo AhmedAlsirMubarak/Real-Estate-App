@@ -15,7 +15,7 @@
 <style>
 :root{--navy:#0f2444;--navy-mid:#1a3a6b;--gold:#c9a84c;--text:#1a2437;--muted:#64748b;--border:#e8ecf0;--off:#f5f7fa}
 *{font-family:{{ $_fontFamily }},sans-serif}
-body{background:var(--off);color:var(--text);overflow-x:hidden}
+body{background:var(--off);color:var(--text);overflow-x:clip}
 .article-body{line-height:2;font-size:.97rem;color:var(--text)}
 .article-body p{margin-bottom:1.2em}
 .related-card{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:all .3s}
@@ -198,7 +198,7 @@ body{background:var(--off);color:var(--text);overflow-x:hidden}
 </div>
 
 <footer class="py-8 text-center text-xs border-t" style="border-color:var(--border);color:var(--muted)">
-  © {{ date('Y') }} {{ $isAr ? 'شركة ثروة للعقارات — جميع الحقوق محفوظة' : 'Tharwa Real Estate — All rights reserved' }}
+  © {{ date('Y') }} {{ $isAr ? 'شركة ثروة للتطوير العقاري — جميع الحقوق محفوظة' : 'Tharwa Real Estate — All rights reserved' }}
 </footer>
 
 {{-- ── Lightbox ── --}}

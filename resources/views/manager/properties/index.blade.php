@@ -50,13 +50,21 @@
 
     <form method="GET" class="bg-white rounded-xl p-4 mb-5 shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-4 gap-3">
         <input type="text" name="search" value="{{ $search }}" placeholder="{{ $isAr ? 'بحث بالاسم أو الكود أو العنوان...' : 'Search by name, code, or address...' }}"
-               class="md:col-span-2 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+               class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <select name="section" class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
+            <option value="">{{ $isAr ? 'كل الأقسام' : 'All sections' }}</option>
+            <option value="management" @selected(request('section')==='management')>{{ $isAr ? 'إدارة المباني' : 'Building Management' }}</option>
+            <option value="hoa" @selected(request('section')==='hoa')>{{ $isAr ? 'جمعية الملاك' : 'Owners Association' }}</option>
+            <option value="external" @selected(request('section')==='external')>{{ $isAr ? 'عقار خارجي' : 'External Property' }}</option>
+        </select>
         <select name="type" class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
             <option value="">{{ $isAr ? 'كل الأنواع' : 'All types' }}</option>
             <option value="apartment_building" @selected(request('type')==='apartment_building')>{{ $isAr ? 'عمارة' : 'Building' }}</option>
+            <option value="flat" @selected(request('type')==='flat')>{{ $isAr ? 'شقة' : 'Flat' }}</option>
             <option value="villa" @selected(request('type')==='villa')>{{ $isAr ? 'فيلا' : 'Villa' }}</option>
             <option value="farm" @selected(request('type')==='farm')>{{ $isAr ? 'مزرعة' : 'Farm' }}</option>
             <option value="chalet" @selected(request('type')==='chalet')>{{ $isAr ? 'شاليه' : 'Chalet' }}</option>
+            <option value="land" @selected(request('type')==='land')>{{ $isAr ? 'أرض' : 'Land' }}</option>
         </select>
         <select name="purpose" class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
             <option value="">{{ $isAr ? 'إيجار أو بيع' : 'Rent or sale' }}</option>

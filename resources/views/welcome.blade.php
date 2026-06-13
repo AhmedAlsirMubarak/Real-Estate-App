@@ -7,58 +7,93 @@
 @vite(['resources/css/app.css','resources/js/app.js'])
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* Prevent horizontal scrolling on small devices */
-html, body { overflow-x: hidden !important }
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; overflow-x: clip; }
 
-:root{
-  --navy:#0f2444; --navy-mid:#1a3a6b; --navy-light:#1e4d8c;
-  --gold:#c9a84c;  --gold-light:#e8c96e;
-  --white:#ffffff; --off:#f5f7fa; --border:#e8ecf0;
-  --text:#1a2437;  --muted:#64748b;
+:root {
+  --navy: #0f2444; --navy-mid: #1a3a6b; --navy-light: #1e4d8c;
+  --gold: #c9a84c; --gold-light: #e8c96e;
+  --off: #f5f7fa; --border: #e8ecf0;
+  --text: #1a2437; --muted: #64748b;
+  --pub-header-h: 104px; /* updated by JS */
 }
-[lang="ar"]*{font-family:'Cairo',sans-serif}
-[lang="en"]*{font-family:'Sora',sans-serif}
-html{scroll-behavior:smooth}
-body{background:#fff;color:var(--text);overflow-x:hidden}
+[lang="ar"] * { font-family: 'Cairo', sans-serif; }
+[lang="en"] * { font-family: 'Sora', sans-serif; }
+html { scroll-behavior: smooth; background: #fff; }
+body { background: #fff; color: var(--text); }
 
-/* ── TOP BAR ── */
-#top-bar{background:var(--navy);border-bottom:1px solid rgba(255,255,255,.08)}
-
-/* ── NAVBAR ── */
-#navbar{background:#fff;border-bottom:1px solid var(--border);transition:box-shadow .3s}
-#navbar.shadow{box-shadow:0 4px 24px rgba(15,36,68,.10)}
-.nav-link{color:var(--text);font-size:.875rem;font-weight:600;position:relative;transition:color .2s}
-.nav-link:hover,.nav-link.active-link{color:var(--navy)}
-.nav-link::after{content:'';position:absolute;bottom:-4px;left:0;right:0;width:0;height:2px;background:var(--gold);border-radius:2px;margin:0 auto;transition:width .3s}
-.nav-link:hover::after,.nav-link.active-link::after{width:100%}
+/* Fix header to float over hero on home page (no gap, no negative margin) */
+#pub-header { position: fixed !important; width: 100%; }
 
 /* ── HERO ── */
-.hero-section{min-height:100vh;position:relative;display:flex;flex-direction:column;justify-content:center;background-size:cover;background-position:center}
-.hero-overlay{position:absolute;inset:0;background:linear-gradient(160deg,rgba(9,24,44,.85) 0%,rgba(15,36,68,.75) 50%,rgba(10,28,58,.65) 100%)}
+.hero-section {
+  width: 100%;
+  height: 56.25vw; /* 16:9 — matches standard video aspect ratio exactly */
+  max-height: 92vh; /* cap on tall / portrait windows */
+  min-height: 480px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: var(--navy);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+}
+/* Dark gradient overlay (z-1) */
+.hero-overlay {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(to bottom,
+    rgba(9,24,44,.40) 0%,
+    rgba(9,24,44,.15) 18%,
+    rgba(9,24,44,.08) 50%,
+    rgba(9,24,44,.12) 78%,
+    rgba(9,24,44,.28) 100%
+  );
+}
 
-/* Ensure hero doesn't cause horizontal overflow on mobile */
-.hero-section{overflow-x:hidden}
+/* Video/iframe container (z-0) */
+.hero-video-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: var(--navy); }
+.hero-video-bg video {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* anchor from top-center: scale clips the dark bottom edge, keeps bright horizon visible */
+  transform: scale(1.15);
+  transform-origin: top center;
+  display: block;
+  pointer-events: none;
+}
+/* Hide ALL native browser video controls & overlays */
+.hero-video-bg video::-webkit-media-controls             { display: none !important; }
+.hero-video-bg video::-webkit-media-controls-enclosure   { display: none !important; }
+.hero-video-bg video::-webkit-media-controls-panel       { display: none !important; }
+.hero-video-bg video::-webkit-media-controls-play-button { display: none !important; }
+.hero-video-bg video::-webkit-media-controls-start-playback-button { display: none !important; }
+.hero-video-bg video::-webkit-media-controls-overlay-play-button   { display: none !important; }
+.hero-video-bg video::-webkit-media-controls-overlay-enclosure     { display: none !important; }
+.hero-video-bg iframe {
+  position: absolute; top: 50%; left: 50%;
+  width: 100vw; height: 56.25vw; min-height: 100%; min-width: 177.78vh;
+  transform: translate(-50%, -50%); border: 0; pointer-events: none;
+}
 
-/* Global mobile safety: prevent any element exceeding viewport */
-html, body, #app, .hero-section, .type-slider-outer, .type-slider-track { max-width:100vw; overflow-x:hidden; box-sizing:border-box; }
+/* Global safety */
+.type-slider-outer, .type-slider-track { max-width: 100%; overflow-x: clip; }
 
 /* Allow city tabs to wrap on small screens to avoid horizontal overflow */
 @media(max-width:640px){
   .city-tab{white-space:normal;padding-inline:10px}
 }
 
-/* ── SEARCH BAR ── */
-.search-bar{background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(15,36,68,.25);overflow:hidden;box-sizing:border-box;max-width:980px;margin:0 auto;padding-inline:12px}
-.search-tab{padding:12px 20px;font-weight:700;font-size:.85rem;border-bottom:3px solid transparent;transition:all .2s;cursor:pointer;color:var(--muted)}
-.search-tab.active{color:var(--navy);border-bottom-color:var(--gold)}
-.search-select,.search-input{border:none;background:#f8fafc;border-radius:10px;padding:12px 16px;font-size:.875rem;color:var(--text);outline:none;width:100%;transition:background .2s}
-.search-select:focus,.search-input:focus{background:#eef2ff}
-.btn-search{background:var(--navy);color:#fff;font-weight:700;border-radius:12px;padding:12px 28px;font-size:.875rem;transition:all .2s;white-space:nowrap}
-.btn-search:hover{background:var(--navy-mid);transform:translateY(-1px)}
+
 
 /* ── STATS ── */
 .stat-card{text-align:center;padding:32px 20px}
-.stat-num{font-size:2.5rem;font-weight:900;color:var(--navy);line-height:1}
+.stat-num{font-size:2.5rem;font-weight:400;color:var(--navy);line-height:1}
 .stat-num span{color:var(--gold)}
 
 /* ── PROPERTY CARDS ── */
@@ -169,8 +204,29 @@ footer{background:var(--navy)}
 .input-field:focus{border-color:var(--navy-mid);box-shadow:0 0 0 3px rgba(26,58,107,.1)}
 
 @media(max-width:768px){
-  .hero-section{min-height:100svh}
+  /* On mobile: auto-height so no empty dark space below text content */
+  .hero-section{
+    height: auto !important;
+    min-height: 420px !important;
+    max-height: none !important;
+  }
   .stat-num{font-size:2rem}
+}
+
+/* ── Property cards ── */
+.mk-card{display:flex;flex-direction:column;box-sizing:border-box;border:1px solid #e8ecf0;border-radius:12px;overflow:hidden;background:#fff;transition:box-shadow .3s,border-color .3s}
+.mk-gallery{display:flex;width:100%;height:176px;position:relative;overflow:hidden;flex-shrink:0}
+.mk-side-imgs{display:none;flex-direction:column;gap:2px;flex:2;flex-shrink:0;margin-left:2px}
+.mk-details{display:flex;flex-direction:column;flex:1;min-width:0;padding:14px 16px}
+.mk-btns{display:flex;gap:6px;margin-top:auto;padding-top:6px}
+@media(min-width:640px){
+  .mk-card{flex-direction:row}
+  .mk-gallery{width:50%;height:auto}
+  .mk-side-imgs{display:flex}
+  .mk-call-btn{display:flex !important}
+}
+@media(max-width:639px){
+  .mk-call-btn{display:none !important}
 }
 </style>
 </head>
@@ -194,7 +250,7 @@ $iconSvg = [
   'office'  =>'<path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 0 0 .75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 0 0-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0 1 12 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 0 1-.673-.38m0 0A2.18 2.18 0 0 1 3 12.489V8.706c0-1.081.768-2.015 1.837-2.175a48.111 48.111 0 0 1 3.413-.387m7.5 0V5.25A2.25 2.25 0 0 0 13.5 3h-3a2.25 2.25 0 0 0-2.25 2.25v.894m7.5 0a48.667 48.667 0 0 0-7.5 0M12 12.75h.008v.008H12v-.008Z"/>',
   'shop'    =>'<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349M3.75 21V9.349m0 0a3.001 3.001 0 0 0 3.75-.615A2.993 2.993 0 0 0 9.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 0 0 2.25 1.016 2.993 2.993 0 0 0 2.25-1.016 3.001 3.001 0 0 0 3.75.614m-16.5 0a3.004 3.004 0 0 1-.621-4.72l1.189-1.19A1.5 1.5 0 0 1 5.378 3h13.243a1.5 1.5 0 0 1 1.06.44l1.19 1.189a3 3 0 0 1-.621 4.72"/>',
   'studio'  =>'<path stroke-linecap="round" stroke-linejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819"/>',
-  'land'    =>'<path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/>',
+  'land'    =>'<path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498 4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 0 0-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836 .88 1.38-1.628-1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0Z"/>',
   'location'=>'<path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/>',
   'phone'   =>'<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25z"/>',
   'email'   =>'<path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/>',
@@ -217,14 +273,59 @@ $waHref        = $waDigits
 
 $heroBg = $s('hero')?->imageUrl()
   ?? 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1920&q=80';
+
+$heroExtra    = (array)($s('hero')?->extra ?? []);
+$heroBgType   = $heroExtra['hero_bg_type'] ?? 'image';
+$heroVideoUrl = trim($heroExtra['hero_video_url'] ?? '');
+$heroVideoFile= $heroExtra['hero_video_file'] ?? null;
+$heroHasVideo = $heroBgType === 'video' && ($heroVideoUrl || $heroVideoFile);
+
+// Detect YouTube
+$ytId = null;
+if ($heroVideoUrl && preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $heroVideoUrl, $m)) {
+    $ytId = $m[1];
+}
+// Detect Vimeo
+$vimeoId = null;
+if (!$ytId && $heroVideoUrl && preg_match('/vimeo\.com\/(\d+)/', $heroVideoUrl, $m)) {
+    $vimeoId = $m[1];
+}
+// Direct video file (uploaded or direct URL)
+$directVideoSrc = null;
+if ($heroHasVideo && !$ytId && !$vimeoId) {
+    $directVideoSrc = $heroVideoFile ? asset('storage/' . $heroVideoFile) : $heroVideoUrl;
+}
 @endphp
 
 @include('_partials.public-nav')
 
 {{-- ══════════ HERO ══════════ --}}
-<section id="home" class="hero-section" style="background-image:url('{{ $heroBg }}')">
+<section id="home" class="hero-section" @if(!$heroHasVideo) style="background-image:url('{{ $heroBg }}')" @endif>
+
+  {{-- Video background layer (z-0, below overlay) --}}
+  @if($heroHasVideo)
+  <div class="hero-video-bg">
+    @if($ytId)
+      <iframe src="https://www.youtube.com/embed/{{ $ytId }}?autoplay=1&mute=1&loop=1&playlist={{ $ytId }}&controls=0&showinfo=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=0"
+              allow="autoplay;encrypted-media" allowfullscreen></iframe>
+    @elseif($vimeoId)
+      <iframe src="https://player.vimeo.com/video/{{ $vimeoId }}?autoplay=1&muted=1&loop=1&background=1&byline=0&title=0"
+              allow="autoplay;fullscreen"></iframe>
+    @else
+      <video autoplay muted loop playsinline preload="auto" disablepictureinpicture disableremoteplayback x-webkit-airplay="deny"
+             controlslist="nodownload noremoteplayback nofullscreen"
+             style="opacity:1;pointer-events:none" tabindex="-1" id="hero-vid">
+        <source src="{{ $directVideoSrc }}" @if(str_ends_with(strtolower($directVideoSrc ?? ''), '.webm')) type="video/webm" @else type="video/mp4" @endif>
+      </video>
+    @endif
+  </div>
+  @endif
+
+  {{-- Dark gradient overlay (z-1) --}}
   <div class="hero-overlay"></div>
-  <div class="relative z-10 flex-1 flex flex-col justify-center max-w-7xl mx-auto w-full px-4 sm:px-6 pt-10 pb-36 sm:pb-44">
+
+  {{-- Content (z-10, above overlay) --}}
+  <div class="relative z-10 flex-1 flex flex-col justify-center max-w-7xl mx-auto w-full px-4 sm:px-6 pt-24 sm:pt-28 pb-14 sm:pb-12">
 
     <div class="max-w-2xl fade-up">
       <div class="inline-flex items-center gap-2 mb-5 bg-white/10 backdrop-blur border border-white/20 text-white/80 text-xs font-semibold px-4 py-2 rounded-full">
@@ -258,64 +359,10 @@ $heroBg = $s('hero')?->imageUrl()
     </div>
   </div>
 
-  {{-- Search bar floating at hero bottom --}}
-  <div class="relative z-10 max-w-5xl mx-auto w-full px-4 sm:px-6 -mb-14 sm:-mb-16">
-    <div class="search-bar fade-up mx-auto" style="max-width:980px">
-      {{-- Tabs --}}
-      <div class="flex justify-center gap-2 border-b border-gray-100 px-2">
-        <button onclick="setTab('rent')" id="tab-rent" class="search-tab active">
-          <span data-ar>للإيجار</span><span data-en class="hidden">For Rent</span>
-        </button>
-        <button onclick="setTab('sale')" id="tab-sale" class="search-tab">
-          <span data-ar>للبيع</span><span data-en class="hidden">For Sale</span>
-        </button>
-        <button onclick="setTab('both')" id="tab-both" class="search-tab">
-          <span data-ar>الكل</span><span data-en class="hidden">All</span>
-        </button>
-      </div>
-      {{-- Fields --}}
-      <form action="{{ route('properties.index') }}" method="GET">
-        <input type="hidden" name="purpose" id="purpose-input" value="rent">
-        <div class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1.5">
-              <span data-ar>نوع العقار</span><span data-en class="hidden">Property Type</span>
-            </label>
-            <select name="type" class="search-select">
-              <option value="" data-ar="جميع الأنواع" data-en="All Types">جميع الأنواع</option>
-              @foreach([
-                ['apartment','شقة','Apartment'],
-                ['villa','فيلا','Villa'],
-                ['office','مكتب','Office'],
-                ['shop','محل','Shop'],
-                ['studio','استوديو','Studio'],
-                ['apartment_building','عمارة','Building'],
-              ] as [$v,$ar,$en])
-              <option value="{{ $v }}" data-ar="{{ $ar }}" data-en="{{ $en }}">{{ $ar }}</option>
-              @endforeach
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-500 mb-1.5">
-              <span data-ar>المدينة / الموقع</span><span data-en class="hidden">City / Location</span>
-            </label>
-            <input type="text" name="search" placeholder-ar="ابحث بالمدينة أو الاسم..." placeholder-en="Search by city or name..."
-              class="search-input" placeholder="ابحث بالمدينة أو الاسم...">
-          </div>
-          <div>
-            <button type="submit" class="btn-search w-full flex items-center justify-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607z"/></svg>
-              <span data-ar>بحث</span><span data-en class="hidden">Search</span>
-            </button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
 </section>
 
 {{-- ══════════ STATS ══════════ --}}
-<section class="pt-24 sm:pt-28 pb-10 sm:pb-14 bg-white border-b border-gray-100">
+<section class="pt-12 sm:pt-16 pb-10 sm:pb-14 bg-white border-b border-gray-100">
   <div class="max-w-7xl mx-auto px-4 sm:px-6">
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-0 divide-x divide-gray-100 rtl:divide-x-reverse">
       @foreach($s('stats')?->activeItems ?? collect() as $stat)
@@ -632,7 +679,7 @@ $firstCity = $cities->first() ?? null;
           <span data-en class="hidden">{{ $s('about')?->subtitle_en ?? 'About Us' }}</span>
         </div>
         <h2 class="text-2xl sm:text-3xl font-black mt-3 mb-5" style="color:var(--navy)">
-          <span data-ar>{{ $s('about')?->title_ar ?? 'شركة ثروة للعقارات' }}</span>
+          <span data-ar>{{ $s('about')?->title_ar ?? 'شركة ثروة للتطوير العقاري' }}</span>
           <span data-en class="hidden">{{ $s('about')?->title_en ?? 'Tharwa Real Estate' }}</span>
         </h2>
         <p class="text-sm sm:text-base leading-relaxed mb-6" style="color:var(--muted)">
@@ -703,9 +750,9 @@ $firstCity = $cities->first() ?? null;
         @if($partner->image)
         <img src="{{ $partner->imageUrl() }}" alt="{{ $partner->title_ar }}"
              class="h-16 sm:h-20 w-auto object-contain transition-all duration-300"
-             style="filter:grayscale(80%) opacity(0.6)"
+             style="filter:grayscale(20%) opacity(0.9)"
              onmouseover="this.style.filter='grayscale(0%) opacity(1)'"
-             onmouseout="this.style.filter='grayscale(80%) opacity(0.6)'">
+             onmouseout="this.style.filter='grayscale(20%) opacity(0.9)'">
         @else
         <span class="text-sm font-bold" style="color:var(--navy)">{{ $partner->title_ar }}</span>
         @endif
@@ -780,11 +827,223 @@ $firstCity = $cities->first() ?? null;
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
           </a>
         </div>
-        <div class="hidden lg:block h-full" style="min-height:280px;background:url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80') center/cover;opacity:.35;border-radius:0 1.5rem 1.5rem 0"></div>
+        @php $ctaImg = $s('cta')?->imageUrl() ?? 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'; @endphp
+        <div class="hidden lg:block h-full" style="min-height:280px;background:url('{{ $ctaImg }}') center/cover;opacity:.35;border-radius:0 1.5rem 1.5rem 0"></div>
       </div>
     </div>
   </div>
 </section>
+@endif
+
+{{-- ══════════ VIDEO GALLERY ══════════ --}}
+@php $videoSection = $s('videos'); $videoItems = $videoSection?->activeItems ?? collect(); @endphp
+@if($videoSection && $videoSection->is_active && $videoItems->isNotEmpty())
+<section id="videos" style="padding:72px 0;background:linear-gradient(160deg,#06122a 0%,#0f2444 60%,#0d1f3c 100%);overflow:hidden">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6">
+
+    {{-- Header --}}
+    <div class="text-center mb-10 fade-up">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.25);color:#c9a84c;font-size:.65rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:5px 16px;border-radius:999px;margin-bottom:14px">
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px"><path d="M4.5 4.5a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h8.25a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3H4.5ZM19.94 18.75l-2.69-2.69V7.94l2.69-2.69c.944-.945 2.56-.276 2.56 1.06v11.38c0 1.336-1.616 2.005-2.56 1.06Z"/></svg>
+        <span data-ar>{{ $videoSection->subtitle_ar ?: 'فيديوهاتنا' }}</span>
+        <span data-en class="hidden">{{ $videoSection->subtitle_en ?: 'Our Videos' }}</span>
+      </div>
+      <h2 style="font-size:clamp(1.5rem,3.5vw,2.2rem);font-weight:900;color:#fff;margin-bottom:8px">
+        <span data-ar>{{ $videoSection->title_ar }}</span>
+        <span data-en class="hidden">{{ $videoSection->title_en }}</span>
+      </h2>
+      @if($videoSection->body_ar)
+      <p style="font-size:.9rem;color:rgba(255,255,255,.55);max-width:520px;margin:0 auto">
+        <span data-ar>{{ $videoSection->body_ar }}</span>
+        <span data-en class="hidden">{{ $videoSection->body_en }}</span>
+      </p>
+      @endif
+    </div>
+
+    {{-- Slider wrapper --}}
+    <div style="position:relative">
+
+      {{-- Track --}}
+      <div id="vid-outer" style="overflow:hidden;border-radius:16px">
+        <div id="vid-track" style="display:flex;gap:20px;transition:transform .45s cubic-bezier(.4,0,.2,1);direction:ltr;will-change:transform">
+          @foreach($videoItems as $vi)
+          @php
+            $vPath     = $vi->extra['video_path'] ?? null;
+            $vThumb    = $vi->imageUrl();
+            $vTitleAr  = $vi->title_ar ?: '';
+            $vTitleEn  = $vi->title_en ?: '';
+            $vDescAr   = $vi->body_ar ?: ($vi->subtitle_ar ?: '');
+            $vDescEn   = $vi->body_en ?: ($vi->subtitle_en ?: $vDescAr);
+          @endphp
+          @if($vPath)
+          <div class="vid-card"
+               style="flex-shrink:0;border-radius:16px;overflow:hidden;background:#0a1628;cursor:pointer;position:relative"
+               onclick="openVidModal('{{ asset('storage/'.$vPath) }}', '{{ addslashes($vTitleAr) }}', '{{ addslashes($vTitleEn) }}')">
+
+            {{-- Thumbnail --}}
+            <div style="position:relative;padding-top:56.25%;overflow:hidden;background:#0a1628">
+              @if($vThumb)
+              <img src="{{ $vThumb }}" alt="{{ $vTitleAr }}" loading="lazy"
+                   style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s"
+                   class="vid-thumb-img">
+              @else
+              <div style="position:absolute;inset:0;background:linear-gradient(135deg,#0f2444,#1a3a6b);display:flex;align-items:center;justify-content:center">
+                <svg viewBox="0 0 24 24" fill="rgba(255,255,255,.06)" style="width:5rem;height:5rem"><path d="M4.5 4.5a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h8.25a3 3 0 0 0 3-3v-9a3 3 0 0 0-3-3H4.5Z"/></svg>
+              </div>
+              @endif
+
+              {{-- Gradient overlay --}}
+              <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(6,18,42,.85) 0%,transparent 55%)"></div>
+
+              {{-- Play button --}}
+              <div class="vid-play-btn" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+                <div style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;transition:all .25s;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+                  <svg viewBox="0 0 24 24" fill="#fff" style="width:26px;height:26px;margin-inline-start:4px"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+              </div>
+
+              {{-- Duration badge --}}
+              @if(!empty($vi->value))
+              <div style="position:absolute;bottom:10px;inset-inline-end:12px;background:rgba(0,0,0,.65);color:#fff;font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:5px">{{ $vi->value }}</div>
+              @endif
+            </div>
+
+            {{-- Title row --}}
+            <div style="padding:14px 16px 16px;background:#0d1d35">
+              <h3 style="font-size:.9rem;font-weight:800;color:#fff;line-height:1.3;margin-bottom:4px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">
+                <span data-ar>{{ $vTitleAr }}</span>
+                <span data-en class="hidden">{{ $vTitleEn }}</span>
+              </h3>
+              @if($vDescAr || $vDescEn)
+              <p style="font-size:.75rem;color:rgba(255,255,255,.5);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-top:4px">
+                <span data-ar>{{ $vDescAr }}</span>
+                <span data-en class="hidden">{{ $vDescEn ?: $vDescAr }}</span>
+              </p>
+              @endif
+            </div>
+          </div>
+          @endif
+          @endforeach
+        </div>
+      </div>
+
+      {{-- Navigation arrows --}}
+      @if($videoItems->count() > 1)
+      <button id="vid-prev" onclick="vidNav(-1)"
+        style="position:absolute;top:35%;transform:translateY(-50%);inset-inline-start:-18px;z-index:10;width:44px;height:44px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.35);transition:all .2s"
+        onmouseover="this.style.background='#c9a84c'" onmouseout="this.style.background='#fff'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0f2444" stroke-width="2.5" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18 6-6-6-6"/></svg>
+      </button>
+      <button id="vid-next" onclick="vidNav(1)"
+        style="position:absolute;top:35%;transform:translateY(-50%);inset-inline-end:-18px;z-index:10;width:44px;height:44px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.35);transition:all .2s"
+        onmouseover="this.style.background='#c9a84c'" onmouseout="this.style.background='#fff'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0f2444" stroke-width="2.5" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18-6-6 6-6"/></svg>
+      </button>
+      @endif
+
+      {{-- Dot indicators --}}
+      @if($videoItems->count() > 1)
+      <div id="vid-dots" style="display:flex;justify-content:center;gap:6px;margin-top:24px">
+        @foreach($videoItems->filter(fn($v)=>!empty($v->extra['video_path']))->values() as $i => $vi2)
+        <button onclick="vidGoTo({{ $i }})" class="vid-dot"
+          style="width:{{ $i===0 ? '24px' : '8px' }};height:8px;border-radius:999px;border:none;cursor:pointer;transition:all .3s;background:{{ $i===0 ? '#c9a84c' : 'rgba(255,255,255,.25)' }}"></button>
+        @endforeach
+      </div>
+      @endif
+
+    </div>
+  </div>
+</section>
+
+{{-- Video Modal --}}
+<div id="vid-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.92);align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)closeVidModal()">
+  <div style="position:relative;width:100%;max-width:900px">
+    <button onclick="closeVidModal()"
+      style="position:absolute;top:-44px;inset-inline-end:0;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center">✕</button>
+    <div id="vid-modal-title" style="color:#fff;font-size:.95rem;font-weight:700;margin-bottom:10px;text-align:start"></div>
+    <video id="vid-modal-player" controls playsinline
+      style="width:100%;border-radius:14px;background:#000;max-height:78vh;display:block;outline:none">
+    </video>
+  </div>
+</div>
+
+<style>
+#vid-track .vid-card { width: 100%; }
+#vid-track .vid-card:hover .vid-thumb-img { transform: scale(1.04); }
+#vid-track .vid-card:hover .vid-play-btn > div { background: rgba(201,168,76,.25); border-color: #c9a84c; transform: scale(1.08); }
+@media(min-width:640px) {
+  #vid-track .vid-card { width: calc(50% - 10px) }
+}
+@media(min-width:1024px) {
+  #vid-track .vid-card { width: calc(33.333% - 14px) }
+}
+</style>
+
+<script>
+(function(){
+  var track   = document.getElementById('vid-track');
+  var dots    = document.querySelectorAll('.vid-dot');
+  var current = 0;
+  var cards   = track ? track.querySelectorAll('.vid-card') : [];
+  var total   = cards.length;
+
+  function visibleCount(){
+    return window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1;
+  }
+  function maxIndex(){
+    return Math.max(0, total - visibleCount());
+  }
+  function updateLayout(){
+    if(!track) return;
+    if(total <= visibleCount()){
+      track.style.justifyContent = 'center';
+      track.style.transform = '';
+      current = 0;
+    } else {
+      track.style.justifyContent = 'flex-start';
+    }
+  }
+  function goTo(n){
+    updateLayout();
+    if(total <= visibleCount()) return;
+    current = Math.max(0, Math.min(n, maxIndex()));
+    if(!cards.length) return;
+    var gap   = 20;
+    var cardW = cards[0].offsetWidth;
+    track.style.transform = 'translateX(-' + (current * (cardW + gap)) + 'px)';
+    dots.forEach(function(d,i){
+      d.style.width      = i === current ? '24px' : '8px';
+      d.style.background = i === current ? '#c9a84c' : 'rgba(255,255,255,.25)';
+    });
+  }
+  window.vidNav = function(dir){ goTo(current + dir); };
+  window.vidGoTo = function(n){ goTo(n); };
+  window.addEventListener('resize', function(){ goTo(current); }, { passive:true });
+  updateLayout();
+
+  /* Modal */
+  var modal   = document.getElementById('vid-modal');
+  var player  = document.getElementById('vid-modal-player');
+  var mTitle  = document.getElementById('vid-modal-title');
+  var _isAr   = document.documentElement.lang === 'ar';
+  window.openVidModal = function(src, titleAr, titleEn){
+    if(!modal || !player) return;
+    player.src = src;
+    mTitle.textContent = _isAr ? titleAr : (titleEn || titleAr);
+    modal.style.display = 'flex';
+    player.play().catch(function(){});
+    document.body.style.overflow = 'hidden';
+  };
+  window.closeVidModal = function(){
+    if(!modal || !player) return;
+    player.pause();
+    player.src = '';
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  };
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeVidModal(); });
+})();
+</script>
 @endif
 
 {{-- ══════════ LATEST NEWS ══════════ --}}
@@ -1199,7 +1458,7 @@ $firstCity = $cities->first() ?? null;
     <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
       <p class="text-xs" style="color:rgba(255,255,255,.22)">
         © {{ date('Y') }}
-        <span data-ar>{{ $footer?->title_ar ?? 'شركة ثروة للعقارات' }} — جميع الحقوق محفوظة.</span>
+        <span data-ar>{{ $footer?->title_ar ?? 'شركة ثروة للتطوير العقاري' }} — جميع الحقوق محفوظة.</span>
         <span data-en class="hidden">{{ $footer?->title_en ?? 'Tharwa Real Estate' }} — All rights reserved.</span>
       </p>
       <p class="text-xs" style="color:rgba(255,255,255,.18)">
@@ -1212,6 +1471,17 @@ $firstCity = $cities->first() ?? null;
 </footer>
 
 <script>
+// ── Disable browser media-session overlay on the hero video ──
+(function(){
+  var v = document.getElementById('hero-vid');
+  if(v && 'mediaSession' in navigator){
+    navigator.mediaSession.metadata = null;
+    ['play','pause','stop','seekbackward','seekforward','previoustrack','nexttrack'].forEach(function(a){
+      try { navigator.mediaSession.setActionHandler(a, null); } catch(e){}
+    });
+  }
+})();
+
 // ── Language ──────────────────────────────
 let lang = localStorage.getItem('tharwa_lang') || 'ar';
 applyLang(lang);
@@ -1309,6 +1579,7 @@ const obs = new IntersectionObserver(
 );
 document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
 </script>
+
 
 </body>
 </html>

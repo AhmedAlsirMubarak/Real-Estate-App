@@ -240,9 +240,10 @@
                     </div>
 
                     {{-- HR --}}
-                    <div x-data="{ open: @js(request()->routeIs('manager.employees.*') || request()->routeIs('manager.salaries.*') || request()->routeIs('manager.contracts.*')) }" class="mb-0.5">
+                    @php $hrActive = request()->routeIs('manager.employees.*') || request()->routeIs('manager.salaries.*') || request()->routeIs('manager.contracts.*') || request()->routeIs('manager.hr.*'); @endphp
+                    <div x-data="{ open: @js($hrActive) }" class="mb-0.5">
                         <button @click="open = !open"
-                                class="sidebar-link w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.employees.*') || request()->routeIs('manager.salaries.*') || request()->routeIs('manager.contracts.*') ? 'active' : '' }}">
+                                class="sidebar-link w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ $hrActive ? 'active' : '' }}">
                             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                             <span class="text-sm font-medium flex-1">{{ $tr('الموارد البشرية', 'HR') }}</span>
                             <svg class="w-4 h-4 flex-shrink-0 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -252,6 +253,22 @@
                                class="sidebar-link flex items-center gap-3 px-4 py-2.5 {{ request()->routeIs('manager.employees.*') ? 'active' : '' }}">
                                 <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                                 <span class="text-sm font-medium">{{ $tr('الموظفون', 'Staff') }}</span>
+                            </a>
+                            <a href="{{ route('manager.hr.leaves.index') }}"
+                               class="sidebar-link flex items-center gap-3 px-4 py-2.5 {{ request()->routeIs('manager.hr.leaves.*') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <span class="text-sm font-medium flex items-center gap-1.5">
+                                    {{ $tr('الإجازات', 'Leaves') }}
+                                    @php $pendingLeaves = \App\Models\EmployeeLeave::where('status','pending')->count(); @endphp
+                                    @if($pendingLeaves > 0)
+                                        <span class="bg-yellow-400 text-yellow-900 text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">{{ $pendingLeaves }}</span>
+                                    @endif
+                                </span>
+                            </a>
+                            <a href="{{ route('manager.hr.attendance.index') }}"
+                               class="sidebar-link flex items-center gap-3 px-4 py-2.5 {{ request()->routeIs('manager.hr.attendance.*') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                                <span class="text-sm font-medium">{{ $tr('الحضور والغياب', 'Attendance') }}</span>
                             </a>
                             <a href="{{ route('manager.salaries.index') }}"
                                class="sidebar-link flex items-center gap-3 px-4 py-2.5 {{ request()->routeIs('manager.salaries.*') ? 'active' : '' }}">
@@ -353,8 +370,8 @@
                     <div class="px-3 mt-4 mb-2">
                         <p class="text-xs text-yellow-400 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('٢. إدارة المباني', '2. Building Management') }}</p>
                     </div>
-                    <a href="{{ route('manager.properties.index') }}?section=management"
-                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.properties.*') && request('section') === 'management' ? 'active' : '' }}">
+                    <a href="{{ route('manager.properties.index') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.properties.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                         <span class="text-sm font-medium">{{ $tr('المباني والوحدات', 'Buildings & Units') }}</span>
                     </a>
@@ -378,8 +395,9 @@
                 @endif
 
                 @if($user->hasRole('employee'))
+                    {{-- ===== GENERAL ===== --}}
                     <div class="px-3 mb-2">
-                        <p class="text-xs text-blue-400 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('موظف', 'Employee') }}</p>
+                        <p class="text-xs text-blue-400 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('عام', 'General') }}</p>
                     </div>
                     <a href="{{ route('employee.dashboard') }}"
                        class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('employee.dashboard') ? 'active' : '' }}">
@@ -396,6 +414,82 @@
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                         <span class="text-sm font-medium">{{ $tr('المدفوعات', 'Payments') }}</span>
                     </a>
+
+                    {{-- Leaves accordion --}}
+                    @php $leavesActive = request()->routeIs('employee.leaves.*'); @endphp
+                    <div x-data="{ open: @js($leavesActive) }" class="mb-0.5">
+                        <button @click="open = !open"
+                                class="sidebar-link w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ $leavesActive ? 'active' : '' }}">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span class="text-sm font-medium flex-1">{{ $tr('الإجازات', 'Leaves') }}</span>
+                            <svg class="w-4 h-4 flex-shrink-0 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-cloak x-transition class="ms-6 border-s border-white/10 ps-1 space-y-0.5 pb-1">
+                            <a href="{{ route('employee.leaves.create') }}"
+                               class="sidebar-link flex items-center gap-3 px-4 py-2.5 {{ request()->routeIs('employee.leaves.create') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                <span class="text-sm font-medium">{{ $tr('طلب إجازة', 'Request Leave') }}</span>
+                            </a>
+                            <a href="{{ route('employee.leaves.index') }}"
+                               class="sidebar-link flex items-center gap-3 px-4 py-2.5 {{ request()->routeIs('employee.leaves.index') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                <span class="text-sm font-medium">{{ $tr('سجل الإجازات', 'Leave History') }}</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    {{-- ===== PROPERTY MANAGEMENT ===== --}}
+                    <div class="px-3 mt-4 mb-2">
+                        <p class="text-xs text-yellow-400 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('إدارة العقارات', 'Property Management') }}</p>
+                    </div>
+
+                    {{-- Tenants accordion --}}
+                    @php $tenantsActive = request()->routeIs('employee.tenants.*'); @endphp
+                    <div x-data="{ open: @js($tenantsActive) }" class="mb-0.5">
+                        <button @click="open = !open"
+                                class="sidebar-link w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ $tenantsActive ? 'active' : '' }}">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                            <span class="text-sm font-medium flex-1">{{ $tr('المستأجرون', 'Tenants') }}</span>
+                            <svg class="w-4 h-4 flex-shrink-0 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-cloak x-transition class="ms-6 border-s border-white/10 ps-1 space-y-0.5 pb-1">
+                            <a href="{{ route('employee.tenants.index') }}"
+                               class="sidebar-link flex items-center gap-3 px-4 py-2.5 {{ request()->routeIs('employee.tenants.index') || request()->routeIs('employee.tenants.show') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                                <span class="text-sm font-medium">{{ $tr('كل المستأجرين', 'All Tenants') }}</span>
+                            </a>
+                            <a href="{{ route('employee.tenants.create') }}"
+                               class="sidebar-link flex items-center gap-3 px-4 py-2.5 {{ request()->routeIs('employee.tenants.create') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                <span class="text-sm font-medium">{{ $tr('إضافة مستأجر', 'Add Tenant') }}</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    
+
+                    {{-- Properties accordion --}}
+                    @php $propsActive = request()->routeIs('employee.properties.*'); @endphp
+                    <div x-data="{ open: @js($propsActive) }" class="mb-0.5">
+                        <button @click="open = !open"
+                                class="sidebar-link w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ $propsActive ? 'active' : '' }}">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                            <span class="text-sm font-medium flex-1">{{ $tr('العقارات', 'Properties') }}</span>
+                            <svg class="w-4 h-4 flex-shrink-0 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-cloak x-transition class="ms-6 border-s border-white/10 ps-1 space-y-0.5 pb-1">
+                            <a href="{{ route('employee.properties.index') }}"
+                               class="sidebar-link flex items-center gap-3 px-4 py-2.5 {{ request()->routeIs('employee.properties.index') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                                <span class="text-sm font-medium">{{ $tr('كل العقارات', 'All Properties') }}</span>
+                            </a>
+                            <a href="{{ route('employee.properties.create') }}"
+                               class="sidebar-link flex items-center gap-3 px-4 py-2.5 {{ request()->routeIs('employee.properties.create') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                <span class="text-sm font-medium">{{ $tr('إضافة عقار', 'Add Property') }}</span>
+                            </a>
+                        </div>
+                    </div>
                 @endif
 
                 @if($user->hasRole('accountant'))

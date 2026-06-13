@@ -95,9 +95,11 @@ $icons = [
                class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-navy/20 focus:border-navy outline-none transition">
     </div>
 
-    {{-- Image --}}
+    {{-- Image / Thumbnail --}}
     <div class="md:col-span-2">
-        <label class="block text-xs font-semibold text-gray-600 mb-1.5">الصورة</label>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5">
+            {{ ($meta['item_type'] ?? '') === 'video' ? 'الصورة المصغرة (اختياري — تُعرض قبل تشغيل الفيديو)' : 'الصورة' }}
+        </label>
         @if($item?->image)
         <div class="mb-3">
             <img src="{{ $item->imageUrl() }}" alt="" class="h-28 rounded-xl object-cover border border-gray-200">
@@ -107,6 +109,31 @@ $icons = [
         <input type="file" name="image" accept="image/*"
                class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-navy/8 file:text-navy file:font-medium hover:file:bg-navy hover:file:text-white file:transition">
     </div>
+
+    {{-- Video file upload (only for video items) --}}
+    @if(($meta['item_type'] ?? '') === 'video')
+    <div class="md:col-span-2">
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5">ملف الفيديو <span class="text-red-500">*</span></label>
+        @if(!empty($item?->extra['video_path']))
+        <div class="mb-3 flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="w-8 h-8 text-navy flex-shrink-0"><path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+            <div>
+                <p class="text-xs font-semibold text-gray-700">الفيديو الحالي</p>
+                <a href="{{ asset('storage/'.$item->extra['video_path']) }}" target="_blank" class="text-xs text-navy hover:underline">عرض الفيديو</a>
+            </div>
+        </div>
+        @endif
+        <input type="file" name="video_file" accept="video/mp4,video/webm,video/mov,video/quicktime"
+               class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-gold/10 file:text-navy file:font-medium hover:file:bg-gold/20 file:transition">
+        <p class="text-xs text-gray-400 mt-1.5">
+            @if(app()->getLocale() === 'en')
+                Supported formats: MP4, WebM, MOV — Max size: 500 MB
+            @else
+                الصيغ المدعومة: MP4, WebM, MOV — الحد الأقصى: 500 ميجابايت
+            @endif
+        </p>
+    </div>
+    @endif
 
     {{-- Active toggle --}}
     <div class="md:col-span-2 flex items-center gap-3">

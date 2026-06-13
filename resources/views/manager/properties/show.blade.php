@@ -221,30 +221,41 @@
             <h3 class="font-bold text-gray-800 text-sm flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 text-blue-700"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z"/></svg>
                 {{ $tr('صور العقار', 'Property Images') }}
-                <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">{{ $property->images->count() }}</span>
+                <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">{{ $property->images->count() }} / 7</span>
             </h3>
         </div>
 
         {{-- Upload form --}}
         <div class="px-4 py-4 border-b border-gray-100 bg-gray-50">
-            <form method="POST" action="{{ route('manager.properties.images.store', $property) }}" enctype="multipart/form-data" class="flex items-center gap-3 flex-wrap">
+            @if($property->images->count() < 7)
+            <form id="img-upload-form-{{ $property->id }}"
+                  method="POST"
+                  action="{{ route('manager.properties.images.store', $property) }}"
+                  enctype="multipart/form-data">
                 @csrf
-                <label class="flex-1 min-w-0 cursor-pointer">
-                    <div class="border-2 border-dashed border-gray-300 hover:border-blue-400 rounded-xl px-4 py-3 text-center transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 mx-auto mb-1 text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
-                        <p class="text-xs text-gray-500" id="img-label-{{ $property->id }}">{{ $tr('اختر الصور (يمكن اختيار أكثر من صورة)', 'Choose images (multiple allowed)') }}</p>
-                    </div>
-                    <input type="file" name="images[]" multiple accept="image/*" class="hidden"
-                           onchange="document.getElementById('img-label-{{ $property->id }}').textContent = this.files.length + ' {{ $tr('صورة مختارة', 'image(s) selected') }}'">
-                </label>
-                <button type="submit" class="bg-blue-900 hover:bg-blue-800 text-white px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
-                    {{ $tr('رفع الصور', 'Upload') }}
-                </button>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <input type="file" id="img-file-{{ $property->id }}" name="images[]" multiple accept="image/*"
+                           class="block flex-1 min-w-0 text-sm text-gray-600 border border-gray-200 rounded-lg px-3 py-2 bg-white
+                                  file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium
+                                  file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                    <button type="submit"
+                            class="bg-blue-900 hover:bg-blue-800 text-white px-5 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 flex-shrink-0 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+                        {{ $tr('رفع الصور', 'Upload') }}
+                    </button>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">{{ $tr('JPG، PNG، WebP — حد أقصى 10 ميجا للصورة', 'JPG, PNG, WebP — max 10 MB each') }}</p>
             </form>
+            @else
+            <p class="text-sm text-amber-700 font-medium">{{ $tr('تم الوصول للحد الأقصى (7 صور). احذف صورة لإضافة أخرى.', 'Maximum reached (7 images). Delete one to add another.') }}</p>
+            @endif
             @if(session('success'))
             <p class="text-green-700 text-xs mt-2 font-medium">✓ {{ session('success') }}</p>
             @endif
+            @php $imgErrors = collect($errors->getMessages())->filter(fn($m,$k) => str_starts_with($k,'images'))->flatten(); @endphp
+            @foreach($imgErrors as $msg)
+            <p class="text-red-600 text-xs mt-1 font-medium">✗ {{ $msg }}</p>
+            @endforeach
         </div>
 
         {{-- Images grid --}}

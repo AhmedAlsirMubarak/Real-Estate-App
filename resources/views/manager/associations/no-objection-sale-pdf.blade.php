@@ -30,7 +30,7 @@
             <img src="{{ public_path('img/logo.png') }}" style="max-height:58px; max-width:115px;">
         </td>
         <td style="width:60%; text-align:center; vertical-align:middle;">
-            <div style="font-size:14pt; font-weight:bold;">شركة ثروة للعقارات</div>
+            <div style="font-size:14pt; font-weight:bold;">شركة ثروة للتطوير العقاري</div>
         </td>
         <td style="width:20%; text-align:left; vertical-align:middle; font-size:11pt; font-weight:bold;">
             التاريخ : {{ now()->format('Y/m/d') }}

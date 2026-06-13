@@ -116,6 +116,53 @@ class UserController extends Controller
             ->with('success', 'تم تحديث بيانات المستخدم بنجاح');
     }
 
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $ids = array_filter((array) $request->input('ids', []), 'is_numeric');
+
+        if (empty($ids)) {
+            return back()->with('error', app()->getLocale() === 'ar' ? 'لم يتم تحديد أي مستخدم.' : 'No users selected.');
+        }
+
+        // Never delete yourself
+        $ids = array_diff($ids, [$request->user()->id]);
+
+        // Never delete the last manager
+        $managerIds = User::role('manager')->whereIn('id', $ids)->pluck('id');
+        if ($managerIds->count() > 0 && User::role('manager')->count() <= $managerIds->count()) {
+            $ids = array_diff($ids, $managerIds->toArray());
+        }
+
+        if (empty($ids)) {
+            return back()->with('error', app()->getLocale() === 'ar' ? 'لا يمكن حذف المستخدمين المحددين.' : 'Cannot delete the selected users.');
+        }
+
+        foreach ($ids as $id) {
+            $this->clearDatabaseSessions((int) $id);
+        }
+
+        $count = User::whereIn('id', $ids)->count();
+        User::whereIn('id', $ids)->delete();
+
+        return back()->with('success', app()->getLocale() === 'ar' ? "تم حذف {$count} مستخدم بنجاح." : "{$count} user(s) deleted successfully.");
+    }
+
+    public function destroy(Request $request, User $user): RedirectResponse
+    {
+        if ($request->user()->id === $user->id) {
+            return back()->with('error', app()->getLocale() === 'ar' ? 'لا يمكنك حذف حسابك الحالي.' : 'You cannot delete your own account.');
+        }
+
+        if ($user->hasRole('manager') && User::role('manager')->count() <= 1) {
+            return back()->with('error', app()->getLocale() === 'ar' ? 'لا يمكن حذف المدير الوحيد في النظام.' : 'Cannot delete the only manager account.');
+        }
+
+        $this->clearDatabaseSessions($user->id);
+        $user->delete();
+
+        return back()->with('success', app()->getLocale() === 'ar' ? 'تم حذف المستخدم بنجاح.' : 'User deleted successfully.');
+    }
+
     public function toggleBlock(Request $request, User $user): RedirectResponse
     {
         if ($request->user()->id === $user->id) {

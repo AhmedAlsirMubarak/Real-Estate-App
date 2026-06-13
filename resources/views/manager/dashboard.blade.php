@@ -278,7 +278,7 @@
                     <tbody class="divide-y divide-orange-100">
                         @foreach($expiringContracts as $ec)
                         @php
-                            $daysLeft = now()->diffInDays($ec->end_date, false);
+                            $daysLeft = (int) now()->diffInDays($ec->end_date, false);
                             $urgency  = $daysLeft <= 7 ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700';
                             $tenantName = $ec->tenant?->user?->name ?? $tr('مستأجر', 'Tenant');
                             $phone      = $ec->tenant?->user?->phone ?? $ec->tenant?->phone;

@@ -36,7 +36,8 @@
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('الهاتف', 'Phone') }}</th>
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('الدور', 'Role') }}</th>
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('العقارات المُسنَدة', 'Managed') }}</th>
-                            <th class="px-4 py-3 text-right font-medium">{{ $tr('عقارات مُحالة', 'Referred') }}</th>
+                            <th class="px-4 py-3 text-right font-medium">{{ $tr('إحالات', 'Referrals') }}</th>
+                            <th class="px-4 py-3 text-right font-medium">{{ $tr('نسبة العمولة الافتراضية', 'Default Comm. Rate') }}</th>
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('عمولة الإحالة', 'Referral Comm.') }}</th>
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('الإجراءات', 'Actions') }}</th>
                         </tr>
@@ -56,19 +57,36 @@
                                 <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-medium">{{ $employee->managed_properties_count }}</span>
                             </td>
                             <td class="px-4 py-3">
-                                @if($employee->referred_properties_count > 0)
-                                    <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">{{ $employee->referred_properties_count }} {{ $tr('عقار', 'props') }}</span>
+                                @php $hasReferrals = ($employee->referred_properties_count + $employee->referred_tenants_count) > 0; @endphp
+                                @if($hasReferrals)
+                                    <div class="flex flex-wrap gap-1">
+                                        @if($employee->referred_properties_count > 0)
+                                            <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs font-medium">{{ $employee->referred_properties_count }} {{ $tr('عقار', 'props') }}</span>
+                                        @endif
+                                        @if($employee->referred_tenants_count > 0)
+                                            <span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full text-xs font-medium">{{ $employee->referred_tenants_count }} {{ $tr('مستأجر', 'tenants') }}</span>
+                                        @endif
+                                    </div>
                                 @else
                                     <span class="text-gray-400 text-xs">—</span>
                                 @endif
                             </td>
                             <td class="px-4 py-3">
-                                @if($employee->referred_properties_count > 0)
-                                    <div class="text-sm font-semibold {{ $employee->referral_commission_earned > 0 ? 'text-green-700' : 'text-gray-400' }}">
+                                @if($employee->commission_rate)
+                                    <span class="bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-semibold">{{ $employee->commission_rate }}%</span>
+                                @else
+                                    <span class="text-gray-400 text-xs">—</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
+                                @if($employee->referral_commission_earned > 0)
+                                    <div class="text-sm font-semibold text-green-700">
                                         {{ number_format($employee->referral_commission_earned, 2) }}
                                         <span class="text-xs font-normal text-gray-500">{{ $tr('ر.ع', 'OMR') }}</span>
                                     </div>
-                                    <div class="text-xs text-gray-400">{{ $tr('من الإيجار المحصَّل', 'from collected rent') }}</div>
+                                    <div class="text-xs text-gray-400">{{ $tr('إجمالي الإحالات', 'all referrals') }}</div>
+                                @elseif($hasReferrals)
+                                    <span class="text-gray-400 text-xs">0.00 {{ $tr('ر.ع', 'OMR') }}</span>
                                 @else
                                     <span class="text-gray-400 text-xs">—</span>
                                 @endif
@@ -85,7 +103,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">{{ $tr('لا يوجد موظفون مسجلون', 'No employees found') }}</td></tr>
+                        <tr><td colspan="9" class="px-4 py-8 text-center text-gray-400">{{ $tr('لا يوجد موظفون مسجلون', 'No employees found') }}</td></tr>
                         @endforelse
                     </tbody>
                 </table>

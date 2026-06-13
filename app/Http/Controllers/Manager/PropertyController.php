@@ -63,7 +63,7 @@ class PropertyController extends Controller
         $property = Property::create($validated);
 
         // For non-apartment types, auto-create a single unit
-        if (in_array($property->type, ['villa', 'farm', 'chalet'])) {
+        if (in_array($property->type, ['villa', 'farm', 'chalet', 'flat', 'land'])) {
             $property->units()->create([
                 'type'         => $property->type . '_unit',
                 'area'         => $property->total_area,
@@ -84,18 +84,39 @@ class PropertyController extends Controller
 
     public function storeImage(Request $request, Property $property)
     {
-        $request->validate(['images' => 'required', 'images.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048']);
+        $request->validate(['images' => 'required', 'images.*' => 'image|max:10240']);
 
         $existingCount = $property->images()->count();
+        $maxImages = 7;
+        if ($existingCount >= $maxImages) {
+            return back()->withErrors(['images' => 'الحد الأقصى للصور هو ' . $maxImages . ' صور لكل عقار. / Maximum ' . $maxImages . ' images allowed per property.']);
+        }
+
         $isFirst = $existingCount === 0;
-        foreach ($request->file('images') as $i => $file) {
+        $remaining = $maxImages - $existingCount;
+        $saved = 0;
+        $errors = [];
+        foreach (array_slice($request->file('images'), 0, $remaining) as $i => $file) {
             $path = $this->storeUploadedFile($file, 'properties/' . $property->id);
-            if (!$path) continue;
-            $property->images()->create([
-                'path'       => $path,
-                'is_primary' => $isFirst && $i === 0,
-                'sort_order' => $existingCount + $i,
-            ]);
+            if (!$path) {
+                $errors[] = $file->getClientOriginalName() . ': failed to save file';
+                continue;
+            }
+            try {
+                $property->images()->create([
+                    'path'       => $path,
+                    'is_primary' => $isFirst && $i === 0,
+                    'sort_order' => $existingCount + $i,
+                ]);
+                $saved++;
+            } catch (\Throwable $e) {
+                \Log::error('PropertyImage create failed: ' . $e->getMessage(), ['path' => $path, 'property_id' => $property->id]);
+                $errors[] = $file->getClientOriginalName() . ': ' . $e->getMessage();
+            }
+        }
+
+        if ($errors) {
+            return back()->with('success', $saved . ' image(s) saved.')->withErrors(['images' => implode(' | ', $errors)]);
         }
 
         return back()->with('success', 'تم رفع الصور بنجاح');
@@ -264,7 +285,7 @@ class PropertyController extends Controller
             'code'        => 'nullable|string|max:50|unique:properties,code,' . ($property?->id ?? 'NULL'),
             'name_ar'     => 'required|string|max:255',
             'name_en'     => 'nullable|string|max:255',
-            'type'        => 'required|in:apartment_building,villa,farm,chalet',
+            'type'        => 'required|in:apartment_building,villa,farm,chalet,flat,land',
             'purpose'     => 'required|in:rent,sale,both',
             'section'     => 'required|in:hoa,management,external',
             'address_ar'  => 'required|string|max:500',
@@ -306,6 +327,8 @@ class PropertyController extends Controller
             'villa'              => 'TH-V',
             'farm'               => 'TH-F',
             'chalet'             => 'TH-C',
+            'flat'               => 'TH-FL',
+            'land'               => 'TH-L',
             default              => 'TH',
         };
         $count = Property::where('type', $type)->count() + 1;

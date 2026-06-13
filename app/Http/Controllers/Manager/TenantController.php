@@ -6,6 +6,7 @@ use App\Exports\TenantExport;
 use App\Exports\TenantTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\TenantImport;
+use App\Models\Payment;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Unit;
@@ -13,6 +14,8 @@ use App\Models\RentalContract;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Mpdf\Mpdf;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class TenantController extends Controller
@@ -20,7 +23,7 @@ class TenantController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $tenants = Tenant::with(['user', 'activeContract.unit.property', 'rentalContracts.unit.property'])
+        $tenants = Tenant::with(['user', 'referralEmployee', 'latestPayment', 'activeContract.unit.property', 'rentalContracts.unit.property'])
             ->when($search, function ($query) use ($search) {
                 $query->whereHas('user', function ($userQuery) use ($search) {
                     $userQuery->where('name', 'like', "%{$search}%")
@@ -45,7 +48,8 @@ class TenantController extends Controller
             ->whereIn('listing_type', ['rent', 'both'])
             ->with('property')
             ->get();
-        return view('manager.tenants.create', compact('availableUnits'));
+        $employees = User::role('employee')->get();
+        return view('manager.tenants.create', compact('availableUnits', 'employees'));
     }
 
     public function store(Request $request)
@@ -53,11 +57,13 @@ class TenantController extends Controller
         $validated = $request->validate([
             'name_ar' => 'required|string|max:255',
             'name_en' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'nullable|email|unique:users,email',
             'phone' => 'nullable|string|max:20',
-            'password' => 'required|string|min:8',
+            'password' => 'nullable|string|min:8',
             'national_id' => 'nullable|string|max:50',
             'emergency_contact' => 'nullable|string|max:255',
+            'referral_employee_id'     => 'nullable|exists:users,id',
+            'referral_commission_rate' => 'nullable|numeric|min:0|max:100',
             'unit_id' => 'required|exists:units,id',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
@@ -67,21 +73,26 @@ class TenantController extends Controller
             'water_account_number'       => 'nullable|string|max:100',
         ]);
 
+        $email    = $validated['email'] ?? ('tenant_' . uniqid() . '@noemail.local');
+        $password = Hash::make($validated['password'] ?? Str::random(16));
+
         $user = User::create(array_merge($this->buildUserNamePayload($validated), [
-            'email' => $validated['email'],
-            'phone' => $validated['phone'] ?? null,
-            'password' => Hash::make($validated['password']),
+            'email'    => $email,
+            'phone'    => $validated['phone'] ?? null,
+            'password' => $password,
         ]));
         $user->assignRole('tenant');
 
         $tenant = Tenant::create([
-            'user_id' => $user->id,
-            'national_id' => $validated['national_id'] ?? null,
-            'phone' => $validated['phone'] ?? null,
-            'emergency_contact' => $validated['emergency_contact'] ?? null,
+            'user_id'                  => $user->id,
+            'national_id'              => $validated['national_id'] ?? null,
+            'phone'                    => $validated['phone'] ?? null,
+            'emergency_contact'        => $validated['emergency_contact'] ?? null,
+            'referral_employee_id'     => $validated['referral_employee_id'] ?? null,
+            'referral_commission_rate' => $validated['referral_commission_rate'] ?? null,
         ]);
 
-        RentalContract::create([
+        $contract = RentalContract::create([
             'unit_id'                    => $validated['unit_id'],
             'tenant_id'                  => $tenant->id,
             'start_date'                 => $validated['start_date'],
@@ -93,6 +104,30 @@ class TenantController extends Controller
             'water_account_number'       => $validated['water_account_number'] ?? null,
         ]);
 
+        $startDate = \Carbon\Carbon::parse($validated['start_date']);
+
+        Payment::create([
+            'rental_contract_id' => $contract->id,
+            'tenant_id'          => $tenant->id,
+            'type'               => 'rent',
+            'amount'             => $validated['monthly_rent'],
+            'month'              => $startDate->month,
+            'year'               => $startDate->year,
+            'status'             => 'pending',
+        ]);
+
+        if (!empty($validated['deposit']) && $validated['deposit'] > 0) {
+            Payment::create([
+                'rental_contract_id' => $contract->id,
+                'tenant_id'          => $tenant->id,
+                'type'               => 'deposit',
+                'amount'             => $validated['deposit'],
+                'month'              => $startDate->month,
+                'year'               => $startDate->year,
+                'status'             => 'pending',
+            ]);
+        }
+
         Unit::where('id', $validated['unit_id'])->update(['status' => 'rented']);
 
         return redirect()->route('manager.tenants.index')
@@ -103,6 +138,106 @@ class TenantController extends Controller
     {
         $tenant->load(['user', 'activeContract.unit.property', 'rentalContracts.unit.property', 'maintenanceRequests.unit', 'payments']);
         return view('manager.tenants.show', compact('tenant'));
+    }
+
+    public function generatePayment(Request $request, Tenant $tenant)
+    {
+        $validated = $request->validate([
+            'month'  => 'required|integer|min:1|max:12',
+            'year'   => 'required|integer|min:2000|max:2100',
+            'amount' => 'required|numeric|min:0',
+        ]);
+
+        $contract = $tenant->activeContract ?? $tenant->rentalContracts()->latest()->first();
+
+        if (!$contract) {
+            return redirect()->route('manager.tenants.show', $tenant)
+                ->withErrors(['payment' => 'لا يوجد عقد لهذا المستأجر، يرجى إضافة عقد أولاً.']);
+        }
+
+        try {
+            Payment::create([
+                'rental_contract_id' => $contract->id,
+                'tenant_id'          => $tenant->id,
+                'type'               => 'rent',
+                'amount'             => $validated['amount'],
+                'month'              => $validated['month'],
+                'year'               => $validated['year'],
+                'status'             => 'pending',
+            ]);
+        } catch (\Throwable $e) {
+            return redirect()->route('manager.tenants.show', $tenant)
+                ->withErrors(['payment' => 'يوجد فاتورة إيجار لهذا الشهر مسبقاً.']);
+        }
+
+        return redirect()->route('manager.tenants.show', $tenant)
+            ->with('success', 'تم توليد الفاتورة بنجاح');
+    }
+
+    public function destroyPayment(Tenant $tenant, Payment $payment)
+    {
+        if ((int) $payment->tenant_id !== (int) $tenant->id) {
+            return redirect()->route('manager.tenants.show', $tenant)
+                ->withErrors(['payment' => 'لا يمكن حذف هذه الفاتورة.']);
+        }
+        $payment->delete();
+        return redirect()->route('manager.tenants.show', $tenant)
+            ->with('success', 'تم حذف الفاتورة بنجاح');
+    }
+
+    public function markPaymentPaid(Request $request, Tenant $tenant, Payment $payment)
+    {
+        if ((int) $payment->tenant_id !== (int) $tenant->id) {
+            return redirect()->route('manager.tenants.show', $tenant)
+                ->withErrors(['payment' => 'لا يمكن تعديل هذه الفاتورة.']);
+        }
+
+        $validated = $request->validate([
+            'paid_at' => 'nullable|date',
+        ]);
+
+        $payment->update([
+            'status'  => 'paid',
+            'paid_at' => $validated['paid_at'] ?? now(),
+        ]);
+
+        return redirect()->route('manager.tenants.show', $tenant)
+            ->with('success', 'تم تسجيل الدفع بنجاح');
+    }
+
+    public function paymentInvoice(Tenant $tenant, Payment $payment)
+    {
+        abort_if((int) $payment->tenant_id !== (int) $tenant->id, 403);
+
+        $payment->load(['rentalContract.unit.property', 'tenant.user']);
+
+        $isAr = app()->getLocale() === 'ar';
+        $html = view('manager.tenants.payment-invoice', compact('tenant', 'payment', 'isAr'))->render();
+
+        $tempDir = storage_path('app/mpdf');
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $mpdf = new Mpdf([
+            'mode'         => 'utf-8',
+            'format'       => 'A4',
+            'orientation'  => 'P',
+            'default_font' => 'dejavusans',
+            'tempDir'      => $tempDir,
+        ]);
+
+        if ($isAr) {
+            $mpdf->SetDirectionality('rtl');
+        }
+
+        $mpdf->WriteHTML($html);
+
+        $filename = 'rent-invoice-' . str_pad($payment->id, 6, '0', STR_PAD_LEFT) . '.pdf';
+
+        return response($mpdf->Output('', 'S'))
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
     }
 
     public function edit(Tenant $tenant)
@@ -122,7 +257,8 @@ class TenantController extends Controller
             }
         }
 
-        return view('manager.tenants.edit', compact('tenant', 'availableUnits'));
+        $employees = User::role('employee')->get();
+        return view('manager.tenants.edit', compact('tenant', 'availableUnits', 'employees'));
     }
 
     public function update(Request $request, Tenant $tenant)
@@ -130,11 +266,13 @@ class TenantController extends Controller
         $validated = $request->validate([
             'name_ar'           => 'required|string|max:255',
             'name_en'           => 'required|string|max:255',
-            'email'             => 'required|email|unique:users,email,' . $tenant->user_id,
+            'email'             => 'nullable|email|unique:users,email,' . $tenant->user_id,
             'phone'             => 'nullable|string|max:20',
-            'national_id'       => 'nullable|string|max:50',
-            'emergency_contact' => 'nullable|string|max:255',
-            'password'          => 'nullable|string|min:8',
+            'national_id'              => 'nullable|string|max:50',
+            'emergency_contact'        => 'nullable|string|max:255',
+            'referral_employee_id'     => 'nullable|exists:users,id',
+            'referral_commission_rate' => 'nullable|numeric|min:0|max:100',
+            'password'                 => 'nullable|string|min:8',
             'unit_id'           => 'nullable|exists:units,id',
             'start_date'        => 'nullable|required_with:unit_id|date',
             'end_date'          => 'nullable|required_with:unit_id|date|after:start_date',
@@ -145,7 +283,7 @@ class TenantController extends Controller
         ]);
 
         $userUpdate = array_merge($this->buildUserNamePayload($validated), [
-            'email' => $validated['email'],
+            'email' => $validated['email'] ?? $tenant->user->email,
             'phone' => $validated['phone'] ?? null,
         ]);
         if (!empty($validated['password'])) {
@@ -154,9 +292,11 @@ class TenantController extends Controller
         $tenant->user->update($userUpdate);
 
         $tenant->update([
-            'national_id'       => $validated['national_id'] ?? null,
-            'phone'             => $validated['phone'] ?? null,
-            'emergency_contact' => $validated['emergency_contact'] ?? null,
+            'national_id'              => $validated['national_id'] ?? null,
+            'phone'                    => $validated['phone'] ?? null,
+            'emergency_contact'        => $validated['emergency_contact'] ?? null,
+            'referral_employee_id'     => $validated['referral_employee_id'] ?? null,
+            'referral_commission_rate' => $validated['referral_commission_rate'] ?? null,
         ]);
 
         if (!empty($validated['unit_id'])) {

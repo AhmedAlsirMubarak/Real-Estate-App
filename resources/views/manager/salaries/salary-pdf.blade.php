@@ -82,7 +82,7 @@
                 </p>
             </td>
             <td class="hdr-right">
-                <div>شركة ثروة للعقارات</div>
+                <div>شركة ثروة للتطوير العقاري</div>
                 <div style="margin-top:3px;">{{ now()->format('Y/m/d H:i') }}</div>
             </td>
         </tr>
@@ -223,7 +223,7 @@
 @endif
 
 <div class="footer">
-    شركة ثروة للعقارات &mdash; تقرير الرواتب التفصيلي
+    شركة ثروة للتطوير العقاري &mdash; تقرير الرواتب التفصيلي
     @if($periodLabel) &mdash; الفترة: {{ $periodLabel }} @endif
     &mdash; تم التوليد في {{ now()->format('Y/m/d H:i') }}
 </div>

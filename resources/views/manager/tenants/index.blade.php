@@ -49,6 +49,7 @@
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('العقار', 'Property') }}</th>
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('الوحدة', 'Unit') }}</th>
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('حالة العقد', 'Contract Status') }}</th>
+                            <th class="px-4 py-3 text-right font-medium">{{ $tr('موظف الإحالة', 'Referral Employee') }}</th>
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('الإجراءات', 'Actions') }}</th>
                         </tr>
                     </thead>
@@ -73,12 +74,36 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3">
+                                @if($tenant->referralEmployee)
+                                    <div class="text-xs font-medium text-gray-800">{{ $tenant->referralEmployee->name }}</div>
+                                    @if($tenant->referral_commission_rate)
+                                    <div class="text-xs text-emerald-600 font-semibold">{{ $tenant->referral_commission_rate }}%</div>
+                                    @endif
+                                @else
+                                    <span class="text-gray-400 text-xs">—</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3">
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <a href="{{ route('manager.tenants.show', $tenant) }}" class="text-blue-600 hover:text-blue-800 text-xs font-medium">{{ $tr('عرض', 'View') }}</a>
                                     <a href="{{ route('manager.tenants.edit', $tenant) }}" class="text-yellow-600 hover:text-yellow-800 text-xs font-medium">{{ $tr('تعديل', 'Edit') }}</a>
                                     <x-whatsapp-button size="sm"
                                         :phone="$tenant->user?->phone ?? $tenant->phone"
                                         :message="$tr('السلام عليكم — تذكير من شركة ثروة', 'Hello — reminder from Tharwa Real Estate')" />
+                                    @if($tenant->latestPayment)
+                                    <a href="{{ route('manager.tenants.payments.invoice', [$tenant, $tenant->latestPayment]) }}"
+                                       target="_blank"
+                                       class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        {{ $tr('فاتورة', 'Invoice') }}
+                                    </a>
+                                    @elseif($contract)
+                                    <a href="{{ route('manager.tenants.show', $tenant) }}#payments"
+                                       class="inline-flex items-center gap-1 border border-indigo-300 text-indigo-600 hover:bg-indigo-50 px-2.5 py-1 rounded-lg text-xs font-medium transition">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                        {{ $tr('توليد فاتورة', 'Generate') }}
+                                    </a>
+                                    @endif
                                     <form method="POST" action="{{ route('manager.tenants.destroy', $tenant) }}" onsubmit="return confirm('{{ $tr('هل أنت متأكد من الحذف؟', 'Are you sure you want to delete?') }}')">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="text-red-600 hover:text-red-800 text-xs font-medium">{{ $tr('حذف', 'Delete') }}</button>
@@ -87,7 +112,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">{{ $tr('لا يوجد مستأجرون مسجلون', 'No tenants found') }}</td></tr>
+                        <tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">{{ $tr('لا يوجد مستأجرون مسجلون', 'No tenants found') }}</td></tr>
                         @endforelse
                     </tbody>
                 </table>

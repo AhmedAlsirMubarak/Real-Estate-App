@@ -154,10 +154,12 @@ class Property extends Model
         if (app()->getLocale() === 'en') {
             return match ($this->type) {
                 'apartment_building' => 'Apartment Building',
-                'villa' => 'Villa',
-                'farm' => 'Farm',
-                'chalet' => 'Chalet',
-                default => $this->type,
+                'villa'              => 'Villa',
+                'farm'               => 'Farm',
+                'chalet'             => 'Chalet',
+                'flat'               => 'Flat',
+                'land'               => 'Land',
+                default              => $this->type,
             };
         }
 
@@ -166,6 +168,8 @@ class Property extends Model
             'villa'              => 'فيلا',
             'farm'               => 'مزرعة',
             'chalet'             => 'شاليه',
+            'flat'               => 'شقة',
+            'land'               => 'أرض',
             default              => $this->type,
         };
     }

@@ -13,7 +13,7 @@
         }
         * { font-family: {{ app()->getLocale() === 'ar' ? "'Cairo'" : "'Sora'" }}, sans-serif; }
         html { scroll-behavior: smooth; }
-        body { background: var(--bg-section); color: var(--text-dark); overflow-x: hidden; }
+        body { background: var(--bg-section); color: var(--text-dark); overflow-x: clip; }
 
         .navbar { background: var(--navy); }
         .page-hero {
@@ -164,7 +164,7 @@
                         <label class="block text-xs font-semibold mb-2" style="color:var(--text-dark);">{{ $tr('نوع العقار', 'Property Type') }}</label>
                         <select name="type" class="filter-input w-full rounded-xl px-3 py-2.5 text-sm">
                             <option value="">{{ $tr('جميع الأنواع', 'All types') }}</option>
-                            @foreach(['apartment_building' => $tr('عمارة سكنية', 'Apartment Building'), 'villa' => $tr('فيلا', 'Villa'), 'farm' => $tr('مزرعة', 'Farm'), 'chalet' => $tr('شاليه', 'Chalet')] as $val => $label)
+                            @foreach(['apartment_building' => $tr('عمارة سكنية', 'Apartment Building'), 'flat' => $tr('شقة', 'Flat'), 'villa' => $tr('فيلا', 'Villa'), 'farm' => $tr('مزرعة', 'Farm'), 'chalet' => $tr('شاليه', 'Chalet'), 'land' => $tr('أرض', 'Land')] as $val => $label)
                             <option value="{{ $val }}" {{ request('type') === $val ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
                         </select>
@@ -273,7 +273,7 @@
                     <label class="block text-xs font-semibold mb-2" style="color:var(--text-dark);">{{ $tr('نوع العقار', 'Property Type') }}</label>
                     <select name="type" class="filter-input w-full rounded-xl px-3 py-2.5 text-sm">
                         <option value="">{{ $tr('جميع الأنواع', 'All types') }}</option>
-                        @foreach(['apartment_building' => $tr('عمارة سكنية', 'Apartment Building'), 'villa' => $tr('فيلا', 'Villa'), 'farm' => $tr('مزرعة', 'Farm'), 'chalet' => $tr('شاليه', 'Chalet')] as $val => $label)
+                        @foreach(['apartment_building' => $tr('عمارة سكنية', 'Apartment Building'), 'flat' => $tr('شقة', 'Flat'), 'villa' => $tr('فيلا', 'Villa'), 'farm' => $tr('مزرعة', 'Farm'), 'chalet' => $tr('شاليه', 'Chalet'), 'land' => $tr('أرض', 'Land')] as $val => $label)
                         <option value="{{ $val }}" {{ request('type') === $val ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>
@@ -343,7 +343,7 @@
                 @endif
                 @if(request('type'))
                     <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                        {{ $tr('النوع', 'Type') }}: {{ ['apartment_building'=>$tr('عمارة','Building'),'villa'=>$tr('فيلا','Villa'),'farm'=>$tr('مزرعة','Farm'),'chalet'=>$tr('شاليه','Chalet')][request('type')] ?? request('type') }}
+                        {{ $tr('النوع', 'Type') }}: {{ ['apartment_building'=>$tr('عمارة','Building'),'flat'=>$tr('شقة','Flat'),'villa'=>$tr('فيلا','Villa'),'farm'=>$tr('مزرعة','Farm'),'chalet'=>$tr('شاليه','Chalet'),'land'=>$tr('أرض','Land')][request('type')] ?? request('type') }}
                         <a href="{{ request()->fullUrlWithQuery(['type'=>null]) }}" class="hover:text-purple-900">✕</a>
                     </span>
                 @endif
@@ -552,7 +552,7 @@
 
 {{-- Footer --}}
 <footer class="mt-16 py-8 border-t text-center text-xs" style="border-color:var(--border); color:var(--text-muted);">
-    © {{ date('Y') }} {{ $tr('شركة ثروة للعقارات — جميع الحقوق محفوظة', 'Tharwa Real Estate — All rights reserved') }}
+    © {{ date('Y') }} {{ $tr('شركة ثروة للتطوير العقاري — جميع الحقوق محفوظة', 'Tharwa Real Estate — All rights reserved') }}
 </footer>
 
 <script>

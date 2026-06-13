@@ -10,7 +10,7 @@
 :root{--navy:#0f2444;--navy-mid:#1a3a6b;--gold:#c9a84c;--gold-light:#e8c96e;--text:#1a2437;--muted:#64748b;--border:#e2e8f0;--off:#f8fafc}
 *{font-family:{{ app()->getLocale()==='ar' ? "'Cairo'" : "'Sora'" }},sans-serif}
 html{scroll-behavior:smooth}
-body{background:#fff;color:var(--text);overflow-x:hidden}
+body{background:#fff;color:var(--text);overflow-x:clip}
 
 /* Gallery */
 .gal-main{position:relative;overflow:hidden;border-radius:14px 14px 0 0;cursor:pointer;background:#0f2444}
@@ -518,7 +518,7 @@ body{background:#fff;color:var(--text);overflow-x:hidden}
 
 {{-- FOOTER --}}
 <footer class="mt-6 py-8 border-t text-center text-xs" style="border-color:var(--border);color:var(--muted)">
-  © {{ date('Y') }} {{ $isAr ? 'شركة ثروة للعقارات — جميع الحقوق محفوظة' : 'Tharwa Real Estate — All rights reserved' }}
+  © {{ date('Y') }} {{ $isAr ? 'شركة ثروة للتطوير العقاري — جميع الحقوق محفوظة' : 'Tharwa Real Estate — All rights reserved' }}
 </footer>
 
 <script>

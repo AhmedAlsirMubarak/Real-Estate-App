@@ -44,9 +44,11 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('نوع العقار', 'Property Type') }}</label>
                     <select name="type" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                         <option value="apartment_building" @selected($typeValue === 'apartment_building')>{{ $tr('عمارة', 'Apartment Building') }}</option>
+                        <option value="flat" @selected($typeValue === 'flat')>{{ $tr('شقة', 'Flat') }}</option>
                         <option value="villa" @selected($typeValue === 'villa')>{{ $tr('فيلا', 'Villa') }}</option>
                         <option value="farm" @selected($typeValue === 'farm')>{{ $tr('مزرعة', 'Farm') }}</option>
                         <option value="chalet" @selected($typeValue === 'chalet')>{{ $tr('شاليه', 'Chalet') }}</option>
+                        <option value="land" @selected($typeValue === 'land')>{{ $tr('أرض', 'Land') }}</option>
                     </select>
                 </div>
                 <div>
@@ -169,17 +171,17 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('موظف الإحالة', 'Referral Employee') }}</label>
-                            <select name="referral_employee_id" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                                <option value="">— {{ $tr('لا يوجد', 'None') }} —</option>
+                            <select name="referral_employee_id" id="referral-employee-select" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                                <option value="" data-rate="">— {{ $tr('لا يوجد', 'None') }} —</option>
                                 @foreach($employees as $emp)
-                                <option value="{{ $emp->id }}" @selected((string) old('referral_employee_id', $property->referral_employee_id) === (string) $emp->id)>{{ $emp->name }}</option>
+                                <option value="{{ $emp->id }}" data-rate="{{ $emp->commission_rate }}" @selected((string) old('referral_employee_id', $property->referral_employee_id) === (string) $emp->id)>{{ $emp->name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('نسبة عمولة الإحالة %', 'Referral Commission %') }}</label>
                             <div class="relative">
-                                <input type="number" name="referral_commission_rate"
+                                <input type="number" name="referral_commission_rate" id="referral-commission-rate"
                                        value="{{ old('referral_commission_rate', $property->referral_commission_rate) }}"
                                        step="0.01" min="0" max="100" placeholder="0.00"
                                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm pr-8">
@@ -358,4 +360,16 @@
         </div>
         @endif
     </div>
+
+    <script>
+        document.getElementById('referral-employee-select').addEventListener('change', function () {
+            const rate = this.options[this.selectedIndex].dataset.rate;
+            const rateInput = document.getElementById('referral-commission-rate');
+            if (rate) {
+                rateInput.value = rate;
+            } else {
+                rateInput.value = '';
+            }
+        });
+    </script>
 </x-app-layout>

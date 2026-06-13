@@ -78,6 +78,10 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
-        return view('welcome', compact('sections', 'footer', 'featured', 'typeCounts', 'cities', 'propertiesByCity', 'showcaseProperties', 'latestNews'));
+        return response()
+            ->view('welcome', compact('sections', 'footer', 'featured', 'typeCounts', 'cities', 'propertiesByCity', 'showcaseProperties', 'latestNews'))
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 }

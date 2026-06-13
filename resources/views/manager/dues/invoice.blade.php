@@ -16,7 +16,7 @@
 
     $logoPath   = public_path('img/logo.png');
     $logoBase64 = file_exists($logoPath) ? base64_encode(file_get_contents($logoPath)) : null;
-    $companyName = $isAr ? 'شركة ثروة للعقارات' : str_replace('_', ' ', ucwords(config('app.name'), '_'));
+    $companyName = $isAr ? 'شركة ثروة للتطوير العقاري' : str_replace('_', ' ', ucwords(config('app.name'), '_'));
 @endphp
 <!DOCTYPE html>
 <html lang="{{ $isAr ? 'ar' : 'en' }}" dir="{{ $dir }}">

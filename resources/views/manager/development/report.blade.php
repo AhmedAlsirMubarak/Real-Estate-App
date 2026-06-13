@@ -128,7 +128,7 @@
                 @if(file_exists($logoPath))
                 <img src="{{ $logoPath }}" class="hdr-logo"><br>
                 @endif
-                <div class="hdr-co" style="margin-top:4px;">{{ $tr('شركة ثروة للعقارات','Tharwa Real Estate') }}</div>
+                <div class="hdr-co" style="margin-top:4px;">{{ $tr('شركة ثروة للتطوير العقاري','Tharwa Real Estate') }}</div>
                 <div class="hdr-date">{{ now()->format('Y/m/d') }}</div>
             </td>
         </tr>
@@ -560,7 +560,7 @@
     <table class="footer-tbl">
         <tr>
             <td>
-                <div class="footer-co">{{ $tr('شركة ثروة للعقارات','Tharwa Real Estate') }}</div>
+                <div class="footer-co">{{ $tr('شركة ثروة للتطوير العقاري','Tharwa Real Estate') }}</div>
                 <div class="footer-txt">{{ $development->name }} &mdash; {{ $tr('تقرير المشروع','Project Report') }} &mdash; {{ now()->format('Y/m/d H:i') }}</div>
             </td>
             @if(file_exists($logoPath))

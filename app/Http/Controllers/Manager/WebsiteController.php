@@ -15,17 +15,18 @@ class WebsiteController extends Controller
     ];
 
     private array $sectionMeta = [
-        'hero'                => ['label_ar' => 'البانر الرئيسي',              'has_items' => false, 'item_type' => null],
-        'stats'               => ['label_ar' => 'الإحصائيات',                 'has_items' => true,  'item_type' => 'stat'],
-        'featured_properties' => ['label_ar' => 'قسم العقارات المميزة',       'has_items' => false, 'item_type' => null],
-        'services'            => ['label_ar' => 'عرض العقار المميز',          'has_items' => false, 'item_type' => null, 'has_showcase' => true],
-        'property_types'      => ['label_ar' => 'أنواع العقارات',             'has_items' => true,  'item_type' => 'type'],
-        'about'               => ['label_ar' => 'عن الشركة',                  'has_items' => true,  'item_type' => 'feature'],
-        'cta'                 => ['label_ar' => 'بانر الدعوة للتواصل',        'has_items' => false, 'item_type' => null],
-        'testimonials'        => ['label_ar' => 'آراء العملاء',               'has_items' => true,  'item_type' => 'testimonial'],
-        'partners'            => ['label_ar' => 'شركاؤنا',                    'has_items' => true,  'item_type' => 'partner'],
-        'contact'             => ['label_ar' => 'معلومات التواصل',            'has_items' => true,  'item_type' => 'contact'],
-        'footer'              => ['label_ar' => 'تذييل الصفحة',              'has_items' => false, 'item_type' => null],
+        'hero'                => ['label_ar' => 'البانر الرئيسي',              'label_en' => 'Hero Banner',            'has_items' => false, 'item_type' => null],
+        'stats'               => ['label_ar' => 'الإحصائيات',                 'label_en' => 'Statistics',             'has_items' => true,  'item_type' => 'stat'],
+        'featured_properties' => ['label_ar' => 'قسم العقارات المميزة',       'label_en' => 'Featured Properties',    'has_items' => false, 'item_type' => null],
+        'services'            => ['label_ar' => 'عرض العقار المميز',          'label_en' => 'Featured Property',      'has_items' => false, 'item_type' => null, 'has_showcase' => true],
+        'property_types'      => ['label_ar' => 'أنواع العقارات',             'label_en' => 'Property Types',         'has_items' => true,  'item_type' => 'type'],
+        'about'               => ['label_ar' => 'عن الشركة',                  'label_en' => 'About the Company',      'has_items' => true,  'item_type' => 'feature'],
+        'cta'                 => ['label_ar' => 'بانر الدعوة للتواصل',        'label_en' => 'Call to Action Banner',  'has_items' => false, 'item_type' => null],
+        'videos'              => ['label_ar' => 'مقاطع الفيديو',              'label_en' => 'Video Tours',            'has_items' => true,  'item_type' => 'video'],
+        'testimonials'        => ['label_ar' => 'آراء العملاء',               'label_en' => 'Testimonials',           'has_items' => true,  'item_type' => 'testimonial'],
+        'partners'            => ['label_ar' => 'شركاؤنا',                    'label_en' => 'Our Partners',           'has_items' => true,  'item_type' => 'partner'],
+        'contact'             => ['label_ar' => 'معلومات التواصل',            'label_en' => 'Contact Information',    'has_items' => true,  'item_type' => 'contact'],
+        'footer'              => ['label_ar' => 'تذييل الصفحة',              'label_en' => 'Footer',                 'has_items' => false, 'item_type' => null],
     ];
 
     public function index()
@@ -73,7 +74,7 @@ class WebsiteController extends Controller
 
         // Handle extra fields
         $extra = $section->extra ?? [];
-        foreach (['btn2_text_ar','btn2_text_en','btn2_url','badge_ar','badge_en','whatsapp','twitter','instagram','facebook','linkedin','showcase_property_id'] as $field) {
+        foreach (['btn2_text_ar','btn2_text_en','btn2_url','badge_ar','badge_en','whatsapp','twitter','instagram','facebook','linkedin','showcase_property_id','hero_bg_type','hero_video_url'] as $field) {
             if ($request->has($field)) {
                 $extra[$field] = $request->input($field);
             }
@@ -84,6 +85,15 @@ class WebsiteController extends Controller
         if ($request->hasFile('image')) {
             $path = $this->storeWebsiteFile($request->file('image'), 'section_' . $page . '_' . $key);
             if ($path) $data['image'] = $path;
+        }
+
+        // Hero video file upload
+        if ($request->hasFile('hero_video_file')) {
+            $path = $this->storeWebsiteFile($request->file('hero_video_file'), 'section_' . $page . '_' . $key . '_video');
+            if ($path) {
+                $extra['hero_video_file'] = $path;
+                $data['extra'] = $extra;
+            }
         }
 
         $section->update($data);
@@ -115,6 +125,11 @@ class WebsiteController extends Controller
             if ($path) $data['image'] = $path;
         }
 
+        if ($request->hasFile('video_file')) {
+            $path = $this->storeWebsiteFile($request->file('video_file'), 'item_' . $key . '_video');
+            if ($path) $data['extra'] = array_merge($data['extra'] ?? [], ['video_path' => $path]);
+        }
+
         WebsiteItem::create($data);
 
         return redirect()->route('manager.website.section.edit', [$page, $key])
@@ -144,16 +159,26 @@ class WebsiteController extends Controller
             if ($path) $data['image'] = $path;
         }
 
+        if ($request->hasFile('video_file')) {
+            $path = $this->storeWebsiteFile($request->file('video_file'), 'item_' . $key . '_video');
+            if ($path) $data['extra'] = array_merge($item->extra ?? [], ['video_path' => $path]);
+        }
+
         $item->update($data);
 
         return redirect()->route('manager.website.section.edit', [$page, $key])
             ->with('success', 'تم تحديث العنصر بنجاح');
     }
 
-    private function storeWebsiteFile(\Illuminate\Http\UploadedFile $file, string $prefix): ?string
+    private function storeWebsiteFile(\Illuminate\Http\UploadedFile $file, string $prefix, array $allowedMimes = ['jpg','jpeg','png','gif','webp','svg','mp4','webm','mov','ogg']): ?string
     {
+        $ext = strtolower($file->getClientOriginalExtension());
+        if (!in_array($ext, $allowedMimes)) {
+            return null;
+        }
+
         $dir      = public_path('storage' . DIRECTORY_SEPARATOR . 'website');
-        $filename = $prefix . '_' . time() . '.' . $file->getClientOriginalExtension();
+        $filename = $prefix . '_' . time() . '.' . $ext;
         $dest     = $dir . DIRECTORY_SEPARATOR . $filename;
 
         if (! is_dir($dir)) {

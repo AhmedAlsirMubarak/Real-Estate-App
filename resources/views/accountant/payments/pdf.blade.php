@@ -38,7 +38,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>{{ $tr('شركة ثروة للعقارات — تقرير المدفوعات', 'Tharwa Real Estate — Payments Report') }}</h1>
+        <h1>{{ $tr('شركة ثروة للتطوير العقاري — تقرير المدفوعات', 'Tharwa Real Estate — Payments Report') }}</h1>
         <p>
             {{ $tr('السنة', 'Year') }}: {{ $year }}
             @if($month)
@@ -108,7 +108,7 @@
         </table>
 
         <div class="footer">
-            {{ $tr('شركة ثروة للعقارات', 'Tharwa Real Estate') }} &mdash; {{ $tr('تم إنشاء هذا التقرير في', 'This report was generated at') }} {{ now()->format('Y/m/d H:i') }}
+            {{ $tr('شركة ثروة للتطوير العقاري', 'Tharwa Real Estate') }} &mdash; {{ $tr('تم إنشاء هذا التقرير في', 'This report was generated at') }} {{ now()->format('Y/m/d H:i') }}
         </div>
     </div>
 </body>

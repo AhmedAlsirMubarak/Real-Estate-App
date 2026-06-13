@@ -30,10 +30,28 @@ class EmployeeController extends Controller
             ) rev ON rev.property_id = props.id
             WHERE props.referral_employee_id = users.id
             AND props.referral_commission_rate IS NOT NULL
+        ) + (
+            SELECT COALESCE(SUM(
+                t.referral_commission_rate / 100 *
+                COALESCE(trev.total_paid, 0)
+            ), 0)
+            FROM tenants t
+            LEFT JOIN (
+                SELECT payments.tenant_id, SUM(payments.amount) AS total_paid
+                FROM payments
+                WHERE payments.status = 'paid'
+                GROUP BY payments.tenant_id
+            ) trev ON trev.tenant_id = t.id
+            WHERE t.referral_employee_id = users.id
+            AND t.referral_commission_rate IS NOT NULL
         ) AS referral_commission_earned");
 
         $employees = User::role('employee')
-            ->withCount(['managedProperties', 'referredProperties as referred_properties_count'])
+            ->withCount([
+                'managedProperties',
+                'referredProperties as referred_properties_count',
+                'referredTenants as referred_tenants_count',
+            ])
             ->addSelect($referralCommissionSub)
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($subQuery) use ($search) {
@@ -60,20 +78,22 @@ class EmployeeController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name_ar'     => 'required|string|max:255',
-            'name_en'     => 'required|string|max:255',
-            'email'       => 'required|email|unique:users,email',
-            'phone'       => 'nullable|string|max:20',
-            'base_salary' => 'nullable|numeric|min:0',
-            'role'        => 'required|in:employee,accountant',
-            'password'    => 'required|string|min:8',
+            'name_ar'         => 'required|string|max:255',
+            'name_en'         => 'required|string|max:255',
+            'email'           => 'required|email|unique:users,email',
+            'phone'           => 'nullable|string|max:20',
+            'base_salary'     => 'nullable|numeric|min:0',
+            'commission_rate' => 'nullable|numeric|min:0|max:100',
+            'role'            => 'required|in:employee,accountant',
+            'password'        => 'required|string|min:8',
         ]);
 
         $user = User::create(array_merge($this->buildUserNamePayload($validated), [
-            'email'       => $validated['email'],
-            'phone'       => $validated['phone'] ?? null,
-            'base_salary' => (float) ($validated['base_salary'] ?? 0),
-            'password'    => Hash::make($validated['password']),
+            'email'           => $validated['email'],
+            'phone'           => $validated['phone'] ?? null,
+            'base_salary'     => (float) ($validated['base_salary'] ?? 0),
+            'commission_rate' => isset($validated['commission_rate']) ? (float) $validated['commission_rate'] : null,
+            'password'        => Hash::make($validated['password']),
         ]));
         $user->assignRole($validated['role']);
 
@@ -83,9 +103,9 @@ class EmployeeController extends Controller
 
     public function show(User $employee)
     {
-        $employee->load(['managedProperties.units', 'referredProperties']);
+        $employee->load(['managedProperties.units', 'referredProperties', 'referredTenants.user', 'leaves', 'attendance', 'salaries']);
 
-        // Total paid rent per referred property (single query)
+        // Total paid rent per referred property
         $referredIds = $employee->referredProperties->pluck('id');
         $propertyRevenue = collect();
         if ($referredIds->isNotEmpty()) {
@@ -99,11 +119,36 @@ class EmployeeController extends Controller
                 ->pluck('total_paid', 'property_id');
         }
 
-        $referralCommissionTotal = $employee->referredProperties->sum(
+        $propertyReferralCommissionTotal = $employee->referredProperties->sum(
             fn ($p) => ($p->referral_commission_rate ?? 0) / 100 * ($propertyRevenue[$p->id] ?? 0)
         );
 
-        return view('manager.employees.show', compact('employee', 'propertyRevenue', 'referralCommissionTotal'));
+        // Total paid rent per referred tenant
+        $referredTenantIds = $employee->referredTenants->pluck('id');
+        $tenantRevenue = collect();
+        if ($referredTenantIds->isNotEmpty()) {
+            $tenantRevenue = DB::table('payments')
+                ->where('status', 'paid')
+                ->whereIn('tenant_id', $referredTenantIds)
+                ->selectRaw('tenant_id, SUM(amount) as total_paid')
+                ->groupBy('tenant_id')
+                ->pluck('total_paid', 'tenant_id');
+        }
+
+        $tenantReferralCommissionTotal = $employee->referredTenants->sum(
+            fn ($t) => ($t->referral_commission_rate ?? 0) / 100 * ($tenantRevenue[$t->id] ?? 0)
+        );
+
+        $referralCommissionTotal = $propertyReferralCommissionTotal + $tenantReferralCommissionTotal;
+
+        return view('manager.employees.show', compact(
+            'employee',
+            'propertyRevenue',
+            'tenantRevenue',
+            'propertyReferralCommissionTotal',
+            'tenantReferralCommissionTotal',
+            'referralCommissionTotal',
+        ));
     }
 
     public function edit(User $employee)
@@ -114,15 +159,17 @@ class EmployeeController extends Controller
     public function update(Request $request, User $employee)
     {
         $validated = $request->validate([
-            'name_ar'     => 'required|string|max:255',
-            'name_en'     => 'required|string|max:255',
-            'phone'       => 'nullable|string|max:20',
-            'base_salary' => 'nullable|numeric|min:0',
+            'name_ar'         => 'required|string|max:255',
+            'name_en'         => 'required|string|max:255',
+            'phone'           => 'nullable|string|max:20',
+            'base_salary'     => 'nullable|numeric|min:0',
+            'commission_rate' => 'nullable|numeric|min:0|max:100',
         ]);
 
         $employee->update(array_merge($this->buildUserNamePayload($validated), [
-            'phone'       => $validated['phone'] ?? null,
-            'base_salary' => (float) ($validated['base_salary'] ?? 0),
+            'phone'           => $validated['phone'] ?? null,
+            'base_salary'     => (float) ($validated['base_salary'] ?? 0),
+            'commission_rate' => isset($validated['commission_rate']) ? (float) $validated['commission_rate'] : null,
         ]));
 
         return redirect()->route('manager.employees.show', $employee)

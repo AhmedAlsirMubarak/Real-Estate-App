@@ -84,7 +84,7 @@
                 @if(file_exists(public_path('img/logo.png')))
                 <img src="{{ public_path('img/logo.png') }}" class="hdr-logo"><br>
                 @endif
-                <div class="hdr-co" style="margin-top:4px;">شركة ثروة للعقارات</div>
+                <div class="hdr-co" style="margin-top:4px;">شركة ثروة للتطوير العقاري</div>
                 <div class="hdr-date">{{ now()->format('Y/m/d H:i') }}</div>
             </td>
         </tr>
@@ -221,7 +221,7 @@
     <table class="footer-tbl">
         <tr>
             <td>
-                <div class="footer-co">شركة ثروة للعقارات</div>
+                <div class="footer-co">شركة ثروة للتطوير العقاري</div>
                 <div class="footer-txt">تقرير المصروفات &mdash; الفترة: {{ $periodLabel }} &mdash; تم التوليد: {{ now()->format('Y/m/d H:i') }}</div>
             </td>
             @if(file_exists(public_path('img/logo.png')))

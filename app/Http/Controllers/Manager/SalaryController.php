@@ -35,8 +35,7 @@ class SalaryController extends Controller
 
     public function create()
     {
-        $employees = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['employee', 'accountant', 'manager']))
-            ->orderBy('name_ar')->get();
+        $employees = User::role('employee')->orderBy('name')->get();
         return view('manager.salaries.create', compact('employees'));
     }
 
@@ -85,7 +84,7 @@ class SalaryController extends Controller
         $month = (int) $request->input('period_month');
         $year  = (int) $request->input('period_year');
 
-        $employees = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['employee', 'accountant']))->get();
+        $employees = User::role('employee')->get();
 
         $alreadyHasSalary = Salary::where('period_month', $month)
             ->where('period_year', $year)

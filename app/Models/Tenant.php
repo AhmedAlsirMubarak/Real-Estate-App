@@ -14,11 +14,18 @@ class Tenant extends Model
         'national_id',
         'phone',
         'emergency_contact',
+        'referral_employee_id',
+        'referral_commission_rate',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function referralEmployee()
+    {
+        return $this->belongsTo(User::class, 'referral_employee_id');
     }
 
     public function rentalContracts()
@@ -39,5 +46,10 @@ class Tenant extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function latestPayment()
+    {
+        return $this->hasOne(Payment::class)->latestOfMany();
     }
 }

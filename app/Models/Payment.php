@@ -12,6 +12,7 @@ class Payment extends Model
     protected $fillable = [
         'rental_contract_id',
         'tenant_id',
+        'type',
         'amount',
         'month',
         'year',

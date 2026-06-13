@@ -4,13 +4,86 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use App\Models\EmployeeCommission;
+use App\Models\Owner;
 use App\Models\Property;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class PropertyController extends Controller
 {
     private const PROPERTY_SALE_COMMISSION_RATE = 3.00;
+
+    public function index(Request $request)
+    {
+        $employee = $request->user();
+
+        $properties = Property::where('employee_id', $employee->id)
+            ->orWhere('referral_employee_id', $employee->id)
+            ->with(['units', 'owner.user'])
+            ->latest()
+            ->paginate(20);
+
+        return view('employee.properties.index', compact('properties'));
+    }
+
+    public function create()
+    {
+        $owners = Owner::with('user')->get();
+        return view('employee.properties.create', compact('owners'));
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'code'                       => 'nullable|string|max:50|unique:properties,code',
+            'name_ar'                    => 'required|string|max:255',
+            'name_en'                    => 'nullable|string|max:255',
+            'type'                       => 'required|in:apartment_building,villa,farm,chalet,flat,land',
+            'purpose'                    => 'required|in:rent,sale,both',
+            'section'                    => 'required|in:hoa,management,external',
+            'address_ar'                 => 'required|string|max:500',
+            'address_en'                 => 'nullable|string|max:500',
+            'city_ar'                    => 'nullable|string|max:100',
+            'city_en'                    => 'nullable|string|max:100',
+            'description_ar'             => 'nullable|string',
+            'description_en'             => 'nullable|string',
+            'owner_id'                   => 'nullable|exists:owners,id',
+            'floors'                     => 'nullable|integer|min:1',
+            'total_area'                 => 'nullable|numeric|min:0',
+            'bedrooms'                   => 'nullable|integer|min:0',
+            'bathrooms'                  => 'nullable|integer|min:0',
+            'electricity_account_number' => 'nullable|string|max:100',
+            'water_account_number'       => 'nullable|string|max:100',
+        ]);
+
+        $validated['employee_id']              = $request->user()->id;
+        $validated['referral_employee_id']     = $request->user()->id;
+        $validated['referral_commission_rate'] = $request->user()->commission_rate ?? null;
+        $validated['code']                     = $validated['code'] ?? $this->generateCode($validated['type']);
+        $validated['name']        = $validated['name_ar'];
+        $validated['address']     = $validated['address_ar'];
+        $validated['city']        = $validated['city_ar'] ?? null;
+        $validated['description'] = $validated['description_ar'] ?? null;
+
+        $property = Property::create($validated);
+
+        if (in_array($property->type, ['villa', 'farm', 'chalet', 'flat', 'land'])) {
+            $property->units()->create([
+                'type'         => $property->type . '_unit',
+                'area'         => $property->total_area,
+                'bedrooms'     => $property->bedrooms,
+                'bathrooms'    => $property->bathrooms,
+                'listing_type' => $property->purpose === 'both' ? 'both' : $property->purpose,
+                'rent_price'   => $request->input('rent_price'),
+                'sale_price'   => $request->input('sale_price'),
+                'status'       => 'available',
+            ]);
+        }
+
+        $msg = app()->getLocale() === 'ar' ? 'تم إضافة العقار بنجاح.' : 'Property added successfully.';
+        return redirect()->route('employee.dashboard')->with('success', $msg);
+    }
 
     public function markSold(Request $request, Property $property)
     {
@@ -63,6 +136,21 @@ class PropertyController extends Controller
                 ? 'Property marked as sold and commission was calculated automatically.'
                 : 'تم تسجيل العقار كمباع واحتساب عمولة البيع تلقائياً'
         );
+    }
+
+    private function generateCode(string $type): string
+    {
+        $prefix = match ($type) {
+            'apartment_building' => 'TH-B',
+            'villa'              => 'TH-V',
+            'farm'               => 'TH-F',
+            'chalet'             => 'TH-C',
+            'flat'               => 'TH-FL',
+            'land'               => 'TH-L',
+            default              => 'TH',
+        };
+        $count = Property::where('type', $type)->count() + 1;
+        return sprintf('%s-%03d', $prefix, $count);
     }
 
     private function propertySupportsSale(Property $property): bool

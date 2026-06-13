@@ -1060,7 +1060,7 @@ $expensesWithInvoices = $expenses->filter(fn($e) => $e->invoices->count() || $e-
 <div style="margin-top:24px; border-top:2px solid #312e81; padding-top:10px;">
     <table width="100%" border="0" cellspacing="0">
         <tr>
-            <td style="font-size:7.5pt; color:#312e81; font-weight:bold;">{{ $tr('شركة ثروة للعقارات','Tharwa Real Estate') }}</td>
+            <td style="font-size:7.5pt; color:#312e81; font-weight:bold;">{{ $tr('شركة ثروة للتطوير العقاري','Tharwa Real Estate') }}</td>
             <td style="text-align:center; font-size:7pt; color:#9ca3af;">{{ $reportTitle }}</td>
             <td style="text-align:{{ $isAr?'left':'right' }}; font-size:7pt; color:#9ca3af;">{{ now()->format('Y/m/d H:i') }}</td>
         </tr>

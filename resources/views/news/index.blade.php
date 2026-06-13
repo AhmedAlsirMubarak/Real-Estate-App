@@ -9,7 +9,7 @@
 <style>
 :root{--navy:#0f2444;--navy-mid:#1a3a6b;--gold:#c9a84c;--gold-light:#e8c96e;--text:#1a2437;--muted:#64748b;--border:#e8ecf0;--off:#f5f7fa}
 *{font-family:{{ app()->getLocale() === 'ar' ? "'Cairo'" : "'Sora'" }},sans-serif}
-body{background:var(--off);color:var(--text);overflow-x:hidden}
+body{background:var(--off);color:var(--text);overflow-x:clip}
 .news-card{background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:all .3s}
 .news-card:hover{transform:translateY(-5px);box-shadow:0 20px 50px rgba(15,36,68,.12);border-color:rgba(201,168,76,.4)}
 .news-card:hover img{transform:scale(1.06)}
@@ -27,7 +27,7 @@ body{background:var(--off);color:var(--text);overflow-x:hidden}
       {{ app()->getLocale() === 'ar' ? 'آخر الأخبار' : 'Latest News' }}
     </h1>
     <p class="text-white/60 text-sm">
-      {{ app()->getLocale() === 'ar' ? 'ابقَ على اطلاع بآخر أخبار ومستجدات ثروة العقارية' : 'Stay updated with the latest news from Tharwa Real Estate' }}
+      {{ app()->getLocale() === 'ar' ? 'ابقَ على اطلاع بآخر أخبار ومستجدات ثروة للتطوير العقاري' : 'Stay updated with the latest news from Tharwa Real Estate' }}
     </p>
   </div>
 </div>
@@ -83,7 +83,7 @@ body{background:var(--off);color:var(--text);overflow-x:hidden}
 </div>
 
 <footer class="py-8 text-center text-xs border-t mt-12" style="border-color:var(--border);color:var(--muted)">
-  © {{ date('Y') }} {{ app()->getLocale() === 'ar' ? 'شركة ثروة للعقارات — جميع الحقوق محفوظة' : 'Tharwa Real Estate — All rights reserved' }}
+  © {{ date('Y') }} {{ app()->getLocale() === 'ar' ? 'شركة ثروة للتطوير العقاري — جميع الحقوق محفوظة' : 'Tharwa Real Estate — All rights reserved' }}
 </footer>
 
 </body>

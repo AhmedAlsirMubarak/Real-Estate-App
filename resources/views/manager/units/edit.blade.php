@@ -4,7 +4,10 @@
     <div class="max-w-2xl mx-auto">
         <a href="{{ route('manager.properties.show', $property) }}" class="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-block">← رجوع</a>
 
-        <form method="POST" action="{{ route('manager.units.update', [$property, $unit]) }}" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+        <form method="POST" action="{{ route('manager.units.update', [$property, $unit]) }}"
+              class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4"
+              x-data="{ unitType: '{{ old('type', $unit->type) }}',
+                        isResidential() { return !['office','shop'].includes(this.unitType); } }">
             @csrf @method('PATCH')
 
             <h2 class="text-lg font-bold text-gray-800 mb-1">تعديل وحدة {{ $unit->unit_number ?? '#' . $unit->id }}</h2>
@@ -21,9 +24,9 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">النوع</label>
-                    <select name="type" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                        @foreach(['apartment'=>'شقة','shop'=>'محل','office'=>'مكتب','studio'=>'استوديو','villa_unit'=>'فيلا','farm_unit'=>'مزرعة','chalet_unit'=>'شاليه'] as $v=>$l)
-                        <option value="{{ $v }}" @selected($unit->type===$v)>{{ $l }}</option>
+                    <select name="type" required x-model="unitType" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                        @foreach(['apartment'=>'شقة سكنية','studio'=>'استوديو','office'=>'مكتب','shop'=>'محل تجاري','villa_unit'=>'وحدة فيلا','farm_unit'=>'وحدة مزرعة','chalet_unit'=>'وحدة شاليه'] as $v=>$l)
+                        <option value="{{ $v }}" @selected(old('type', $unit->type)===$v)>{{ $l }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -49,14 +52,17 @@
                         <option value="maintenance" @selected($unit->status==='maintenance')>صيانة</option>
                     </select>
                 </div>
-                <div>
+
+                {{-- Residential-only fields --}}
+                <div x-show="isResidential()" x-cloak>
                     <label class="block text-sm font-medium text-gray-700 mb-1">غرف النوم</label>
                     <input type="number" name="bedrooms" value="{{ old('bedrooms', $unit->bedrooms) }}" min="0" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                 </div>
-                <div>
+                <div x-show="isResidential()" x-cloak>
                     <label class="block text-sm font-medium text-gray-700 mb-1">الحمامات</label>
                     <input type="number" name="bathrooms" value="{{ old('bathrooms', $unit->bathrooms) }}" min="0" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                 </div>
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">سعر الإيجار</label>
                     <input type="number" step="0.01" name="rent_price" value="{{ old('rent_price', $unit->rent_price) }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">

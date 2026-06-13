@@ -44,6 +44,17 @@
                     @error('base_salary')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('نسبة عمولة الإحالة الافتراضية (%)', 'Default Referral Commission Rate (%)') }}</label>
+                    <div class="relative">
+                        <input type="number" step="0.01" min="0" max="100" name="commission_rate" value="{{ old('commission_rate') }}"
+                               placeholder="0.00"
+                               class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 @error('commission_rate') border-red-500 @enderror">
+                        <span class="absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm">%</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">{{ $tr('تُعبَّأ تلقائيًا عند اختيار هذا الموظف كمُحيل في أي عقار', 'Auto-filled when this employee is selected as referral on any property') }}</p>
+                    @error('commission_rate')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الدور', 'Role') }} <span class="text-red-500">*</span></label>
                     <select name="role" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500">
                         <option value="employee" {{ old('role')=='employee'?'selected':'' }}>{{ $tr('موظف', 'Employee') }}</option>

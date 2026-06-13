@@ -85,7 +85,7 @@ class DashboardController extends Controller
             ->get();
 
         $expiringContracts = RentalContract::where('status', 'active')
-            ->whereBetween('end_date', [now()->toDateString(), now()->addDays(30)->toDateString()])
+            ->whereBetween('end_date', [now()->toDateString(), now()->addDays(60)->toDateString()])
             ->with(['tenant.user', 'unit.property'])
             ->orderBy('end_date')
             ->get();

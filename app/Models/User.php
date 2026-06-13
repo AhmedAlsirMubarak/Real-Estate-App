@@ -21,6 +21,7 @@ class User extends Authenticatable
         'password',
         'phone',
         'base_salary',
+        'commission_rate',
         'is_blocked',
         'blocked_at',
     ];
@@ -38,6 +39,7 @@ class User extends Authenticatable
             'is_blocked' => 'boolean',
             'blocked_at' => 'datetime',
             'base_salary' => 'decimal:2',
+            'commission_rate' => 'decimal:2',
         ];
     }
 
@@ -49,6 +51,11 @@ class User extends Authenticatable
     public function referredProperties()
     {
         return $this->hasMany(Property::class, 'referral_employee_id');
+    }
+
+    public function referredTenants()
+    {
+        return $this->hasMany(Tenant::class, 'referral_employee_id');
     }
 
     public function tenant()
@@ -79,6 +86,16 @@ class User extends Authenticatable
     public function salaries()
     {
         return $this->hasMany(Salary::class, 'employee_id');
+    }
+
+    public function leaves()
+    {
+        return $this->hasMany(EmployeeLeave::class, 'employee_id');
+    }
+
+    public function attendance()
+    {
+        return $this->hasMany(EmployeeAttendance::class, 'employee_id');
     }
 
     public function getNameAttribute($value): ?string

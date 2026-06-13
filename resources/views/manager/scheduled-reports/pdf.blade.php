@@ -102,7 +102,7 @@
                     <p class="hdr-sub">{{ $report->section === 'hoa' ? 'جمعية الملاك' : 'إدارة المباني' }} &mdash; تقرير دوري</p>
                 </td>
                 <td class="hdr-right">
-                    <div class="hdr-co">شركة ثروة للعقارات</div>
+                    <div class="hdr-co">شركة ثروة للتطوير العقاري</div>
                     <div class="hdr-date">{{ now()->format('Y/m/d H:i') }}</div>
                 </td>
             </tr>
@@ -797,7 +797,7 @@
      FOOTER
 ══════════════════════════════════════════════ --}}
 <div class="footer">
-    شركة ثروة للعقارات &mdash;
+    شركة ثروة للتطوير العقاري &mdash;
     تم توليد هذا التقرير تلقائياً بواسطة نظام ثروة
     في {{ now()->format('Y/m/d H:i') }}
 </div>

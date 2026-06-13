@@ -60,7 +60,7 @@ class WebsiteSeeder extends Seeder
         WebsiteSection::updateOrCreate(['page' => 'home', 'key' => 'services'], [
             'title_ar'    => 'اكتشف أحدث العقارات المضافة',
             'title_en'    => 'Explore New Added Properties',
-            'subtitle_ar' => 'في شركة ثروة للعقارات',
+            'subtitle_ar' => 'في شركة ثروة للتطوير العقاري',
             'subtitle_en' => 'In Tharwa Real Estate Agency',
             'body_ar'     => 'نفخر بتقديم أفضل العقارات السكنية والتجارية في أرقى المواقع. اكتشف مجموعتنا المتنوعة من العقارات المميزة.',
             'body_en'     => 'We are proud to offer the finest residential and commercial properties in premium locations. Explore our diverse collection of featured properties.',
@@ -89,11 +89,11 @@ class WebsiteSeeder extends Seeder
 
         // ── HOME / ABOUT ─────────────────────────────────────────────────────
         $about = WebsiteSection::updateOrCreate(['page' => 'home', 'key' => 'about'], [
-            'title_ar'      => 'شركة ثروة للعقارات',
+            'title_ar'      => 'شركة ثروة للتطوير العقاري',
             'title_en'      => 'Tharwa Real Estate Co.',
             'subtitle_ar'   => 'من نحن',
             'subtitle_en'   => 'About Us',
-            'body_ar'       => 'شركة ثروة للعقارات رائدة في قطاع إدارة العقارات في المنطقة. نقدم خدمات إدارية متكاملة للمباني السكنية والتجارية بأعلى معايير الجودة والاحترافية. يجمعنا شغف حقيقي بتطوير قطاع العقارات وتسهيل التعاملات بين ملاك العقارات والمستأجرين من خلال منصتنا الرقمية المتطورة.',
+            'body_ar'       => 'شركة ثروة للتطوير العقاري رائدة في قطاع إدارة العقارات في المنطقة. نقدم خدمات إدارية متكاملة للمباني السكنية والتجارية بأعلى معايير الجودة والاحترافية. يجمعنا شغف حقيقي بتطوير قطاع العقارات وتسهيل التعاملات بين ملاك العقارات والمستأجرين من خلال منصتنا الرقمية المتطورة.',
             'body_en'       => 'Tharwa Real Estate is a leader in property management in the region. We provide comprehensive management services for residential and commercial buildings with the highest standards of quality and professionalism. We share a genuine passion for advancing the real estate sector and simplifying dealings between property owners and tenants through our advanced digital platform.',
             'button_text_ar' => 'تواصل معنا',
             'button_text_en' => 'Contact Us',
@@ -118,6 +118,17 @@ class WebsiteSeeder extends Seeder
             'button_text_en' => 'Contact Us Now',
             'button_url'    => '#contact',
             'sort_order'    => 6,
+        ]);
+
+        // ── HOME / VIDEOS ────────────────────────────────────────────────────
+        WebsiteSection::updateOrCreate(['page' => 'home', 'key' => 'videos'], [
+            'title_ar'    => 'جولاتنا المرئية',
+            'title_en'    => 'Video Tours',
+            'subtitle_ar' => 'فيديوهاتنا',
+            'subtitle_en' => 'Our Videos',
+            'body_ar'     => 'شاهد أحدث مشاريعنا العقارية وجولاتنا الميدانية',
+            'body_en'     => 'Watch our latest property projects and field tours',
+            'sort_order'  => 65,
         ]);
 
         // ── HOME / TESTIMONIALS ──────────────────────────────────────────────
@@ -162,7 +173,7 @@ class WebsiteSeeder extends Seeder
 
         // ── GLOBAL / FOOTER ──────────────────────────────────────────────────
         WebsiteSection::updateOrCreate(['page' => 'global', 'key' => 'footer'], [
-            'title_ar' => 'شركة ثروة للعقارات',
+            'title_ar' => 'شركة ثروة للتطوير العقاري',
             'title_en' => 'Tharwa Real Estate',
             'body_ar'  => 'رائدون في إدارة العقارات السكنية والتجارية بأعلى معايير الجودة والاحترافية.',
             'body_en'  => 'Leaders in managing residential and commercial properties with the highest standards of quality.',

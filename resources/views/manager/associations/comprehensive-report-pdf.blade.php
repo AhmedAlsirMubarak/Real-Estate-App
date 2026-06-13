@@ -1220,7 +1220,7 @@ $nocSales = $data['association']->noObjectionSaleCertificates ?? collect();
     <table width="100%" border="0" cellspacing="0">
         <tr>
             <td style="font-size:7.5pt; color:#1e3a8a; font-weight:bold;">
-                {{ $tr('شركة ثروة للعقارات','Tharwa Real Estate') }}
+                {{ $tr('شركة ثروة للتطوير العقاري','Tharwa Real Estate') }}
             </td>
             <td style="text-align:center; font-size:7pt; color:#9ca3af;">
                 {{ $tr('تقرير شامل لجمعية الملاك','Comprehensive HOA Report') }}

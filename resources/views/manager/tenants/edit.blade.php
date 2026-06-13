@@ -35,8 +35,8 @@
                         @error('name_en')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('البريد الإلكتروني', 'Email') }} <span class="text-red-500">*</span></label>
-                        <input type="email" name="email" value="{{ old('email', $tenant->user->email) }}" required
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('البريد الإلكتروني', 'Email') }}</label>
+                        <input type="email" name="email" value="{{ old('email', $tenant->user->email) }}"
                                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 @error('email') border-red-500 @enderror">
                         @error('email')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                     </div>
@@ -46,7 +46,7 @@
                                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('رقم الهوية الوطنية', 'National ID') }}</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الهوية', 'ID') }}</label>
                         <input type="text" name="national_id" value="{{ old('national_id', $tenant->national_id) }}"
                                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500">
                     </div>
@@ -128,10 +128,53 @@
                 </div>
             </div>
 
+            {{-- Referral section --}}
+            <div class="bg-white rounded-xl shadow p-6">
+                <h3 class="font-semibold text-gray-700 mb-4 pb-2 border-b border-gray-100 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    {{ $tr('موظف الإحالة (من أحضر هذا المستأجر)', 'Referral (Who Sourced This Tenant)') }}
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('موظف الإحالة', 'Referral Employee') }}</label>
+                        <select name="referral_employee_id" id="tenant-referral-employee" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500">
+                            <option value="" data-rate="">— {{ $tr('لا يوجد', 'None') }} —</option>
+                            @foreach($employees as $emp)
+                            <option value="{{ $emp->id }}" data-rate="{{ $emp->commission_rate }}"
+                                {{ old('referral_employee_id', $tenant->referral_employee_id) == $emp->id ? 'selected' : '' }}>
+                                {{ $emp->name }}{{ $emp->commission_rate ? ' ('.$emp->commission_rate.'%)' : '' }}
+                            </option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-400 mt-1">{{ $tr('الموظف الذي أحضر هذا المستأجر للشركة', 'Employee who sourced or referred this tenant') }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('نسبة عمولة الإحالة %', 'Referral Commission %') }}</label>
+                        <div class="relative">
+                            <input type="number" name="referral_commission_rate" id="tenant-referral-rate"
+                                   value="{{ old('referral_commission_rate', $tenant->referral_commission_rate) }}"
+                                   step="0.01" min="0" max="100" placeholder="0.00"
+                                   class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 pr-8">
+                            <span class="absolute inset-y-0 left-3 flex items-center text-gray-400 text-sm">%</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">{{ $tr('تُعبَّأ تلقائيًا من نسبة الموظف الافتراضية', 'Auto-filled from the employee\'s default rate') }}</p>
+                        @error('referral_commission_rate')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+            </div>
+
             <div class="flex gap-3">
                 <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition">{{ $tr('حفظ التعديلات', 'Save Changes') }}</button>
                 <a href="{{ route('manager.tenants.show', $tenant) }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg font-medium transition">{{ $tr('إلغاء', 'Cancel') }}</a>
             </div>
         </form>
+
+    <script>
+        document.getElementById('tenant-referral-employee').addEventListener('change', function () {
+            const rate = this.options[this.selectedIndex].dataset.rate;
+            const rateInput = document.getElementById('tenant-referral-rate');
+            rateInput.value = rate || '';
+        });
+    </script>
     </div>
 </x-app-layout>

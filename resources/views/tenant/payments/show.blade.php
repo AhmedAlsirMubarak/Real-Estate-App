@@ -31,7 +31,7 @@
         <div class="bg-white rounded-xl shadow overflow-hidden">
             {{-- Receipt Header --}}
             <div class="bg-blue-900 text-white p-6 text-center">
-                <h3 class="text-2xl font-bold text-yellow-400 mb-1">{{ $tr('شركة ثروة للعقارات', 'Tharwa Real Estate') }}</h3>
+                <h3 class="text-2xl font-bold text-yellow-400 mb-1">{{ $tr('شركة ثروة للتطوير العقاري', 'Tharwa Real Estate') }}</h3>
                 <p class="text-blue-200 text-sm">{{ $tr('إيصال دفع إيجار', 'Rent Payment Receipt') }}</p>
             </div>
 
