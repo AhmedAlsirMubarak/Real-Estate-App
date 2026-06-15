@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'ثروة') }} — {{ $title ?? (app()->getLocale() === 'ar' ? 'لوحة التحكم' : 'Dashboard') }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>

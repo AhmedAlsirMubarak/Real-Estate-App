@@ -81,8 +81,6 @@ body { background: #fff; color: var(--text); }
   transform: translate(-50%, -50%); border: 0; pointer-events: none;
 }
 
-/* Global safety — outer clips visual overflow; track scrolls */
-.type-slider-outer { max-width: 100%; overflow: hidden; }
 
 /* Allow city tabs to wrap on small screens to avoid horizontal overflow */
 @media(max-width:640px){
@@ -135,37 +133,10 @@ body { background: #fff; color: var(--text); }
 .type-explore{color:rgba(255,255,255,.65);font-size:.8rem;font-weight:500}
 
 /* ── TYPE SLIDER ── */
-.type-slider-outer{position:relative;padding:0 52px} /* 44px arrow + 8px breathing room */
-.type-slider-track{
-  overflow-x:auto;
-  overflow-y:hidden;
-  scroll-snap-type:x mandatory;
-  scroll-behavior:smooth;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
-  border-radius:4px;
-}
-.type-slider-track::-webkit-scrollbar{display:none}
-.type-slider{display:flex;gap:20px}
 .type-card{
-  scroll-snap-align:start;
   flex-shrink:0;
-  width:min(300px,78vw)!important;
+  width:min(300px,80vw)!important;
   height:380px!important;
-}
-.type-arrow{
-  position:absolute;top:50%;transform:translateY(-50%);z-index:20;
-  width:44px;height:44px;border-radius:50%;background:#fff;
-  border:1.5px solid var(--border);display:flex;align-items:center;
-  justify-content:center;cursor:pointer;touch-action:manipulation;
-  box-shadow:0 4px 16px rgba(0,0,0,.12);transition:all .2s;color:var(--navy);
-}
-.type-arrow:hover{background:var(--navy);color:#fff;border-color:var(--navy);box-shadow:0 6px 20px rgba(15,36,68,.25)}
-.type-arrow-prev{left:4px}
-.type-arrow-next{right:4px}
-@media(max-width:640px){
-  .type-slider-outer{padding:0 44px} /* 36px arrow + 8px breathing room */
-  .type-arrow{width:36px;height:36px}
 }
 .type-dots{display:flex;justify-content:center;gap:7px;margin-top:20px}
 .type-dot{width:8px;height:8px;border-radius:50%;background:var(--border);border:none;cursor:pointer;transition:all .25s;padding:0}
@@ -505,15 +476,11 @@ $firstCity = $cities->first() ?? null;
       </h2>
     </div>
 
-    {{-- Slider --}}
-    <div class="type-slider-outer mx-auto" style="max-width:1240px">
+    {{-- Slider — same structure as video slider: position:relative wrapper → overflow:hidden clip → flex row, arrows outside clip --}}
+    <div style="position:relative;max-width:1240px;margin:0 auto">
 
-      <button class="type-arrow type-arrow-prev" id="typePrev" aria-label="Previous">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
-      </button>
-
-      <div class="type-slider-track">
-      <div class="type-slider" id="typeSlider">
+      <div style="overflow:hidden;border-radius:16px">
+      <div id="typeSlider" style="display:flex;gap:16px;direction:ltr;transition:transform .4s cubic-bezier(.25,.46,.45,.94);will-change:transform">
         @foreach($s('property_types')->activeItems as $type)
         @php $typeCount = $typeCounts[$type->value] ?? 0; @endphp
         <a href="{{ route('properties.index', ['type' => $type->value]) }}" class="type-card" style="flex-shrink:0">
@@ -555,13 +522,19 @@ $firstCity = $cities->first() ?? null;
         </a>
         @endforeach
       </div>
+      </div>{{-- /overflow:hidden clip --}}
 
-      </div>{{-- /.type-slider-track --}}
-
-      <button class="type-arrow type-arrow-next" id="typeNext" aria-label="Next">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+      {{-- Arrows outside clip, absolutely positioned on the position:relative wrapper --}}
+      <button id="typePrev" aria-label="Previous"
+        style="position:absolute;top:50%;transform:translateY(-50%);inset-inline-start:-18px;z-index:10;width:44px;height:44px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.2);transition:all .2s;touch-action:manipulation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2.5" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
       </button>
-    </div>{{-- /.type-slider-outer --}}
+      <button id="typeNext" aria-label="Next"
+        style="position:absolute;top:50%;transform:translateY(-50%);inset-inline-end:-18px;z-index:10;width:44px;height:44px;border-radius:50%;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,.2);transition:all .2s;touch-action:manipulation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2.5" style="width:16px;height:16px"><path stroke-linecap="round" stroke-linejoin="round" d="m9 18 6-6-6-6"/></svg>
+      </button>
+
+    </div>
 
     {{-- Dots --}}
     <div class="type-dots" id="typeDots"></div>
@@ -569,15 +542,28 @@ $firstCity = $cities->first() ?? null;
 
     <script>
     (function(){
-      var track   = document.getElementById('typeSlider').parentElement; // .type-slider-track
       var slider  = document.getElementById('typeSlider');
       var dotsWrap= document.getElementById('typeDots');
-      if (!slider || !track) return;
+      if (!slider) return;
 
       var cards   = Array.from(slider.querySelectorAll('.type-card'));
       var total   = cards.length;
       var current = 0;
       var timer   = null;
+
+      function cardStep(){ return (cards[0] ? cards[0].offsetWidth : 300) + 16; }
+
+      function goTo(idx){
+        current = ((idx % total) + total) % total;
+        slider.style.transform = 'translateX(-' + (current * cardStep()) + 'px)';
+        updateDots();
+      }
+
+      function updateDots(){
+        dotsWrap.querySelectorAll('.type-dot').forEach(function(d, i){
+          d.classList.toggle('active', i === current);
+        });
+      }
 
       // Build dots
       cards.forEach(function(_, i){
@@ -588,55 +574,38 @@ $firstCity = $cities->first() ?? null;
         dotsWrap.appendChild(d);
       });
 
-      function updateDots(){
-        dotsWrap.querySelectorAll('.type-dot').forEach(function(d, i){
-          d.classList.toggle('active', i === current);
-        });
-      }
-
-      function goTo(idx){
-        current = ((idx % total) + total) % total;
-        cards[current].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-        updateDots();
-      }
-
+      // Arrow buttons — respond to both click and touch
       function addTap(el, fn){
+        if (!el) return;
         el.addEventListener('click', fn);
         el.addEventListener('touchend', function(e){ e.preventDefault(); fn(); }, {passive:false});
       }
       addTap(document.getElementById('typePrev'), function(){ goTo(current - 1); resetTimer(); });
       addTap(document.getElementById('typeNext'), function(){ goTo(current + 1); resetTimer(); });
 
-      function syncDotFromScroll(){
-        // Find which card's left edge is closest to the track's scrollLeft
-        var sl = track.scrollLeft;
-        var best = 0, bestDist = Infinity;
-        cards.forEach(function(c, i){
-          var dist = Math.abs(c.offsetLeft - sl);
-          if(dist < bestDist){ bestDist = dist; best = i; }
-        });
-        current = best;
-        updateDots();
-      }
+      // Touch swipe on the slider row
+      var swipeX = 0;
+      slider.addEventListener('touchstart', function(e){ swipeX = e.touches[0].clientX; clearInterval(timer); }, {passive:true});
+      slider.addEventListener('touchend', function(e){
+        var dx = swipeX - e.changedTouches[0].clientX;
+        if(Math.abs(dx) > 40) goTo(dx > 0 ? current + 1 : current - 1);
+        if(visible) resetTimer();
+      }, {passive:true});
 
-      // Sync dot highlight when user swipes natively
-      track.addEventListener('scrollend', syncDotFromScroll);
-      // Fallback for browsers without scrollend (e.g. iOS Safari < 16.4)
-      track.addEventListener('scroll', function(){
-        clearTimeout(track._st);
-        track._st = setTimeout(syncDotFromScroll, 150);
-      });
-
-      // Auto-play
+      // Auto-play — only while the slider is visible in the viewport
       function startTimer(){ timer = setInterval(function(){ goTo(current + 1); }, 3500); }
       function resetTimer(){ clearInterval(timer); startTimer(); }
-      track.addEventListener('mouseenter', function(){ clearInterval(timer); });
-      track.addEventListener('mouseleave', startTimer);
-      track.addEventListener('touchstart', function(){ clearInterval(timer); }, {passive:true});
-      track.addEventListener('touchend',   function(){ resetTimer(); }, {passive:true});
-      startTimer();
+      slider.addEventListener('mouseenter', function(){ clearInterval(timer); });
+      slider.addEventListener('mouseleave', function(){ if(visible) startTimer(); });
 
-      window.addEventListener('resize', function(){ cards[current].scrollIntoView({ block:'nearest', inline:'start' }); });
+      var visible = false;
+      var io = new IntersectionObserver(function(entries){
+        visible = entries[0].isIntersecting;
+        if(visible) startTimer(); else clearInterval(timer);
+      }, { threshold: 0.3 });
+      io.observe(slider);
+
+      window.addEventListener('resize', function(){ goTo(current); });
     })();
     </script>
   </div>
