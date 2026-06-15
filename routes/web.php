@@ -193,6 +193,7 @@ Route::middleware(['auth', 'role:manager|accountant'])->prefix('manager')->name(
 
     Route::get('expenses/export',  [Manager\ExpenseController::class, 'exportPdf'])->name('expenses.export');
     Route::get('expenses/preview', [Manager\ExpenseController::class, 'previewPdf'])->name('expenses.preview');
+    Route::delete('expenses/bulk-destroy', [Manager\ExpenseController::class, 'bulkDestroy'])->name('expenses.bulk-destroy');
     Route::get('expenses', [Manager\ExpenseController::class, 'index'])->name('expenses.index');
     Route::get('expenses/create', [Manager\ExpenseController::class, 'create'])->name('expenses.create');
     Route::post('expenses', [Manager\ExpenseController::class, 'store'])->name('expenses.store');

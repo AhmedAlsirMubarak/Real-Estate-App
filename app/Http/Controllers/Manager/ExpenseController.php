@@ -200,6 +200,29 @@ class ExpenseController extends Controller
             ->with('success', 'تم حذف الفاتورة');
     }
 
+    public function bulkDestroy(Request $request)
+    {
+        $ids = array_filter(explode(',', $request->input('ids', '')));
+        if (empty($ids)) {
+            return back()->with('error', 'لم يتم تحديد أي مصروف');
+        }
+
+        $expenses = Expense::whereIn('id', $ids)->get();
+        foreach ($expenses as $expense) {
+            foreach ($expense->invoices as $inv) {
+                $abs = storage_path('app/public/' . $inv->file_path);
+                if (file_exists($abs)) @unlink($abs);
+            }
+            if ($expense->receipt_path) {
+                $abs = storage_path('app/public/' . $expense->receipt_path);
+                if (file_exists($abs)) @unlink($abs);
+            }
+            $expense->delete();
+        }
+
+        return back()->with('success', 'تم حذف ' . $expenses->count() . ' مصروف');
+    }
+
     public function destroy(Expense $expense)
     {
         // Delete all invoice files from disk

@@ -22,6 +22,12 @@
     @endphp
     <x-slot name="title">{{ $tr('المصروفات', 'Expenses') }}</x-slot>
 
+    {{-- Bulk delete form (hidden, submitted by JS) --}}
+    <form id="bulk-form" method="POST" action="{{ route('manager.expenses.bulk-destroy') }}">
+        @csrf @method('DELETE')
+        <input type="hidden" name="ids" id="bulk-ids">
+    </form>
+
     <div class="mb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
             <h2 class="text-xl font-bold text-gray-800">{{ $tr('المصروفات', 'Expenses') }}</h2>
@@ -35,7 +41,13 @@
                 @endif
             </p>
         </div>
-        <div class="flex gap-2 flex-wrap">
+        <div class="flex gap-2 flex-wrap items-center">
+            {{-- Bulk delete button (visible only when rows selected) --}}
+            <button id="bulk-delete-btn" type="button" onclick="submitBulkDelete()"
+                class="hidden items-center gap-1.5 border border-red-300 text-red-700 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-lg text-sm font-medium">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <span id="bulk-delete-label">{{ $tr('حذف المحدد', 'Delete selected') }}</span>
+            </button>
             @php $pdfParams = array_filter(['year' => $year, 'month' => $month, 'scope' => $scope, 'category' => $category, 'property_id' => $propertyId]); @endphp
             <a href="{{ route('manager.expenses.preview', $pdfParams) }}" target="_blank"
                class="flex items-center gap-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium">
@@ -137,6 +149,9 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-600 text-xs uppercase">
                     <tr>
+                        <th class="px-4 py-3 w-8">
+                            <input type="checkbox" id="select-all" class="rounded border-gray-300 cursor-pointer" title="{{ $tr('تحديد الكل', 'Select all') }}">
+                        </th>
                         <th class="px-4 py-3 text-right">{{ $tr('البيان', 'Title') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('الفئة', 'Category') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('النطاق', 'Scope') }}</th>
@@ -150,7 +165,10 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($expenses as $expense)
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50 expense-row">
+                        <td class="px-4 py-3 w-8">
+                            <input type="checkbox" class="row-check rounded border-gray-300 cursor-pointer" value="{{ $expense->id }}">
+                        </td>
                         <td class="px-4 py-3">
                             <div class="font-medium text-gray-800">{{ $expense->title }}</div>
                             @if($expense->description)
@@ -202,7 +220,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="8" class="py-10 text-center text-gray-400">{{ $tr('لا توجد مصروفات', 'No expenses found') }}</td></tr>
+                    <tr><td colspan="9" class="py-10 text-center text-gray-400">{{ $tr('لا توجد مصروفات', 'No expenses found') }}</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -215,4 +233,52 @@
         {{ session('success') }}
     </div>
     @endif
+
+<script>
+(function () {
+    const selectAll = document.getElementById('select-all');
+    const bulkBtn   = document.getElementById('bulk-delete-btn');
+    const bulkLabel = document.getElementById('bulk-delete-label');
+    const bulkIds   = document.getElementById('bulk-ids');
+    const labelAr   = '{{ $tr("حذف المحدد", "Delete selected") }}';
+
+    function getChecked() {
+        return [...document.querySelectorAll('.row-check:checked')];
+    }
+
+    function updateToolbar() {
+        const checked = getChecked();
+        if (checked.length > 0) {
+            bulkBtn.classList.remove('hidden');
+            bulkBtn.classList.add('inline-flex');
+            bulkLabel.textContent = labelAr + ' (' + checked.length + ')';
+        } else {
+            bulkBtn.classList.add('hidden');
+            bulkBtn.classList.remove('inline-flex');
+        }
+        const all = document.querySelectorAll('.row-check');
+        selectAll.indeterminate = checked.length > 0 && checked.length < all.length;
+        selectAll.checked = all.length > 0 && checked.length === all.length;
+    }
+
+    selectAll.addEventListener('change', function () {
+        document.querySelectorAll('.row-check').forEach(cb => cb.checked = this.checked);
+        updateToolbar();
+    });
+
+    document.querySelectorAll('.row-check').forEach(cb => {
+        cb.addEventListener('change', updateToolbar);
+    });
+
+    window.submitBulkDelete = function () {
+        const ids = getChecked().map(cb => cb.value).join(',');
+        if (!ids) return;
+        const count = getChecked().length;
+        const msg = '{{ $tr("هل تريد حذف", "Delete") }} ' + count + ' {{ $tr("مصروف؟ لا يمكن التراجع عن هذا.", "expense(s)? This cannot be undone.") }}';
+        if (!confirm(msg)) return;
+        bulkIds.value = ids;
+        document.getElementById('bulk-form').submit();
+    };
+})();
+</script>
 </x-app-layout>
