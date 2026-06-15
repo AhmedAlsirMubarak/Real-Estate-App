@@ -153,6 +153,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::get('website/{page}', [Manager\WebsiteController::class, 'showPage'])->name('website.page');
     Route::get('website/{page}/{key}', [Manager\WebsiteController::class, 'editSection'])->name('website.section.edit');
     Route::post('website/{page}/{key}', [Manager\WebsiteController::class, 'updateSection'])->name('website.section.update');
+    Route::patch('website/{page}/{key}/toggle', [Manager\WebsiteController::class, 'toggleSection'])->name('website.section.toggle');
     Route::get('website/{page}/{key}/items/create', [Manager\WebsiteController::class, 'createItem'])->name('website.items.create');
     Route::post('website/{page}/{key}/items', [Manager\WebsiteController::class, 'storeItem'])->name('website.items.store');
     Route::get('website/{page}/{key}/items/{item}/edit', [Manager\WebsiteController::class, 'editItem'])->name('website.items.edit');

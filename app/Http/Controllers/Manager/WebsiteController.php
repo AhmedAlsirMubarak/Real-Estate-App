@@ -202,6 +202,17 @@ class WebsiteController extends Controller
         return null;
     }
 
+    public function toggleSection(string $page, string $key)
+    {
+        $section = WebsiteSection::where('page', $page)->where('key', $key)->firstOrFail();
+        $section->update(['is_active' => !$section->is_active]);
+        $sectionLabel = $this->sectionMeta[$key]['label_ar'] ?? $key;
+        $msg = $section->is_active
+            ? $sectionLabel . ' — تم التفعيل'
+            : $sectionLabel . ' — تم الإخفاء';
+        return back()->with('success', $msg);
+    }
+
     public function destroyItem(string $page, string $key, WebsiteItem $item)
     {
         $section = WebsiteSection::where('page', $page)->where('key', $key)->firstOrFail();
