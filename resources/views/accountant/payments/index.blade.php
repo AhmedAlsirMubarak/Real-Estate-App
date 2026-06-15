@@ -103,8 +103,8 @@
                                 : ['pending' => 'Pending', 'paid' => 'Paid', 'overdue' => 'Overdue'];
                         @endphp
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 font-medium">{{ $displayName($pay->tenant->user->name ?? null, $tr('مستأجر', 'Tenant')) }}</td>
-                            <td class="px-4 py-3 text-gray-600">{{ $pay->tenant->activeContract->unit->property->name ?? '-' }} / {{ $pay->tenant->activeContract->unit->unit_number ?? '-' }}</td>
+                            <td class="px-4 py-3 font-medium">{{ $displayName($pay->tenant?->user?->name ?? null, $tr('مستأجر', 'Tenant')) }}</td>
+                            <td class="px-4 py-3 text-gray-600">{{ $pay->tenant?->activeContract?->unit?->property?->name ?? '-' }} / {{ $pay->tenant?->activeContract?->unit?->unit_number ?? '-' }}</td>
                             <td class="px-4 py-3 font-medium">{{ number_format($pay->amount) }} {{ $currency }}</td>
                             <td class="px-4 py-3 text-gray-600">{{ $pay->month }}/{{ $pay->year }}</td>
                             <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-medium {{ $pc[$pay->status] ?? 'bg-gray-100 text-gray-700' }}">{{ $pl[$pay->status] ?? $pay->status }}</span></td>

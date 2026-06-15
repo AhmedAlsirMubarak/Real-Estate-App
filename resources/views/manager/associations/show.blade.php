@@ -8,7 +8,7 @@
     <div class="mb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
             <h2 class="text-xl font-bold text-gray-800">{{ $association->name }}</h2>
-            <p class="text-sm text-gray-500 mt-0.5">{{ $association->property->name }} — {{ $association->property->code }}</p>
+            <p class="text-sm text-gray-500 mt-0.5">{{ $association->property?->name ?? '—' }} — {{ $association->property?->code ?? '—' }}</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('manager.associations.report.create', ['association_id' => $association->id]) }}"

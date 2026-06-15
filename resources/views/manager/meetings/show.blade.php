@@ -8,7 +8,7 @@
     <div class="mb-5 flex items-center justify-between">
         <div>
             <h2 class="text-xl font-bold text-gray-800">{{ $meeting->title }}</h2>
-            <p class="text-sm text-gray-500 mt-0.5">{{ $meeting->association->property->name }} — {{ $meeting->scheduled_at->format('Y/m/d H:i') }}</p>
+            <p class="text-sm text-gray-500 mt-0.5">{{ $meeting->association?->property?->name ?? '—' }} — {{ $meeting->scheduled_at->format('Y/m/d H:i') }}</p>
         </div>
         <a href="{{ route('manager.meetings.edit', $meeting) }}" class="bg-gray-100 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-200">{{ $tr('تعديل', 'Edit') }}</a>
     </div>

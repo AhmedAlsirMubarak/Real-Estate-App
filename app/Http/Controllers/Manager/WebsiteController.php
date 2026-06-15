@@ -115,6 +115,11 @@ class WebsiteController extends Controller
     {
         $section = WebsiteSection::where('page', $page)->where('key', $key)->firstOrFail();
 
+        $request->validate([
+            'image'      => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
+            'video_file' => 'nullable|file|mimes:mp4,webm,mov,ogg|max:512000',
+        ]);
+
         $data = array_merge(
             $request->only(['title_ar','title_en','subtitle_ar','subtitle_en','body_ar','body_en','icon','value','url','sort_order']),
             ['section_id' => $section->id, 'is_active' => $request->boolean('is_active', true)]
@@ -149,6 +154,11 @@ class WebsiteController extends Controller
         $section = WebsiteSection::where('page', $page)->where('key', $key)->firstOrFail();
         abort_unless($item->section_id === $section->id, 403);
 
+        $request->validate([
+            'image'      => 'nullable|file|mimes:jpg,jpeg,png,gif,webp|max:5120',
+            'video_file' => 'nullable|file|mimes:mp4,webm,mov,ogg|max:512000',
+        ]);
+
         $data = array_merge(
             $request->only(['title_ar','title_en','subtitle_ar','subtitle_en','body_ar','body_en','icon','value','url','sort_order']),
             ['is_active' => $request->boolean('is_active', true)]
@@ -170,10 +180,22 @@ class WebsiteController extends Controller
             ->with('success', 'تم تحديث العنصر بنجاح');
     }
 
-    private function storeWebsiteFile(\Illuminate\Http\UploadedFile $file, string $prefix, array $allowedMimes = ['jpg','jpeg','png','gif','webp','svg','mp4','webm','mov','ogg']): ?string
+    private function storeWebsiteFile(\Illuminate\Http\UploadedFile $file, string $prefix, array $allowedMimes = ['jpg','jpeg','png','gif','webp','mp4','webm','mov','ogg']): ?string
     {
-        $ext = strtolower($file->getClientOriginalExtension());
-        if (!in_array($ext, $allowedMimes)) {
+        // Use server-detected MIME type, not client-supplied extension
+        $mime = $file->getMimeType() ?? '';
+        $mimeToExt = [
+            'image/jpeg'  => 'jpg',
+            'image/png'   => 'png',
+            'image/gif'   => 'gif',
+            'image/webp'  => 'webp',
+            'video/mp4'   => 'mp4',
+            'video/webm'  => 'webm',
+            'video/quicktime' => 'mov',
+            'video/ogg'   => 'ogg',
+        ];
+        $ext = $mimeToExt[$mime] ?? null;
+        if (!$ext || !in_array($ext, $allowedMimes)) {
             return null;
         }
 

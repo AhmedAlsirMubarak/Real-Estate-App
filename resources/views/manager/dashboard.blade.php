@@ -289,7 +289,11 @@
                         @endphp
                         <tr class="hover:bg-orange-50/60">
                             <td class="px-4 py-3 font-medium text-slate-800">
+                                @if($ec->tenant)
                                 <a href="{{ route('manager.tenants.show', $ec->tenant) }}" class="hover:text-blue-700">{{ $tenantName }}</a>
+                                @else
+                                {{ $tenantName }}
+                                @endif
                             </td>
                             <td class="px-4 py-3 text-slate-600">
                                 {{ $ec->unit?->property?->name ?? '-' }}
@@ -341,7 +345,7 @@
                                 @endphp
                                 <tr class="hover:bg-slate-50 transition">
                                     <td class="px-4 py-3 font-semibold text-slate-700">{{ $req->title }}</td>
-                                    <td class="px-4 py-3 text-slate-500">{{ $displayName($req->tenant->user->name ?? null, $tr('مستأجر', 'Tenant')) }}</td>
+                                    <td class="px-4 py-3 text-slate-500">{{ $displayName($req->tenant?->user?->name ?? null, $tr('مستأجر', 'Tenant')) }}</td>
                                     <td class="px-4 py-3">
                                         <span class="px-2.5 py-1 rounded-full text-xs font-semibold {{ $priorityClasses[$req->priority] ?? 'bg-slate-100 text-slate-700' }}">
                                             {{ $priorityLabels[$req->priority] ?? $req->priority }}
@@ -386,7 +390,7 @@
                                         : ['pending' => 'Pending', 'paid' => 'Paid', 'overdue' => 'Overdue'];
                                 @endphp
                                 <tr class="hover:bg-slate-50 transition">
-                                    <td class="px-4 py-3 font-semibold text-slate-700">{{ $displayName($pay->tenant->user->name ?? null, $tr('مستأجر', 'Tenant')) }}</td>
+                                    <td class="px-4 py-3 font-semibold text-slate-700">{{ $displayName($pay->tenant?->user?->name ?? null, $tr('مستأجر', 'Tenant')) }}</td>
                                     <td class="px-4 py-3 font-bold text-slate-800">{{ number_format($pay->amount) }} {{ $currency }}</td>
                                     <td class="px-4 py-3 text-slate-500">{{ $pay->month }}/{{ $pay->year }}</td>
                                     <td class="px-4 py-3">

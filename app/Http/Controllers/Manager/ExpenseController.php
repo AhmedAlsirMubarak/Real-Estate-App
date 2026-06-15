@@ -75,7 +75,7 @@ class ExpenseController extends Controller
             'property_id'    => 'required_if:scope,property|nullable|exists:properties,id',
             'paid_by'        => 'nullable|exists:users,id',
             'invoices'       => 'nullable|array',
-            'invoices.*'     => 'file|max:10240',
+            'invoices.*'     => 'file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
         $expense = new Expense();
@@ -128,7 +128,7 @@ class ExpenseController extends Controller
             'property_id'    => 'required_if:scope,property|nullable|exists:properties,id',
             'paid_by'        => 'nullable|exists:users,id',
             'invoices'       => 'nullable|array',
-            'invoices.*'     => 'file|max:10240',
+            'invoices.*'     => 'file|mimes:pdf,jpg,jpeg,png|max:10240',
         ]);
 
         $expense->scope        = $data['scope'];
