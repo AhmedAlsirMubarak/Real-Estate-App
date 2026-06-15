@@ -81,8 +81,8 @@ body { background: #fff; color: var(--text); }
   transform: translate(-50%, -50%); border: 0; pointer-events: none;
 }
 
-/* Global safety */
-.type-slider-outer, .type-slider-track { max-width: 100%; overflow-x: clip; }
+/* Global safety — outer clips visual overflow; track scrolls */
+.type-slider-outer { max-width: 100%; overflow: hidden; }
 
 /* Allow city tabs to wrap on small screens to avoid horizontal overflow */
 @media(max-width:640px){
@@ -135,11 +135,12 @@ body { background: #fff; color: var(--text); }
 .type-explore{color:rgba(255,255,255,.65);font-size:.8rem;font-weight:500}
 
 /* ── TYPE SLIDER ── */
-.type-slider-outer{position:relative;padding:0 20px}
+.type-slider-outer{position:relative;padding:0 52px} /* 44px arrow + 8px breathing room */
 .type-slider-track{
   overflow-x:auto;
   overflow-y:hidden;
   scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;
   -webkit-overflow-scrolling:touch;
   scrollbar-width:none;
   border-radius:4px;
@@ -153,17 +154,17 @@ body { background: #fff; color: var(--text); }
   height:380px!important;
 }
 .type-arrow{
-  position:absolute;top:50%;transform:translateY(-50%);z-index:10;
+  position:absolute;top:50%;transform:translateY(-50%);z-index:20;
   width:44px;height:44px;border-radius:50%;background:#fff;
   border:1.5px solid var(--border);display:flex;align-items:center;
-  justify-content:center;cursor:pointer;
+  justify-content:center;cursor:pointer;touch-action:manipulation;
   box-shadow:0 4px 16px rgba(0,0,0,.12);transition:all .2s;color:var(--navy);
 }
 .type-arrow:hover{background:var(--navy);color:#fff;border-color:var(--navy);box-shadow:0 6px 20px rgba(15,36,68,.25)}
-.type-arrow-prev{left:0}
-.type-arrow-next{right:0}
+.type-arrow-prev{left:4px}
+.type-arrow-next{right:4px}
 @media(max-width:640px){
-  .type-slider-outer{padding:0 12px}
+  .type-slider-outer{padding:0 44px} /* 36px arrow + 8px breathing room */
   .type-arrow{width:36px;height:36px}
 }
 .type-dots{display:flex;justify-content:center;gap:7px;margin-top:20px}
@@ -505,7 +506,7 @@ $firstCity = $cities->first() ?? null;
     </div>
 
     {{-- Slider --}}
-    <div class="type-slider-outer mx-auto px-0 sm:px-8" style="max-width:1240px">
+    <div class="type-slider-outer mx-auto" style="max-width:1240px">
 
       <button class="type-arrow type-arrow-prev" id="typePrev" aria-label="Previous">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
@@ -578,9 +579,6 @@ $firstCity = $cities->first() ?? null;
       var current = 0;
       var timer   = null;
 
-      function gap(){ return 20; }
-      function cardW(){ return (cards[0] ? cards[0].offsetWidth : 300) + gap(); }
-
       // Build dots
       cards.forEach(function(_, i){
         var d = document.createElement('button');
@@ -598,28 +596,35 @@ $firstCity = $cities->first() ?? null;
 
       function goTo(idx){
         current = ((idx % total) + total) % total;
-        // Use native scrollTo on the overflow track — works on all devices
-        track.scrollTo({ left: current * cardW(), behavior: 'smooth' });
+        cards[current].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
         updateDots();
       }
 
-      document.getElementById('typePrev').addEventListener('click', function(){ goTo(current - 1); resetTimer(); });
-      document.getElementById('typeNext').addEventListener('click', function(){ goTo(current + 1); resetTimer(); });
+      function addTap(el, fn){
+        el.addEventListener('click', fn);
+        el.addEventListener('touchend', function(e){ e.preventDefault(); fn(); }, {passive:false});
+      }
+      addTap(document.getElementById('typePrev'), function(){ goTo(current - 1); resetTimer(); });
+      addTap(document.getElementById('typeNext'), function(){ goTo(current + 1); resetTimer(); });
+
+      function syncDotFromScroll(){
+        // Find which card's left edge is closest to the track's scrollLeft
+        var sl = track.scrollLeft;
+        var best = 0, bestDist = Infinity;
+        cards.forEach(function(c, i){
+          var dist = Math.abs(c.offsetLeft - sl);
+          if(dist < bestDist){ bestDist = dist; best = i; }
+        });
+        current = best;
+        updateDots();
+      }
 
       // Sync dot highlight when user swipes natively
-      track.addEventListener('scrollend', function(){
-        var idx = Math.round(track.scrollLeft / cardW());
-        current = ((idx % total) + total) % total;
-        updateDots();
-      });
-      // Fallback for browsers without scrollend
+      track.addEventListener('scrollend', syncDotFromScroll);
+      // Fallback for browsers without scrollend (e.g. iOS Safari < 16.4)
       track.addEventListener('scroll', function(){
         clearTimeout(track._st);
-        track._st = setTimeout(function(){
-          var idx = Math.round(track.scrollLeft / cardW());
-          current = ((idx % total) + total) % total;
-          updateDots();
-        }, 120);
+        track._st = setTimeout(syncDotFromScroll, 150);
       });
 
       // Auto-play
@@ -631,7 +636,7 @@ $firstCity = $cities->first() ?? null;
       track.addEventListener('touchend',   function(){ resetTimer(); }, {passive:true});
       startTimer();
 
-      window.addEventListener('resize', function(){ goTo(current); });
+      window.addEventListener('resize', function(){ cards[current].scrollIntoView({ block:'nearest', inline:'start' }); });
     })();
     </script>
   </div>
