@@ -1044,6 +1044,7 @@ $firstCity = $cities->first() ?? null;
 @endif
 
 {{-- ══════════ LATEST NEWS ══════════ --}}
+@unless($latestNews->isEmpty())
 <section id="news" class="py-16 sm:py-20 bg-white">
   <div class="max-w-7xl mx-auto px-4 sm:px-6">
     <div class="text-center mb-10 fade-up">
@@ -1058,14 +1059,6 @@ $firstCity = $cities->first() ?? null;
         <span data-en class="hidden">Stay updated with our latest news and real estate market updates</span>
       </p>
     </div>
-    @if($latestNews->isEmpty())
-    <div class="text-center py-10" style="color:var(--muted)">
-      <p class="text-sm">
-        <span data-ar>لا توجد أخبار بعد. يمكنك إضافة مقالات من لوحة التحكم.</span>
-        <span data-en class="hidden">No news yet. Add articles from the manager dashboard.</span>
-      </p>
-    </div>
-    @else
     @php
       $newsCount = $latestNews->count();
       $newsCols  = $newsCount === 1 ? 'grid-cols-1 max-w-lg mx-auto'
@@ -1114,7 +1107,6 @@ $firstCity = $cities->first() ?? null;
       </a>
       @endforeach
     </div>
-    @endif
     <div class="text-center mt-10">
       <a href="{{ route('news.index') }}"
          class="inline-flex items-center gap-2 text-sm font-bold border-2 px-7 py-3 rounded-xl transition"
@@ -1127,6 +1119,7 @@ $firstCity = $cities->first() ?? null;
     </div>
   </div>
 </section>
+@endunless
 
 {{-- ══════════ TESTIMONIALS ══════════ --}}
 @if($s('testimonials') && $s('testimonials')->activeItems->count())
