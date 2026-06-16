@@ -122,6 +122,10 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::delete('associations/no-objection-certs/{noc}', [Manager\AssociationController::class, 'deleteNoc'])->name('associations.noc.delete');
     Route::get('associations/no-objection-sale-certs/{noc}/download', [Manager\AssociationController::class, 'downloadNocSale'])->name('associations.noc-sale.download');
     Route::delete('associations/no-objection-sale-certs/{noc}', [Manager\AssociationController::class, 'deleteNocSale'])->name('associations.noc-sale.delete');
+    Route::delete('associations/bulk-destroy', [Manager\AssociationController::class, 'bulkDestroy'])->name('associations.bulk-destroy');
+    Route::get('associations/import', [Manager\AssociationController::class, 'importForm'])->name('associations.import.form');
+    Route::post('associations/import', [Manager\AssociationController::class, 'import'])->name('associations.import');
+    Route::get('associations/import/template', [Manager\AssociationController::class, 'downloadTemplate'])->name('associations.import.template');
     Route::resource('associations', Manager\AssociationController::class);
     Route::post('associations/{association}/dues/generate', [Manager\AssociationDueController::class, 'generate'])->name('associations.dues.generate');
     Route::delete('associations/{association}/documents/{field}', [Manager\AssociationController::class, 'deleteDocument'])->name('associations.documents.delete');
@@ -167,7 +171,11 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::delete('contacts/{contact}', [Manager\ContactController::class, 'destroy'])->name('contacts.destroy');
 
     // Customers (leads / requirements)
-    Route::resource('customers', Manager\CustomerController::class)->except(['show']);
+    Route::delete('customers/bulk-destroy', [Manager\CustomerController::class, 'bulkDestroy'])->name('customers.bulk-destroy');
+    Route::get('customers/import', [Manager\CustomerController::class, 'importForm'])->name('customers.import.form');
+    Route::post('customers/import', [Manager\CustomerController::class, 'import'])->name('customers.import');
+    Route::get('customers/import/template', [Manager\CustomerController::class, 'downloadTemplate'])->name('customers.import.template');
+    Route::resource('customers', Manager\CustomerController::class);
 
     // Company Departments — HR (manager only)
     Route::resource('contracts', Manager\EmployeeContractController::class)->except(['show']);

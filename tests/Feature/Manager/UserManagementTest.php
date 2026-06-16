@@ -17,7 +17,8 @@ test('manager can create user and assign role', function () {
     $manager->assignRole('manager');
 
     $response = $this->actingAs($manager)->post(route('manager.users.store'), [
-        'name' => 'Test Employee',
+        'name_ar' => 'موظف تجريبي',
+        'name_en' => 'Test Employee',
         'email' => 'test-employee@example.com',
         'phone' => '96890000000',
         'role' => 'employee',
@@ -97,7 +98,8 @@ test('manager can create tenant user with profile and contract from users form',
     ]);
 
     $response = $this->actingAs($manager)->post(route('manager.users.store'), [
-        'name' => 'Tenant User',
+        'name_ar' => 'مستأجر تجريبي',
+        'name_en' => 'Tenant User',
         'email' => 'tenant-user@example.com',
         'phone' => '96891111111',
         'role' => 'tenant',

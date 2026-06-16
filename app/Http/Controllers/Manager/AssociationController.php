@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers\Manager;
 
+use App\Exports\AssociationTemplateExport;
 use App\Http\Controllers\Controller;
+use App\Imports\AssociationImport;
 use App\Models\Association;
 use App\Models\NoObjectionCertificate;
 use App\Models\NoObjectionSaleCertificate;
 use App\Models\Property;
 use Illuminate\Http\Request;
 use Mpdf\Mpdf;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class AssociationController extends Controller
 {
@@ -137,6 +140,63 @@ class AssociationController extends Controller
     {
         $association->delete();
         return redirect()->route('manager.associations.index')->with('success', __('Deleted Successfully'));
+    }
+
+    public function bulkDestroy(Request $request)
+    {
+        $ids = array_filter(explode(',', $request->input('ids', '')));
+        if (empty($ids)) {
+            return back()->with('error', 'لم يتم تحديد أي جمعية');
+        }
+
+        $count = Association::whereIn('id', $ids)->count();
+        Association::whereIn('id', $ids)->delete();
+
+        return back()->with('success', 'تم حذف ' . $count . ' جمعية');
+    }
+
+    public function importForm()
+    {
+        return view('manager.associations.import');
+    }
+
+    public function downloadTemplate()
+    {
+        $spreadsheet = (new AssociationTemplateExport())->build();
+        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, 'associations-import-template.xlsx', [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="associations-import-template.xlsx"',
+        ]);
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:10240',
+        ], [
+            'file.required' => 'Please select a file to upload.',
+            'file.mimes'    => 'Only Excel files (.xlsx, .xls) are accepted.',
+            'file.max'      => 'The file must not exceed 10 MB.',
+        ]);
+
+        try {
+            $importer = new AssociationImport($request->file('file')->getPathname());
+            $importer->run();
+        } catch (\Throwable $e) {
+            return back()->withErrors([
+                'file' => 'Could not read the file. Make sure it is a valid Excel or CSV file.',
+            ]);
+        }
+
+        return back()->with('import_results', [
+            'imported' => $importer->imported,
+            'errors'   => $importer->rowErrors,
+            'warnings' => $importer->warnings,
+        ]);
     }
 
     public function noObjectionPdf(Request $request, Association $association)

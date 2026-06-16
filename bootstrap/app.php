@@ -21,5 +21,5 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', \App\Http\Middleware\EnsureUserIsNotBlocked::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        \Sentry\Laravel\Integration::handles($exceptions);
     })->create();
