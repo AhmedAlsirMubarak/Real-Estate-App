@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" id="html-root">
 <head>
+@include('_partials.gtm-head')
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
@@ -204,6 +205,7 @@ footer{background:var(--navy)}
 </style>
 </head>
 <body>
+@include('_partials.gtm-body')
 
 @php
 $s = fn(string $key) => $sections[$key] ?? null;

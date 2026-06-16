@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}" dir="{{ app()->getLocale() === 'ar' ? 'rtl' : 'ltr' }}">
 <head>
+@include('_partials.gtm-head')
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
@@ -44,6 +45,7 @@ body{background:var(--off);color:var(--text);overflow-x:clip}
 </style>
 </head>
 <body>
+@include('_partials.gtm-body')
 
 @include('_partials.public-nav')
 

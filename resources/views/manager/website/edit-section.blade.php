@@ -26,6 +26,7 @@
         <h2 class="text-lg font-bold text-gray-900 mb-5">{{ $tr('محتوى القسم', 'Section Content') }}</h2>
 
         <form method="POST" action="{{ route('manager.website.section.update', [$page, $key]) }}" enctype="multipart/form-data"
+              id="websiteSectionForm"
               @if($key === 'hero') x-data="{ heroBgType: '{{ old('hero_bg_type', $extra['hero_bg_type'] ?? 'image') }}' }" @endif>
             @csrf
             @php $extra = (array) ($section->extra ?? []); @endphp
@@ -317,4 +318,93 @@
     @endif
 
 </div>
+
+{{-- Upload progress overlay --}}
+<div id="uploadProgressOverlay" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+        <p class="text-sm font-bold text-gray-800 mb-1" id="uploadProgressLabel">{{ $tr('جاري رفع الملف...', 'Uploading file...') }}</p>
+        <p class="text-xs text-gray-400 mb-3" id="uploadProgressDetail">&nbsp;</p>
+        <div class="w-full h-3 rounded-full bg-gray-100 overflow-hidden">
+            <div id="uploadProgressBar" class="h-full bg-navy rounded-full transition-all" style="width:0%"></div>
+        </div>
+        <p class="text-end text-xs font-semibold text-navy mt-2" id="uploadProgressPercent">0%</p>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+(function(){
+    var form = document.getElementById('websiteSectionForm');
+    if (!form) return;
+
+    var overlay = document.getElementById('uploadProgressOverlay');
+    var bar     = document.getElementById('uploadProgressBar');
+    var percent = document.getElementById('uploadProgressPercent');
+    var detail  = document.getElementById('uploadProgressDetail');
+    var label   = document.getElementById('uploadProgressLabel');
+
+    var uploadingLabel = @json($tr('جاري رفع الملف...', 'Uploading file...'));
+    var savingLabel    = @json($tr('جاري الحفظ على الخادم...', 'Saving on the server...'));
+    var failLabel      = @json($tr('حدث خطأ أثناء الرفع، حاول مرة أخرى.', 'Upload failed, please try again.'));
+    var connErrLabel   = @json($tr('حدث خطأ في الاتصال، حاول مرة أخرى.', 'Connection error, please try again.'));
+
+    function formatMB(bytes){
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    form.addEventListener('submit', function(e){
+        var fileInputs = form.querySelectorAll('input[type=file]');
+        var hasFile = Array.prototype.some.call(fileInputs, function(input){
+            return input.files && input.files.length > 0;
+        });
+        if (!hasFile) return; // plain text save — no need for a progress UI
+
+        e.preventDefault();
+
+        var submitBtn = form.querySelector('button[type=submit]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        label.textContent = uploadingLabel;
+        bar.style.width = '0%';
+        percent.textContent = '0%';
+        detail.textContent = '';
+        overlay.classList.remove('hidden');
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', form.action, true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+        xhr.upload.addEventListener('progress', function(ev){
+            if (!ev.lengthComputable) return;
+            var pct = Math.round((ev.loaded / ev.total) * 100);
+            bar.style.width = pct + '%';
+            percent.textContent = pct + '%';
+            detail.textContent = formatMB(ev.loaded) + ' / ' + formatMB(ev.total);
+            if (pct >= 100) {
+                label.textContent = savingLabel;
+            }
+        });
+
+        xhr.addEventListener('load', function(){
+            if (xhr.status >= 200 && xhr.status < 400) {
+                window.location.href = xhr.responseURL || form.action;
+            } else {
+                overlay.classList.add('hidden');
+                if (submitBtn) submitBtn.disabled = false;
+                alert(failLabel);
+            }
+        });
+
+        xhr.addEventListener('error', function(){
+            overlay.classList.add('hidden');
+            if (submitBtn) submitBtn.disabled = false;
+            alert(connErrLabel);
+        });
+
+        xhr.send(new FormData(form));
+    });
+})();
+</script>
+@endpush
+
 </x-app-layout>
