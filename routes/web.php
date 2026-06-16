@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
+Route::get('/sitemap.xml', [App\Http\Controllers\SitemapController::class, 'index'])->name('sitemap');
+
 Route::get('/locale/{locale}', function (string $locale) {
     abort_unless(in_array($locale, ['ar', 'en'], true), 404);
     session(['locale' => $locale]);
