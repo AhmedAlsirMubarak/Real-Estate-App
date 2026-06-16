@@ -87,6 +87,16 @@ class WebsiteController extends Controller
             if ($path) $data['image'] = $path;
         }
 
+        // Remove the currently uploaded hero video (so a video URL can be used instead)
+        if ($request->boolean('remove_hero_video_file') && !empty($extra['hero_video_file'])) {
+            $abs = public_path('storage' . DIRECTORY_SEPARATOR . $extra['hero_video_file']);
+            if (file_exists($abs)) {
+                @unlink($abs);
+            }
+            unset($extra['hero_video_file']);
+            $data['extra'] = $extra;
+        }
+
         // Hero video file upload
         if ($request->hasFile('hero_video_file')) {
             $path = $this->storeWebsiteFile($request->file('hero_video_file'), 'section_' . $page . '_' . $key . '_video');

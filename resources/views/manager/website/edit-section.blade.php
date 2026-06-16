@@ -147,6 +147,11 @@
                             <video src="{{ asset('storage/' . $extra['hero_video_file']) }}"
                                    class="h-28 rounded-xl border border-gray-200 bg-black" controls muted></video>
                             <p class="text-xs text-gray-400 mt-1">{{ $tr('الفيديو الحالي — ارفع فيديو جديداً لاستبداله', 'Current video — upload a new one to replace it') }}</p>
+                            <label class="inline-flex items-center gap-2 mt-2 cursor-pointer">
+                                <input type="checkbox" name="remove_hero_video_file" value="1"
+                                       class="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-200">
+                                <span class="text-xs text-red-600 font-medium">{{ $tr('إزالة الفيديو المرفوع لاستخدام رابط فيديو فقط', 'Remove uploaded video to use a video URL only') }}</span>
+                            </label>
                         </div>
                         @endif
                         <input type="file" name="hero_video_file" accept="video/mp4,video/webm,video/ogg,video/quicktime"
