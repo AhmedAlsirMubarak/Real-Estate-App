@@ -5,7 +5,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
-<title>{{ app()->getLocale() === 'ar' ? 'آخر الأخبار — ثروة' : 'Latest News — Tharwa' }}</title>
+@php
+  $metaTitle = app()->getLocale() === 'ar'
+      ? 'آخر الأخبار والمقالات العقارية | ثروة للعقارات'
+      : 'Latest Real Estate News & Articles | Tharwa Real Estate';
+  $metaDescription = app()->getLocale() === 'ar'
+      ? 'تابع آخر الأخبار والمقالات والتحديثات من ثروة للعقارات حول سوق العقارات في عُمان، نصائح الاستثمار، وأحدث المشاريع.'
+      : 'Follow the latest news, articles, and updates from Tharwa Real Estate about the Oman property market, investment tips, and new projects.';
+@endphp
+<title>{{ $metaTitle }}</title>
+<meta name="description" content="{{ $metaDescription }}">
+<link rel="canonical" href="{{ url()->current() }}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ $metaTitle }}">
+<meta property="og:description" content="{{ $metaDescription }}">
+<meta property="og:url" content="{{ url()->current() }}">
+<meta property="og:image" content="{{ asset('img/logo.png') }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ $metaTitle }}">
+<meta name="twitter:description" content="{{ $metaDescription }}">
 @vite(['resources/css/app.css','resources/js/app.js'])
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>

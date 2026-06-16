@@ -5,7 +5,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
-    <title>{{ app()->getLocale() === 'ar' ? 'العقارات المتاحة' : 'Available Properties' }} — ثروة</title>
+    @php
+      $metaTitle = app()->getLocale() === 'ar'
+          ? 'العقارات المتاحة للبيع والإيجار في عُمان | ثروة للعقارات'
+          : 'Properties for Sale & Rent in Oman | Tharwa Real Estate';
+      $metaDescription = app()->getLocale() === 'ar'
+          ? 'تصفح أحدث العقارات المتاحة للبيع والإيجار في عُمان — شقق، فلل، مزارع وشاليهات. فلترة بالسعر والمدينة وعدد الغرف للعثور على عقارك المثالي.'
+          : 'Browse the latest properties for sale and rent in Oman — apartments, villas, farms, and chalets. Filter by price, city, and bedrooms to find your ideal property.';
+    @endphp
+    <title>{{ $metaTitle }}</title>
+    <meta name="description" content="{{ $metaDescription }}">
+    <link rel="canonical" href="{{ url()->current() }}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ $metaTitle }}">
+    <meta property="og:description" content="{{ $metaDescription }}">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:image" content="{{ asset('img/logo.png') }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $metaTitle }}">
+    <meta name="twitter:description" content="{{ $metaDescription }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;700;800;900&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -423,7 +441,7 @@
                         <div class="flex flex-col gap-0.5 flex-shrink-0" style="flex:2;margin-{{ $isAr ? 'right' : 'left' }}:2px">
                             <div class="overflow-hidden" style="flex:1;min-height:0">
                                 @if($img2)
-                                <img src="{{ $img2->url() }}" loading="lazy" alt=""
+                                <img src="{{ $img2->url() }}" loading="lazy" alt="{{ $property->name . ' - 2' }}"
                                      style="width:100%;height:100%;object-fit:cover">
                                 @else
                                 <div style="width:100%;height:100%;background:#dde3ec"></div>
@@ -431,7 +449,7 @@
                             </div>
                             <div class="overflow-hidden" style="flex:1;min-height:0">
                                 @if($img3)
-                                <img src="{{ $img3->url() }}" loading="lazy" alt=""
+                                <img src="{{ $img3->url() }}" loading="lazy" alt="{{ $property->name . ' - 3' }}"
                                      style="width:100%;height:100%;object-fit:cover">
                                 @else
                                 <div style="width:100%;height:100%;background:#dde3ec"></div>

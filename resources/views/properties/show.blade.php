@@ -5,7 +5,40 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
-<title>{{ app()->getLocale() === 'ar' ? ($property->name_ar ?: $property->name) : ($property->name_en ?: $property->name) }} — ثروة</title>
+@php
+  $_isAr     = app()->getLocale() === 'ar';
+  $_propName = $_isAr ? ($property->name_ar ?: $property->name) : ($property->name_en ?: $property->name);
+  $_propCity = $_isAr ? ($property->city_ar ?: $property->city) : ($property->city_en ?: $property->city);
+  $_propDesc = $_isAr ? ($property->description_ar ?: $property->description) : ($property->description_en ?: $property->description);
+
+  $metaTitle = $_propName . ($_propCity ? ' — ' . $_propCity : '') . ' | ' . ($_isAr ? 'ثروة للعقارات' : 'Tharwa Real Estate');
+
+  if ($_propDesc) {
+      $metaDescription = \Illuminate\Support\Str::limit(strip_tags($_propDesc), 160);
+  } else {
+      $metaDescription = $_isAr
+          ? "{$property->typeLabel()} {$property->purposeLabel()} في " . ($_propCity ?: 'عُمان')
+              . ($property->bedrooms ? " — {$property->bedrooms} غرف نوم" : '')
+              . ($property->bathrooms ? "، {$property->bathrooms} حمامات" : '')
+          : "{$property->typeLabel()} for {$property->purposeLabel()} in " . ($_propCity ?: 'Oman')
+              . ($property->bedrooms ? " — {$property->bedrooms} bedrooms" : '')
+              . ($property->bathrooms ? ", {$property->bathrooms} bathrooms" : '');
+  }
+
+  $metaImage = $property->primaryImage()?->url() ?? asset('img/logo.png');
+@endphp
+<title>{{ $metaTitle }}</title>
+<meta name="description" content="{{ $metaDescription }}">
+<link rel="canonical" href="{{ url()->current() }}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ $metaTitle }}">
+<meta property="og:description" content="{{ $metaDescription }}">
+<meta property="og:url" content="{{ url()->current() }}">
+<meta property="og:image" content="{{ $metaImage }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ $metaTitle }}">
+<meta name="twitter:description" content="{{ $metaDescription }}">
+<meta name="twitter:image" content="{{ $metaImage }}">
 @vite(['resources/css/app.css','resources/js/app.js'])
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -155,7 +188,7 @@ body{background:#fff;color:var(--text);overflow-x:clip}
       @foreach($allImages as $img)
       @php $tIdx = $loop->index; @endphp
       <div class="gal-thumb {{ $tIdx === 0 ? 'active' : '' }}" id="thumb-{{ $tIdx }}" onclick="switchImg({{ $tIdx }}, '{{ $img->url() }}')">
-        <img src="{{ $img->url() }}" loading="lazy" alt="">
+        <img src="{{ $img->url() }}" loading="lazy" alt="{{ $pName }} - {{ $tIdx + 1 }}">
       </div>
       @endforeach
     </div>
@@ -541,7 +574,9 @@ function switchImg(idx, url) {
 // ── Lightbox ──
 function lbOpen(i) {
   _ci = i;
-  document.getElementById('lb-img').src = _imgs[_ci];
+  var lbImg = document.getElementById('lb-img');
+  lbImg.src = _imgs[_ci];
+  lbImg.alt = @json($pName) + ' - ' + (_ci + 1);
   document.getElementById('lb-counter').textContent = (_ci+1) + ' / ' + _imgs.length;
   document.getElementById('prop-lb').classList.add('open');
   document.body.style.overflow = 'hidden';

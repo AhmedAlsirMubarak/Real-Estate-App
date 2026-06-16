@@ -5,7 +5,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
-<title>{{ app()->getLocale() === 'ar' ? $article->title_ar : ($article->title_en ?: $article->title_ar) }} — ثروة</title>
+@php
+  $_artTitle = app()->getLocale() === 'ar' ? $article->title_ar : ($article->title_en ?: $article->title_ar);
+  $metaTitle = $_artTitle . ' | ' . (app()->getLocale() === 'ar' ? 'ثروة للعقارات' : 'Tharwa Real Estate');
+  $metaDescription = $article->excerpt() ?: \Illuminate\Support\Str::limit(strip_tags(app()->getLocale() === 'ar' ? $article->body_ar : ($article->body_en ?: $article->body_ar)), 160);
+  $metaImage = $article->imageUrl() ?? asset('img/logo.png');
+@endphp
+<title>{{ $metaTitle }}</title>
+<meta name="description" content="{{ $metaDescription }}">
+<link rel="canonical" href="{{ url()->current() }}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ $metaTitle }}">
+<meta property="og:description" content="{{ $metaDescription }}">
+<meta property="og:url" content="{{ url()->current() }}">
+<meta property="og:image" content="{{ $metaImage }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ $metaTitle }}">
+<meta name="twitter:description" content="{{ $metaDescription }}">
+<meta name="twitter:image" content="{{ $metaImage }}">
 @php
   $_isArLang   = app()->getLocale() === 'ar';
   $_fontFamily = $_isArLang ? "'Cairo'" : "'Sora'";
@@ -112,7 +129,7 @@ body{background:var(--off);color:var(--text);overflow-x:clip}
       @foreach($sideImgs as $i => $sImg)
       <div class="relative overflow-hidden group cursor-pointer" style="flex:1;min-height:0"
            onclick="openLightbox({{ $i + 1 }})">
-        <img src="{{ $sImg->url() }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="">
+        <img src="{{ $sImg->url() }}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" alt="{{ $article->title_ar }} - {{ $i + 2 }}">
         @if($i === $sideImgs->count() - 1 && $extraCount > 0)
         <div class="absolute inset-0 flex flex-col items-center justify-center gap-1" style="background:rgba(15,36,68,.65)">
           <span class="text-white font-black text-3xl leading-none">+{{ $extraCount }}</span>
@@ -159,7 +176,7 @@ body{background:var(--off);color:var(--text);overflow-x:clip}
     <div class="grid {{ $gallCols }} gap-3">
       @foreach($allImages as $idx => $img)
       <div class="gallery-item" style="height:220px" onclick="openLightbox({{ $idx }})">
-        <img src="{{ $img->url() }}" alt="" loading="lazy">
+        <img src="{{ $img->url() }}" alt="{{ $article->title_ar }} - {{ $idx + 1 }}" loading="lazy">
       </div>
       @endforeach
     </div>
@@ -177,7 +194,7 @@ body{background:var(--off);color:var(--text);overflow-x:clip}
       <a href="{{ route('news.show', $rel) }}" class="related-card block">
         <div class="overflow-hidden" style="height:150px">
           @if($rel->imageUrl())
-          <img src="{{ $rel->imageUrl() }}" class="w-full h-full object-cover" alt="" loading="lazy">
+          <img src="{{ $rel->imageUrl() }}" class="w-full h-full object-cover" alt="{{ $isAr ? ($rel->title_ar ?: $rel->title_en) : ($rel->title_en ?: $rel->title_ar) }}" loading="lazy">
           @else
           <div class="w-full h-full flex items-center justify-center" style="background:linear-gradient(135deg,#0f2444,#1a3a6b)">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-10 h-10 opacity-20 text-white"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25M16.5 7.5V18a2.25 2.25 0 0 0 2.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 0 0 2.25 2.25h13.5M6 7.5h3v3H6v-3Z"/></svg>
@@ -232,7 +249,9 @@ var _lbIdx = 0;
 
 function openLightbox(idx) {
   _lbIdx = idx;
-  document.getElementById('lb-img').src = _lbImages[_lbIdx];
+  var lbImg = document.getElementById('lb-img');
+  lbImg.src = _lbImages[_lbIdx];
+  lbImg.alt = @json($article->title_ar) + ' - ' + (_lbIdx + 1);
   document.getElementById('lb-counter').textContent = (_lbIdx + 1) + ' / ' + _lbImages.length;
   document.getElementById('lightbox').classList.add('open');
   document.getElementById('lb-prev').style.display = _lbImages.length > 1 ? 'flex' : 'none';

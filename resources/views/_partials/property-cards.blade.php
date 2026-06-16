@@ -49,7 +49,7 @@
       <div class="flex flex-col gap-0.5 flex-shrink-0" style="flex:2;margin-left:2px">
         <div class="overflow-hidden" style="flex:1;min-height:0">
           @if($img2)
-          <img src="{{ $img2->url() }}" loading="lazy" alt=""
+          <img src="{{ $img2->url() }}" loading="lazy" alt="{{ ($p->name_ar ?: $p->name) . ' - 2' }}"
                style="width:100%;height:100%;object-fit:cover;transition:transform .5s">
           @else
           <div style="width:100%;height:100%;background:#dde3ec"></div>
@@ -57,7 +57,7 @@
         </div>
         <div class="overflow-hidden" style="flex:1;min-height:0">
           @if($img3)
-          <img src="{{ $img3->url() }}" loading="lazy" alt=""
+          <img src="{{ $img3->url() }}" loading="lazy" alt="{{ ($p->name_ar ?: $p->name) . ' - 3' }}"
                style="width:100%;height:100%;object-fit:cover;transition:transform .5s">
           @else
           <div style="width:100%;height:100%;background:#dde3ec"></div>

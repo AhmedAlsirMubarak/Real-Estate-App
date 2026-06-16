@@ -5,7 +5,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
-<title>ثروة | Tharwa — Real Estate</title>
+@php
+  $metaTitle = app()->getLocale() === 'ar'
+      ? 'ثروة للعقارات | بيع وإيجار العقارات في عُمان'
+      : 'Tharwa Real Estate | Buy & Rent Properties in Oman';
+  $metaDescription = app()->getLocale() === 'ar'
+      ? 'ثروة للعقارات — شركة رائدة في إدارة وبيع وإيجار العقارات في سلطنة عُمان. تصفح شققاً وفللاً ومزارع وشاليهات للبيع والإيجار بأفضل الأسعار.'
+      : 'Tharwa Real Estate — a leading property management, sales, and rental company in Oman. Browse apartments, villas, farms, and chalets for sale and rent at the best prices.';
+@endphp
+<title>{{ $metaTitle }}</title>
+<meta name="description" content="{{ $metaDescription }}">
+<link rel="canonical" href="{{ url('/') }}">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ $metaTitle }}">
+<meta property="og:description" content="{{ $metaDescription }}">
+<meta property="og:url" content="{{ url('/') }}">
+<meta property="og:image" content="{{ asset('img/logo.png') }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ $metaTitle }}">
+<meta name="twitter:description" content="{{ $metaDescription }}">
+<meta name="twitter:image" content="{{ asset('img/logo.png') }}">
 @vite(['resources/css/app.css','resources/js/app.js'])
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -627,9 +646,9 @@ $firstCity = $cities->first() ?? null;
       <div class="relative fade-up order-2 lg:order-1">
         <div class="rounded-2xl overflow-hidden shadow-2xl" style="height:420px">
           @if($s('about')?->imageUrl())
-          <img src="{{ $s('about')->imageUrl() }}" class="w-full h-full object-cover" alt="">
+          <img src="{{ $s('about')->imageUrl() }}" class="w-full h-full object-cover" alt="{{ app()->getLocale() === 'ar' ? 'عن ثروة للعقارات' : 'About Tharwa Real Estate' }}">
           @else
-          <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80" class="w-full h-full object-cover" alt="">
+          <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80" class="w-full h-full object-cover" alt="{{ app()->getLocale() === 'ar' ? 'عن ثروة للعقارات' : 'About Tharwa Real Estate' }}">
           @endif
         </div>
         {{-- floating badge --}}
@@ -1126,7 +1145,7 @@ $firstCity = $cities->first() ?? null;
         </p>
         <div class="flex items-center gap-3 pt-4 border-t" style="border-color:var(--border)">
           @if($t->image)
-          <img src="{{ $t->imageUrl() }}" class="w-10 h-10 rounded-full object-cover border-2" style="border-color:var(--gold)" alt="">
+          <img src="{{ $t->imageUrl() }}" class="w-10 h-10 rounded-full object-cover border-2" style="border-color:var(--gold)" alt="{{ $t->title_ar }}">
           @else
           <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm" style="background:linear-gradient(135deg,var(--navy),var(--navy-mid))">{{ mb_substr($t->title_ar ?? '؟',0,1) }}</div>
           @endif
