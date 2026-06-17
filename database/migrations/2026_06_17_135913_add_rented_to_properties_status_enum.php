@@ -12,11 +12,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE `properties` MODIFY COLUMN `status` ENUM('active','sold','rented','under_maintenance','archived') NOT NULL DEFAULT 'active'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE `properties` MODIFY COLUMN `status` ENUM('active','sold','rented','under_maintenance','archived') NOT NULL DEFAULT 'active'");
+        }
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE `properties` MODIFY COLUMN `status` ENUM('active','sold','under_maintenance','archived') NOT NULL DEFAULT 'active'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE `properties` MODIFY COLUMN `status` ENUM('active','sold','under_maintenance','archived') NOT NULL DEFAULT 'active'");
+        }
     }
 };

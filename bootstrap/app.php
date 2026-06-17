@@ -21,7 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', \App\Http\Middleware\EnsureUserIsNotBlocked::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->respond(function (\Illuminate\Http\Response $response) {
+        $exceptions->respond(function (\Symfony\Component\HttpFoundation\Response $response) {
             if ($response->getStatusCode() === 419) {
                 return redirect()->route('login')->withErrors(['session' => 'Your session expired. Please log in again.']);
             }
