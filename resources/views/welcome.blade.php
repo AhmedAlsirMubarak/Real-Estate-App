@@ -1220,6 +1220,8 @@ $firstCity = $cities->first() ?? null;
           </h3>
           <form method="POST" action="{{ route('contact.store') }}" class="space-y-4">
             @csrf
+            {{-- Honeypot: left empty by real users; bots fill it and get silently rejected --}}
+            <input type="text" name="website" value="" autocomplete="off" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
             <div class="grid sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-semibold mb-1.5" style="color:var(--text)">
@@ -1234,7 +1236,7 @@ $firstCity = $cities->first() ?? null;
                 <label class="block text-xs font-semibold mb-1.5" style="color:var(--text)">
                   <span data-ar>رقم الجوال</span><span data-en class="hidden">Phone</span>
                 </label>
-                <input type="text" name="phone" value="{{ old('phone') }}"
+                <input type="tel" name="phone" value="{{ old('phone') }}"
                   placeholder-ar="05xxxxxxxx" placeholder-en="+968 9x..." placeholder="05xxxxxxxx"
                   class="input-field w-full rounded-xl px-4 py-3 text-sm">
               </div>
