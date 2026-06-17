@@ -10,6 +10,7 @@ use App\Models\NoObjectionCertificate;
 use App\Models\NoObjectionSaleCertificate;
 use App\Models\Property;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Mpdf\Mpdf;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
@@ -589,30 +590,41 @@ class AssociationController extends Controller
             'manager_id'               => 'manager_id_path',
         ];
 
-        $targetDir = storage_path('app/public/associations/' . $association->id);
-        if (!is_dir($targetDir)) {
-            mkdir($targetDir, 0755, true);
-        }
-
         $updates = [];
         foreach ($documents as $inputName => $column) {
             if (!$request->hasFile($inputName)) {
                 continue;
             }
 
-            $file     = $request->file($inputName);
-            $filename = $inputName . '_' . time() . '.' . $file->getClientOriginalExtension();
-            $destPath = $targetDir . DIRECTORY_SEPARATOR . $filename;
+            $file = $request->file($inputName);
 
-            if (!move_uploaded_file($file->getPathname(), $destPath)) {
+            if (!$file->isValid()) {
                 continue;
             }
 
-            // Remove old file only after new one is safely in place
-            if ($association->$column) {
-                $old = storage_path('app/public/' . $association->$column);
-                if (file_exists($old)) {
-                    @unlink($old);
+            $ext      = $file->getClientOriginalExtension() ?: 'pdf';
+            $filename = $inputName . '_' . time() . '.' . $ext;
+            $destDir  = storage_path('app/public/associations/' . $association->id);
+            $destPath = $destDir . DIRECTORY_SEPARATOR . $filename;
+
+            if (!is_dir($destDir)) {
+                mkdir($destDir, 0755, true);
+            }
+
+            // Use copy() with raw pathname to avoid getRealPath() failing on Windows
+            if (!copy($file->getPathname(), $destPath)) {
+                Log::error("Association upload copy failed for {$inputName}", [
+                    'src' => $file->getPathname(),
+                    'dst' => $destPath,
+                ]);
+                continue;
+            }
+
+            // Remove old file only after new one is in place
+            if (!empty($association->$column)) {
+                $oldAbs = storage_path('app/public/' . $association->$column);
+                if (file_exists($oldAbs)) {
+                    @unlink($oldAbs);
                 }
             }
 

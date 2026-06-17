@@ -52,6 +52,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     // Building Comprehensive Report — must be before resource() to avoid {property} wildcard capture
     Route::get('properties/comprehensive-report', [Manager\BuildingComprehensiveReportController::class, 'create'])->name('properties.report.create');
     Route::post('properties/comprehensive-report', [Manager\BuildingComprehensiveReportController::class, 'generate'])->name('properties.report.generate');
+    Route::get('properties/commissions', [Manager\PropertyController::class, 'managementCommissions'])->name('properties.commissions');
 
     Route::get('properties/export', [Manager\PropertyController::class, 'export'])->name('properties.export');
     Route::get('properties/import', [Manager\PropertyController::class, 'importForm'])->name('properties.import.form');
@@ -60,6 +61,14 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
 
     Route::resource('properties', Manager\PropertyController::class);
     Route::patch('properties/{property}/transfer', [Manager\PropertyController::class, 'transfer'])->name('properties.transfer');
+
+    Route::get('external-properties/comprehensive-report', [Manager\ExternalPropertyReportController::class, 'create'])->name('external-properties.report.create');
+    Route::post('external-properties/comprehensive-report', [Manager\ExternalPropertyReportController::class, 'generate'])->name('external-properties.report.generate');
+    Route::resource('external-properties', Manager\ExternalPropertyController::class)->parameters(['external-properties' => 'property']);
+    Route::get('external-properties-commissions', [Manager\ExternalPropertyController::class, 'commissions'])->name('external-properties.commissions');
+    Route::post('properties/{property}/commission-invoice', [Manager\PropertyController::class, 'commissionInvoice'])->name('properties.commission-invoice');
+    Route::get('properties/{property}/commission-invoices/{invoice}/download', [Manager\PropertyController::class, 'downloadCommissionInvoice'])->name('properties.commission-invoice.download');
+    Route::delete('properties/{property}/commission-invoices/{invoice}', [Manager\PropertyController::class, 'destroyCommissionInvoice'])->name('properties.commission-invoice.destroy');
     Route::post('properties/{property}/images', [Manager\PropertyController::class, 'storeImage'])->name('properties.images.store');
     Route::delete('properties/{property}/images/{image}', [Manager\PropertyController::class, 'destroyImage'])->name('properties.images.destroy');
     Route::patch('properties/{property}/images/{image}/primary', [Manager\PropertyController::class, 'setPrimaryImage'])->name('properties.images.primary');
@@ -248,6 +257,17 @@ Route::middleware(['auth', 'role:employee'])->prefix('employee')->name('employee
     Route::get('leaves', [Employee\LeaveController::class, 'index'])->name('leaves.index');
     Route::get('leaves/create', [Employee\LeaveController::class, 'create'])->name('leaves.create');
     Route::post('leaves', [Employee\LeaveController::class, 'store'])->name('leaves.store');
+
+    Route::get('contacts', [Employee\ContactController::class, 'index'])->name('contacts.index');
+    Route::get('contacts/{contact}', [Employee\ContactController::class, 'show'])->name('contacts.show');
+
+    Route::get('customers', [Employee\CustomerController::class, 'index'])->name('customers.index');
+    Route::get('customers/create', [Employee\CustomerController::class, 'create'])->name('customers.create');
+    Route::post('customers', [Employee\CustomerController::class, 'store'])->name('customers.store');
+    Route::get('customers/{customer}', [Employee\CustomerController::class, 'show'])->name('customers.show');
+    Route::get('customers/{customer}/edit', [Employee\CustomerController::class, 'edit'])->name('customers.edit');
+    Route::put('customers/{customer}', [Employee\CustomerController::class, 'update'])->name('customers.update');
+    Route::patch('customers/{customer}/reply', [Employee\CustomerController::class, 'reply'])->name('customers.reply');
 });
 
 // Accountant routes

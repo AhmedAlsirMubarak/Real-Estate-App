@@ -5,7 +5,7 @@
 
 {{-- Header --}}
 <div class="flex items-center gap-4 mb-8">
-    <a href="{{ route('manager.properties.index') }}"
+    <a href="{{ route('manager.external-properties.index') }}"
        class="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 text-gray-500 transition">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -13,8 +13,8 @@
         </svg>
     </a>
     <div>
-        <h1 class="text-2xl font-bold text-gray-900">{{ $tr('التقرير الشامل لإدارة المباني','Comprehensive Building Management Report') }}</h1>
-        <p class="text-sm text-gray-500 mt-0.5">{{ $tr('توليد تقرير PDF احترافي شامل لإدارة العقارات والمباني','Generate a comprehensive professional PDF report for property and building management') }}</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ $tr('التقرير الشامل للعقارات الخارجية','Comprehensive External Properties Report') }}</h1>
+        <p class="text-sm text-gray-500 mt-0.5">{{ $tr('توليد تقرير PDF احترافي شامل للعقارات الخارجية وفواتير العمولة','Generate a comprehensive PDF report for external properties and commission invoices') }}</p>
     </div>
 </div>
 
@@ -26,15 +26,15 @@
 </div>
 @endif
 
-<form method="POST" action="{{ route('manager.properties.report.generate') }}" target="_blank">
+<form method="POST" action="{{ route('manager.external-properties.report.generate') }}" target="_blank">
 @csrf
 
 <div class="space-y-6">
 
 {{-- 1. Filters ──────────────────────────────────────────────────────────── --}}
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="px-6 py-4 bg-blue-50 border-b border-blue-100">
-        <h2 class="font-semibold text-blue-900 flex items-center gap-2">
+    <div class="px-6 py-4 bg-emerald-50 border-b border-emerald-100">
+        <h2 class="font-semibold text-emerald-900 flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"/>
             </svg>
@@ -45,10 +45,10 @@
 
         {{-- Property --}}
         <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ $tr('العقار','Property') }}</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ $tr('العقار الخارجي','External Property') }}</label>
             <select name="property_id"
-                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm px-4 py-2.5">
-                <option value="">★ {{ $tr('جميع العقارات (تقرير موحد)','All Properties (Combined Report)') }}</option>
+                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm px-4 py-2.5">
+                <option value="">★ {{ $tr('جميع العقارات الخارجية (تقرير موحد)','All External Properties (Combined Report)') }}</option>
                 <option disabled>──────────────────────</option>
                 @foreach($properties as $p)
                 <option value="{{ $p->id }}" {{ old('property_id', $selectedPropertyId) == $p->id ? 'selected' : '' }}>
@@ -59,24 +59,11 @@
             </select>
         </div>
 
-        {{-- Type --}}
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ $tr('نوع العقار','Property Type') }}</label>
-            <select name="type"
-                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm px-4 py-2.5">
-                <option value="">{{ $tr('— جميع الأنواع —','— All Types —') }}</option>
-                <option value="apartment_building" {{ old('type')==='apartment_building'?'selected':'' }}>{{ $tr('عمارة','Apartment Building') }}</option>
-                <option value="villa"              {{ old('type')==='villa'?'selected':'' }}>{{ $tr('فيلا','Villa') }}</option>
-                <option value="farm"               {{ old('type')==='farm'?'selected':'' }}>{{ $tr('مزرعة','Farm') }}</option>
-                <option value="chalet"             {{ old('type')==='chalet'?'selected':'' }}>{{ $tr('شاليه','Chalet') }}</option>
-            </select>
-        </div>
-
         {{-- Owner --}}
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ $tr('المالك','Owner') }}</label>
             <select name="owner_id"
-                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm px-4 py-2.5">
+                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm px-4 py-2.5">
                 <option value="">{{ $tr('— جميع الملاك —','— All Owners —') }}</option>
                 @foreach($owners as $owner)
                 <option value="{{ $owner->id }}" {{ old('owner_id') == $owner->id ? 'selected' : '' }}>
@@ -90,7 +77,7 @@
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ $tr('الموظف المسؤول','Assigned Employee') }}</label>
             <select name="employee_id"
-                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm px-4 py-2.5">
+                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm px-4 py-2.5">
                 <option value="">{{ $tr('— جميع الموظفين —','— All Employees —') }}</option>
                 @foreach($employees as $emp)
                 <option value="{{ $emp->id }}" {{ old('employee_id') == $emp->id ? 'selected' : '' }}>
@@ -104,7 +91,7 @@
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ $tr('لغة التقرير','Report Language') }}</label>
             <select name="locale"
-                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm px-4 py-2.5">
+                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm px-4 py-2.5">
                 <option value="ar" {{ old('locale','ar')==='ar'?'selected':'' }}>العربية</option>
                 <option value="en" {{ old('locale','ar')==='en'?'selected':'' }}>English</option>
             </select>
@@ -114,7 +101,7 @@
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ $tr('طريقة العرض','Output Mode') }}</label>
             <select name="mode"
-                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm px-4 py-2.5">
+                    class="w-full rounded-xl border-gray-200 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm px-4 py-2.5">
                 <option value="preview">{{ $tr('عرض في المتصفح','Preview in browser') }}</option>
                 <option value="download">{{ $tr('تنزيل مباشرة','Download directly') }}</option>
             </select>
@@ -134,7 +121,7 @@
                 @foreach($presets as $p)
                 <button type="button" data-from="{{ $p['f'] }}" data-to="{{ $p['t'] }}"
                         onclick="setPreset(this)"
-                        class="px-3 py-1.5 text-xs rounded-lg border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 transition">
+                        class="px-3 py-1.5 text-xs rounded-lg border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition">
                     {{ $tr($p['ar'],$p['en']) }}
                 </button>
                 @endforeach
@@ -146,7 +133,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ $tr('من تاريخ','From Date') }} <span class="text-red-500">*</span></label>
             <input type="date" name="from" id="inp-from"
                    value="{{ old('from', now()->subMonths(3)->startOfMonth()->format('Y-m-d')) }}" required
-                   class="w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm px-4 py-2.5">
+                   class="w-full rounded-xl border-gray-200 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm px-4 py-2.5">
         </div>
 
         {{-- To --}}
@@ -154,7 +141,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-1.5">{{ $tr('إلى تاريخ','To Date') }} <span class="text-red-500">*</span></label>
             <input type="date" name="to" id="inp-to"
                    value="{{ old('to', now()->endOfMonth()->format('Y-m-d')) }}" required
-                   class="w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm px-4 py-2.5">
+                   class="w-full rounded-xl border-gray-200 shadow-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 text-sm px-4 py-2.5">
         </div>
 
     </div>
@@ -162,15 +149,15 @@
 
 {{-- 2. Sections ─────────────────────────────────────────────────────────── --}}
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="px-6 py-4 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
-        <h2 class="font-semibold text-indigo-900 flex items-center gap-2">
+    <div class="px-6 py-4 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
+        <h2 class="font-semibold text-emerald-900 flex items-center gap-2">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
             </svg>
             {{ $tr('أقسام التقرير','Report Sections') }}
         </h2>
         <div class="flex gap-3 text-xs">
-            <button type="button" onclick="toggleAll(true)" class="text-indigo-700 hover:underline">{{ $tr('تحديد الكل','Select all') }}</button>
+            <button type="button" onclick="toggleAll(true)" class="text-emerald-700 hover:underline">{{ $tr('تحديد الكل','Select all') }}</button>
             <span class="text-gray-300">|</span>
             <button type="button" onclick="toggleAll(false)" class="text-gray-500 hover:underline">{{ $tr('إلغاء الكل','Deselect all') }}</button>
         </div>
@@ -190,16 +177,16 @@
             ['key'=>'profitability',        'ar'=>'تحليل الربحية',               'en'=>'Profitability Analysis',    'icon'=>'📈'],
             ['key'=>'maintenance',          'ar'=>'الصيانة',                     'en'=>'Maintenance Report',        'icon'=>'🔧'],
             ['key'=>'vacancy',              'ar'=>'تقرير الوحدات الشاغرة',        'en'=>'Vacancy Report',            'icon'=>'🏗'],
-            ['key'=>'alerts',              'ar'=>'التنبيهات والأنشطة القادمة',    'en'=>'Upcoming Alerts',           'icon'=>'🔔'],
-            ['key'=>'commission_invoices',  'ar'=>'فواتير العمولة',                'en'=>'Commission Invoices',        'icon'=>'🧾'],
+            ['key'=>'alerts',               'ar'=>'التنبيهات والأنشطة القادمة',   'en'=>'Upcoming Alerts',           'icon'=>'🔔'],
+            ['key'=>'commission_invoices',  'ar'=>'فواتير العمولة التجارية',      'en'=>'Commission Invoices',        'icon'=>'💼'],
             ['key'=>'attachments',          'ar'=>'المرفقات والوثائق',             'en'=>'Attachments',               'icon'=>'📎'],
         ]; @endphp
         @foreach($sectionList as $s)
-        <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 cursor-pointer transition group">
+        <label class="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50 hover:bg-emerald-50 hover:border-emerald-200 cursor-pointer transition group">
             <input type="checkbox" name="sections[]" value="{{ $s['key'] }}" checked
-                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                   class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4">
             <span class="text-base">{{ $s['icon'] }}</span>
-            <span class="text-sm text-gray-700 group-hover:text-indigo-900">{{ $tr($s['ar'],$s['en']) }}</span>
+            <span class="text-sm text-gray-700 group-hover:text-emerald-900">{{ $tr($s['ar'],$s['en']) }}</span>
         </label>
         @endforeach
     </div>
@@ -207,11 +194,11 @@
 
 {{-- Submit --}}
 <div class="flex items-center justify-between">
-    <a href="{{ route('manager.properties.index') }}" class="text-sm text-gray-500 hover:text-gray-700">
-        ← {{ $tr('العودة للعقارات','Back to Properties') }}
+    <a href="{{ route('manager.external-properties.index') }}" class="text-sm text-gray-500 hover:text-gray-700">
+        ← {{ $tr('العودة للعقارات الخارجية','Back to External Properties') }}
     </a>
     <button type="submit"
-            class="inline-flex items-center gap-2 px-8 py-3 bg-indigo-700 hover:bg-indigo-800 text-white font-semibold rounded-xl shadow-lg shadow-indigo-200 transition">
+            class="inline-flex items-center gap-2 px-8 py-3 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold rounded-xl shadow-lg shadow-emerald-200 transition">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
         </svg>
@@ -223,6 +210,7 @@
 </form>
 </div>
 </div>
+
 <script>
 function setPreset(btn) {
     document.getElementById('inp-from').value = btn.dataset.from;

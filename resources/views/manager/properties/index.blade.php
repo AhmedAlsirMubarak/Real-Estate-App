@@ -55,7 +55,6 @@
             <option value="">{{ $isAr ? 'كل الأقسام' : 'All sections' }}</option>
             <option value="management" @selected(request('section')==='management')>{{ $isAr ? 'إدارة المباني' : 'Building Management' }}</option>
             <option value="hoa" @selected(request('section')==='hoa')>{{ $isAr ? 'جمعية الملاك' : 'Owners Association' }}</option>
-            <option value="external" @selected(request('section')==='external')>{{ $isAr ? 'عقار خارجي' : 'External Property' }}</option>
         </select>
         <select name="type" class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
             <option value="">{{ $isAr ? 'كل الأنواع' : 'All types' }}</option>
@@ -68,9 +67,11 @@
         </select>
         <select name="purpose" class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
             <option value="">{{ $isAr ? 'إيجار أو بيع' : 'Rent or sale' }}</option>
-            <option value="rent" @selected(request('purpose')==='rent')>{{ $isAr ? 'إيجار' : 'Rent' }}</option>
-            <option value="sale" @selected(request('purpose')==='sale')>{{ $isAr ? 'بيع' : 'Sale' }}</option>
-            <option value="both" @selected(request('purpose')==='both')>{{ $isAr ? 'إيجار وبيع' : 'Rent & Sale' }}</option>
+            <option value="rent"           @selected(request('purpose')==='rent')>{{ $isAr ? 'إيجار' : 'Rent' }}</option>
+            <option value="sale"           @selected(request('purpose')==='sale')>{{ $isAr ? 'بيع' : 'Sale' }}</option>
+            <option value="both"           @selected(request('purpose')==='both')>{{ $isAr ? 'إيجار وبيع' : 'Rent & Sale' }}</option>
+            <option value="exclusive_rent" @selected(request('purpose')==='exclusive_rent')>{{ $isAr ? 'ايجار حصري' : 'Exclusive Rent' }}</option>
+            <option value="exclusive_sale" @selected(request('purpose')==='exclusive_sale')>{{ $isAr ? 'بيع حصري' : 'Exclusive Sale' }}</option>
         </select>
         <div class="md:col-span-4 flex gap-2">
             <button class="bg-blue-900 text-white px-4 py-2 rounded-lg text-sm">{{ $isAr ? 'تصفية' : 'Filter' }}</button>

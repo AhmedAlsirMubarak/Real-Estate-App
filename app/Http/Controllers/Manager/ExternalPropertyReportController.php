@@ -12,16 +12,16 @@ use Illuminate\Http\Request;
 use Mpdf\Mpdf;
 use setasign\Fpdi\Fpdi;
 
-class BuildingComprehensiveReportController extends Controller
+class ExternalPropertyReportController extends Controller
 {
     public function create(Request $request)
     {
-        $properties = Property::orderBy('name_ar')->get();
+        $properties = Property::where('section', 'external')->orderBy('name_ar')->get();
         $owners     = Owner::with('user')->get();
         $employees  = User::role('employee')->orderBy('name')->get();
         $selectedPropertyId = $request->input('property_id');
 
-        return view('manager.properties.comprehensive-report-form',
+        return view('manager.external-properties.comprehensive-report-form',
             compact('properties', 'owners', 'employees', 'selectedPropertyId'));
     }
 
@@ -29,7 +29,6 @@ class BuildingComprehensiveReportController extends Controller
     {
         $validated = $request->validate([
             'property_id'  => 'nullable|exists:properties,id',
-            'type'         => 'nullable|in:apartment_building,villa,farm,chalet',
             'owner_id'     => 'nullable|exists:owners,id',
             'employee_id'  => 'nullable|exists:users,id',
             'from'         => 'required|date',
@@ -45,21 +44,20 @@ class BuildingComprehensiveReportController extends Controller
         $locale   = $validated['locale'] ?? 'ar';
 
         $filters = [
+            'section'     => 'external',
             'property_id' => $validated['property_id'] ?? null,
-            'type'        => $validated['type'] ?? null,
             'owner_id'    => $validated['owner_id'] ?? null,
             'employee_id' => $validated['employee_id'] ?? null,
         ];
 
         $data = $service->collect($filters, $from, $to);
 
-        // Report title
         if ($filters['property_id']) {
-            $prop         = Property::findOrFail($filters['property_id']);
-            $reportTitle  = $locale === 'ar' ? ($prop->name_ar ?? $prop->name_en) : ($prop->name_en ?? $prop->name_ar);
+            $prop        = Property::findOrFail($filters['property_id']);
+            $reportTitle = $locale === 'ar' ? ($prop->name_ar ?? $prop->name_en) : ($prop->name_en ?? $prop->name_ar);
         } else {
-            $prop         = null;
-            $reportTitle  = $locale === 'ar' ? 'تقرير إدارة المباني الشامل' : 'Comprehensive Building Management Report';
+            $prop        = null;
+            $reportTitle = $locale === 'ar' ? 'تقرير العقارات الخارجية الشامل' : 'Comprehensive External Properties Report';
         }
 
         $prevLocale = app()->getLocale();
@@ -99,8 +97,7 @@ class BuildingComprehensiveReportController extends Controller
 
         $mpdf->WriteHTML($html);
 
-        // ── Merge physical attachments via FPDI ───────────────────────────────
-        $tempMain = $tempDir . '/bldg_main_' . time() . '_' . rand(1000, 9999) . '.pdf';
+        $tempMain = $tempDir . '/ext_main_' . time() . '_' . rand(1000, 9999) . '.pdf';
         file_put_contents($tempMain, $mpdf->Output('', 'S'));
 
         try {
@@ -114,7 +111,6 @@ class BuildingComprehensiveReportController extends Controller
                 $fpdi->useTemplate($tpl);
             }
 
-            // Append rental contracts
             foreach ($data['allContracts'] as $contract) {
                 if (! $contract->contract_file) continue;
                 $abs   = storage_path('app/public/' . $contract->contract_file);
@@ -123,7 +119,6 @@ class BuildingComprehensiveReportController extends Controller
                 $this->appendFile($fpdi, $abs, $label);
             }
 
-            // Append expense invoices
             foreach ($data['expenses'] as $expense) {
                 foreach ($expense->invoices as $inv) {
                     $this->appendFile($fpdi, storage_path('app/public/' . $inv->file_path),
@@ -135,7 +130,6 @@ class BuildingComprehensiveReportController extends Controller
                 }
             }
 
-            // Append commission invoice PDFs
             foreach ($data['commissionInvoices'] as $cinv) {
                 if (! $cinv->file_path) continue;
                 $this->appendFile($fpdi, storage_path('app/public/' . $cinv->file_path),
@@ -147,8 +141,8 @@ class BuildingComprehensiveReportController extends Controller
             @unlink($tempMain);
         }
 
-        $slug     = preg_replace('/[\s\/]+/', '-', $prop?->name_en ?? ($filters['property_id'] ? 'property' : 'all-properties'));
-        $filename = 'building-report-' . $slug . '-' . $from->format('Y-m') . '-to-' . $to->format('Y-m') . '.pdf';
+        $slug     = preg_replace('/[\s\/]+/', '-', $prop?->name_en ?? ($filters['property_id'] ? 'property' : 'all-external'));
+        $filename = 'external-properties-report-' . $slug . '-' . $from->format('Y-m') . '-to-' . $to->format('Y-m') . '.pdf';
 
         $disposition = $request->input('mode') === 'download' ? 'attachment' : 'inline';
 

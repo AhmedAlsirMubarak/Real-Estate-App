@@ -6,12 +6,14 @@ use App\Exports\PropertyExport;
 use App\Exports\PropertyTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\PropertyImport;
+use App\Models\CommissionInvoice;
 use App\Models\Owner;
 use App\Models\Property;
 use App\Models\PropertyImage;
 use App\Models\User;
 use App\Traits\StoresUploadedFiles;
 use Illuminate\Http\Request;
+use Mpdf\Mpdf;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class PropertyController extends Controller
@@ -158,8 +160,16 @@ class PropertyController extends Controller
             'images',
             'expenses' => fn($q) => $q->latest('expense_date')->limit(10),
         ]);
+
+        $rentalContracts = \App\Models\RentalContract::whereHas('unit', fn($q) => $q->where('property_id', $property->id))
+            ->with(['unit', 'tenant.user'])
+            ->where('status', 'active')
+            ->get();
+
+        $commissionInvoices = $property->commissionInvoices;
+
         $employees = User::role('employee')->get();
-        return view('manager.properties.show', compact('property', 'employees'));
+        return view('manager.properties.show', compact('property', 'employees', 'rentalContracts', 'commissionInvoices'));
     }
 
     public function edit(Property $property)
@@ -178,7 +188,8 @@ class PropertyController extends Controller
 
         $this->saveImages($request, $property);
 
-        return back()->with('success', 'تم تحديث العقار بنجاح');
+        return redirect()->route('manager.properties.index')
+            ->with('success', 'تم تحديث العقار بنجاح');
     }
 
     private function saveImages(Request $request, Property $property): void
@@ -260,6 +271,134 @@ class PropertyController extends Controller
         ]);
     }
 
+    public function commissionInvoice(Request $request, Property $property)
+    {
+        $data = $request->validate([
+            'invoice_for'     => 'required|in:owner,client',
+            'recipient_name'  => 'required|string|max:255',
+            'duration_months' => 'required|numeric|min:1',
+            'monthly_rent'    => 'required|numeric|min:0',
+            'commission_rate' => 'required|numeric|min:0|max:100',
+            'invoice_date'    => 'nullable|date',
+            'notes'           => 'nullable|string',
+        ]);
+
+        $totalRent        = $data['duration_months'] * $data['monthly_rent'];
+        $commissionAmount = $totalRent * $data['commission_rate'] / 100;
+        $invoiceDate      = $data['invoice_date'] ?? now()->toDateString();
+        $invoiceNumber    = 'COM-' . $property->id . '-' . now()->format('YmdHis');
+
+        $html = view('manager.properties.commission-invoice-pdf', [
+            'property'         => $property,
+            'invoiceFor'       => $data['invoice_for'],
+            'recipientName'    => $data['recipient_name'],
+            'durationMonths'   => $data['duration_months'],
+            'monthlyRent'      => $data['monthly_rent'],
+            'commissionRate'   => $data['commission_rate'],
+            'totalRent'        => $totalRent,
+            'commissionAmount' => $commissionAmount,
+            'invoiceDate'      => $invoiceDate,
+            'invoiceNumber'    => $invoiceNumber,
+            'notes'            => $data['notes'] ?? null,
+        ])->render();
+
+        $tempDir = storage_path('app/mpdf');
+        if (!is_dir($tempDir)) mkdir($tempDir, 0755, true);
+
+        $mpdf = new Mpdf([
+            'mode'         => 'utf-8',
+            'format'       => 'A4',
+            'orientation'  => 'P',
+            'default_font' => 'dejavusans',
+            'tempDir'      => $tempDir,
+        ]);
+        $mpdf->SetDirectionality('rtl');
+        $mpdf->WriteHTML($html);
+        $pdfContent = $mpdf->Output('', 'S');
+
+        // Save PDF to disk
+        $filename   = $invoiceNumber . '.pdf';
+        $storageDir = storage_path('app/public/commission-invoices');
+        if (!is_dir($storageDir)) mkdir($storageDir, 0755, true);
+        file_put_contents($storageDir . DIRECTORY_SEPARATOR . $filename, $pdfContent);
+
+        // Save record
+        CommissionInvoice::create([
+            'property_id'      => $property->id,
+            'invoice_number'   => $invoiceNumber,
+            'invoice_for'      => $data['invoice_for'],
+            'recipient_name'   => $data['recipient_name'],
+            'duration_months'  => $data['duration_months'],
+            'monthly_rent'     => $data['monthly_rent'],
+            'commission_rate'  => $data['commission_rate'],
+            'total_rent'       => $totalRent,
+            'commission_amount'=> $commissionAmount,
+            'invoice_date'     => $invoiceDate,
+            'notes'            => $data['notes'] ?? null,
+            'file_path'        => 'commission-invoices/' . $filename,
+        ]);
+
+        return response($pdfContent)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+    }
+
+    public function downloadCommissionInvoice(Request $request, Property $property, CommissionInvoice $invoice)
+    {
+        $path = storage_path('app/public/' . $invoice->file_path);
+        if (!file_exists($path)) {
+            abort(404, 'Invoice file not found.');
+        }
+        $filename = $invoice->invoice_number . '.pdf';
+        if ($request->boolean('download')) {
+            return response()->download($path, $filename);
+        }
+        return response()->file($path, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
+
+    public function destroyCommissionInvoice(Property $property, CommissionInvoice $invoice)
+    {
+        $path = storage_path('app/public/' . $invoice->file_path);
+        if (file_exists($path)) @unlink($path);
+        $invoice->delete();
+
+        return redirect()->route('manager.properties.show', $property)
+            ->with('success', 'تم حذف الفاتورة');
+    }
+
+    public function managementCommissions(Request $request)
+    {
+        $search        = $request->input('search');
+        $invoiceFor    = $request->input('invoice_for');
+        $from          = $request->input('from');
+        $to            = $request->input('to');
+
+        $managementPropertyIds = Property::where('section', 'management')->pluck('id');
+
+        $baseQuery = fn() => CommissionInvoice::with('property')
+            ->whereIn('property_id', $managementPropertyIds)
+            ->when($search, fn($q) => $q->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                  ->orWhere('recipient_name', 'like', "%{$search}%")
+                  ->orWhereHas('property', fn($q) => $q->where('name', 'like', "%{$search}%"));
+            }))
+            ->when($invoiceFor, fn($q) => $q->where('invoice_for', $invoiceFor))
+            ->when($from, fn($q) => $q->whereDate('invoice_date', '>=', $from))
+            ->when($to,   fn($q) => $q->whereDate('invoice_date', '<=', $to));
+
+        $invoices         = $baseQuery()->orderByDesc('invoice_date')->paginate(20)->appends($request->query());
+        $totalCommissions = $baseQuery()->sum('commission_amount');
+        $ownerCount       = $baseQuery()->where('invoice_for', 'owner')->count();
+        $clientCount      = $baseQuery()->where('invoice_for', 'client')->count();
+
+        return view('manager.properties.commissions', compact(
+            'invoices', 'search', 'invoiceFor', 'from', 'to', 'totalCommissions', 'ownerCount', 'clientCount'
+        ));
+    }
+
     public function destroy(Property $property)
     {
         $property->delete();
@@ -286,8 +425,8 @@ class PropertyController extends Controller
             'name_ar'     => 'required|string|max:255',
             'name_en'     => 'nullable|string|max:255',
             'type'        => 'required|in:apartment_building,villa,farm,chalet,flat,land',
-            'purpose'     => 'required|in:rent,sale,both',
-            'section'     => 'required|in:hoa,management,external',
+            'purpose'     => 'required|in:rent,sale,both,exclusive_rent,exclusive_sale',
+            'section'     => 'required|in:hoa,management',
             'address_ar'  => 'required|string|max:500',
             'address_en'  => 'nullable|string|max:500',
             'city_ar'     => 'nullable|string|max:100',
@@ -302,11 +441,15 @@ class PropertyController extends Controller
             'total_area'  => 'nullable|numeric|min:0',
             'bedrooms'    => 'nullable|integer|min:0',
             'bathrooms'   => 'nullable|integer|min:0',
-            'status'      => 'nullable|in:active,sold,under_maintenance,archived',
+            'status'      => 'nullable|in:active,sold,rented,under_maintenance,archived',
             'electricity_account_number' => 'nullable|string|max:100',
             'water_account_number'       => 'nullable|string|max:100',
             'latitude'                   => 'nullable|numeric|between:-90,90',
             'longitude'                  => 'nullable|numeric|between:-180,180',
+            'rent_commission_rate'       => 'nullable|numeric|min:0|max:100',
+            'sale_commission_rate'       => 'nullable|numeric|min:0|max:100',
+            'commission_payer'           => 'nullable|in:owner,tenant,buyer,shared',
+            'commission_notes'           => 'nullable|string',
         ]);
     }
 

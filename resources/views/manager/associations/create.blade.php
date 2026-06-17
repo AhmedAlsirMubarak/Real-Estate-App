@@ -99,7 +99,7 @@
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{{ $tr('المستندات', 'Documents') }}</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('شهادة عدم الممانعة', 'No Objection Certificate') }}</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('ملكية', 'Ownership') }}</label>
                         <input type="file" name="no_objection_certificate" accept=".pdf,.jpg,.jpeg,.png"
                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100 file:text-gray-700">
                         <p class="text-xs text-gray-400 mt-1">PDF, JPG, PNG — {{ $tr('الحد الأقصى', 'Max') }} 5MB</p>

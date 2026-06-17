@@ -10,6 +10,12 @@
         <a href="{{ route('manager.associations.show', $association) }}" class="text-sm text-gray-600 hover:text-gray-900">{{ $tr('رجوع', 'Back') }}</a>
     </div>
 
+    @if($errors->any())
+    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm max-w-3xl">
+        @foreach($errors->all() as $e)<p>{{ $e }}</p>@endforeach
+    </div>
+    @endif
+
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-3xl">
         <form method="POST" action="{{ route('manager.associations.update', $association) }}" enctype="multipart/form-data" class="space-y-4">
             @csrf @method('PATCH')
@@ -91,7 +97,7 @@
                 <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{{ $tr('المستندات', 'Documents') }}</p>
                 @php
                     $docs = [
-                        'no_objection_certificate' => ['label' => $tr('شهادة عدم الممانعة', 'No Objection Certificate'),       'col' => 'no_objection_certificate_path'],
+                        'no_objection_certificate' => ['label' => $tr('ملكية', 'Ownership'),                                   'col' => 'no_objection_certificate_path'],
                         'sketch'                   => ['label' => $tr('المخطط', 'Sketch'),                                     'col' => 'sketch_path'],
                         'association_certificate'  => ['label' => $tr('شهادة جمعية الملاك', 'Owners Association Certificate'), 'col' => 'association_certificate_path'],
                         'personal_id'              => ['label' => $tr('الهوية الشخصية', 'Personal ID'),                       'col' => 'personal_id_path'],
@@ -108,10 +114,10 @@
                             <a href="{{ asset('storage/' . $association->{$doc['col']}) }}" target="_blank" class="text-xs text-green-700 hover:text-green-900 truncate flex-1">
                                 {{ basename($association->{$doc['col']}) }}
                             </a>
-                            <form method="POST" action="{{ route('manager.associations.documents.delete', [$association, $doc['col']]) }}" onsubmit="return confirm('{{ $tr('حذف هذا المستند؟', 'Delete this document?') }}')">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="text-red-500 hover:text-red-700 text-xs">{{ $tr('حذف', 'Delete') }}</button>
-                            </form>
+                            <button type="button" class="text-red-500 hover:text-red-700 text-xs"
+                                onclick="if(confirm('{{ $tr('حذف هذا المستند؟', 'Delete this document?') }}')){document.getElementById('del-{{ $inputName }}').submit()}">
+                                {{ $tr('حذف', 'Delete') }}
+                            </button>
                         </div>
                         @endif
                         <input type="file" name="{{ $inputName }}" accept=".pdf,.jpg,.jpeg,.png"
@@ -137,4 +143,24 @@
             <button class="text-red-600 hover:text-red-800 text-sm">{{ $tr('حذف', 'Delete') }}</button>
         </form>
     </div>
+
+    {{-- Standalone delete forms for individual documents (outside main form to avoid nesting) --}}
+    @php
+        $docCols = [
+            'no_objection_certificate' => 'no_objection_certificate_path',
+            'sketch'                   => 'sketch_path',
+            'association_certificate'  => 'association_certificate_path',
+            'personal_id'              => 'personal_id_path',
+            'manager_id'               => 'manager_id_path',
+        ];
+    @endphp
+    @foreach($docCols as $inputName => $col)
+    @if($association->{$col})
+    <form id="del-{{ $inputName }}" method="POST"
+          action="{{ route('manager.associations.documents.delete', [$association, $col]) }}"
+          style="display:none">
+        @csrf @method('DELETE')
+    </form>
+    @endif
+    @endforeach
 </x-app-layout>

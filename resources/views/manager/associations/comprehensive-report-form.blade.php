@@ -171,6 +171,7 @@
             ['key'=>'maintenance',        'ar'=>'الصيانة وأوامر العمل',       'en'=>'Maintenance Report',            'icon'=>'🔧'],
             ['key'=>'meetings',           'ar'=>'الاجتماعات والحوكمة',        'en'=>'Meetings & Governance',         'icon'=>'📅'],
             ['key'=>'reserve_fund',       'ar'=>'صندوق الاحتياطي',            'en'=>'Reserve Fund',                  'icon'=>'🏦'],
+            ['key'=>'commission_invoices','ar'=>'فواتير العمولة التجارية',     'en'=>'Business Commission Invoices',  'icon'=>'💼'],
             ['key'=>'attachments',        'ar'=>'المرفقات والوثائق',           'en'=>'Attachments',                   'icon'=>'📎'],
         ];
         @endphp

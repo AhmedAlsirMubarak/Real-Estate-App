@@ -2,13 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\CommissionInvoice;
 use App\Models\Expense;
 use App\Models\MaintenanceRequest;
 use App\Models\Owner;
 use App\Models\Payment;
 use App\Models\Property;
-use App\Models\RentalContract;
-use App\Models\Unit;
 use App\Models\User;
 use Carbon\Carbon;
 
@@ -26,8 +25,12 @@ class BuildingReportDataService
             'units.maintenanceRequests.assignedEmployee',
             'units.maintenanceRequests.tenant.user',
             'images',
-        ])->where(function ($q) {
-            $q->whereIn('section', ['management', 'external', 'hoa']);
+        ])->where(function ($q) use ($filters) {
+            if (! empty($filters['section'])) {
+                $q->where('section', $filters['section']);
+            } else {
+                $q->whereIn('section', ['management', 'external', 'hoa']);
+            }
         });
 
         if (! empty($filters['property_id'])) {
@@ -146,7 +149,7 @@ class BuildingReportDataService
             $mo = $cursor->month;
             $yr = $cursor->year;
             $mPay = $allPayments->filter(fn ($p) => $p->month === $mo && $p->year === $yr);
-            $mExp = $expenses->filter(fn ($e) => $e->expense_date->month === $mo && $e->expense_date->year === $yr);
+            $mExp = $expenses->filter(fn ($e) => $e->expense_date && $e->expense_date->month === $mo && $e->expense_date->year === $yr);
             $mCollected = (float) $mPay->where('status', 'paid')->sum('amount');
             $mExpenses  = (float) $mExp->sum('amount');
             $monthlyTrends[] = [
@@ -230,6 +233,17 @@ class BuildingReportDataService
 
         usort($alerts, fn ($a, $b) => ['high' => 0, 'medium' => 1, 'low' => 2][$a['priority']] <=> ['high' => 0, 'medium' => 1, 'low' => 2][$b['priority']]);
 
+        // ── Commission invoices in period ─────────────────────────────────────
+        $commissionInvoices = collect();
+        if ($propertyIds) {
+            $commissionInvoices = CommissionInvoice::whereIn('property_id', $propertyIds)
+                ->whereBetween('invoice_date', [$from->toDateString(), $to->toDateString()])
+                ->with('property')
+                ->orderBy('invoice_date')
+                ->get();
+        }
+        $totalCommissions = (float) $commissionInvoices->sum('commission_amount');
+
         // ── Filter helpers ────────────────────────────────────────────────────
         $allOwners    = Owner::with('user')->get();
         $allEmployees = User::role('employee')->get();
@@ -244,6 +258,7 @@ class BuildingReportDataService
             'expiringIn30', 'expiringIn60', 'expiringIn90', 'expiredContracts',
             'aging', 'monthlyTrends', 'propertyProfitability',
             'vacantUnitsList', 'alerts',
+            'commissionInvoices', 'totalCommissions',
             'allOwners', 'allEmployees'
         );
     }

@@ -205,6 +205,7 @@
                     'instagram' => ['ar' => 'انستغرام',                   'en' => 'Instagram',                    'ph' => 'https://instagram.com/...'],
                     'facebook'  => ['ar' => 'فيسبوك',                     'en' => 'Facebook',                     'ph' => 'https://facebook.com/...'],
                     'linkedin'  => ['ar' => 'لينكدإن',                    'en' => 'LinkedIn',                     'ph' => 'https://linkedin.com/...'],
+                    'tiktok'    => ['ar' => 'تيك توك',                    'en' => 'TikTok',                       'ph' => 'https://tiktok.com/@...'],
                 ];
                 @endphp
                 @foreach($socialFields as $social => $sf)

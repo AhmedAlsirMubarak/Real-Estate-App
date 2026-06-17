@@ -371,12 +371,12 @@
                     <div class="px-3 mt-4 mb-2">
                         <p class="text-xs text-yellow-400 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('٢. إدارة المباني', '2. Building Management') }}</p>
                     </div>
-                    <a href="{{ route('manager.properties.index') }}"
-                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.properties.*') ? 'active' : '' }}">
+                    <a href="{{ route('manager.properties.index') }}?section=management"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.properties.*') && !request()->routeIs('manager.properties.commissions') && !request()->routeIs('manager.properties.report.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                         <span class="text-sm font-medium">{{ $tr('المباني والوحدات', 'Buildings & Units') }}</span>
                     </a>
-                    <a href="{{ route('manager.tenants.index') }}"
+                      <a href="{{ route('manager.tenants.index') }}"
                        class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.tenants.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                         <span class="text-sm font-medium">{{ $tr('المستأجرين', 'Tenants') }}</span>
@@ -387,11 +387,37 @@
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                         <span class="text-sm font-medium">{{ $tr('المصروفات', 'Expenses') }}</span>
                     </a>
+                    <a href="{{ route('manager.properties.commissions') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.properties.commissions') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('عمولة الأعمال', 'Business Commission') }}</span>
+                    </a>
                     <a href="{{ route('manager.properties.report.create') }}"
                        class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.properties.report.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         <span class="text-sm font-medium">{{ $tr('التقرير الشامل', 'Comprehensive Report') }}</span>
                     </a>
+
+                    {{-- ===== SECTION 3: EXTERNAL PROPERTIES ===== --}}
+                    <div class="px-3 mt-4 mb-2">
+                        <p class="text-xs text-yellow-400 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('٣. العقارات الخارجية', '3. External Properties') }}</p>
+                    </div>
+                    <a href="{{ route('manager.external-properties.index') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.external-properties.*') && !request()->routeIs('manager.external-properties.commissions') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('العقارات الخارجية', 'External Properties') }}</span>
+                    </a>
+                    <a href="{{ route('manager.external-properties.commissions') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.external-properties.commissions') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('عمولة الأعمال', 'Business Commission') }}</span>
+                    </a>
+                    <a href="{{ route('manager.external-properties.report.create') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.external-properties.report.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('التقرير الشامل', 'Comprehensive Report') }}</span>
+                    </a>
+                  
 
                 @endif
 
@@ -438,6 +464,26 @@
                             </a>
                         </div>
                     </div>
+
+                    {{-- Contact Messages --}}
+                    <a href="{{ route('employee.contacts.index') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('employee.contacts.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        <span class="text-sm font-medium flex items-center gap-1.5">
+                            {{ $tr('رسائل التواصل', 'Contact Messages') }}
+                            @php $empUnread = \App\Models\ContactMessage::where('is_read', false)->count(); @endphp
+                            @if($empUnread > 0)
+                            <span class="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">{{ $empUnread > 9 ? '9+' : $empUnread }}</span>
+                            @endif
+                        </span>
+                    </a>
+
+                    {{-- Customers --}}
+                    <a href="{{ route('employee.customers.index') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('employee.customers.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('العملاء والطلبات', 'Customers') }}</span>
+                    </a>
 
                     {{-- ===== PROPERTY MANAGEMENT ===== --}}
                     <div class="px-3 mt-4 mb-2">

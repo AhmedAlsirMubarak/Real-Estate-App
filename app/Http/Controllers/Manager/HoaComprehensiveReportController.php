@@ -154,14 +154,21 @@ class HoaComprehensiveReportController extends Controller
                     $this->appendFile($fpdi, storage_path('app/public/' . $relPath), $label);
                 }
 
-                // 4. Generated NOC certificates (rental)
+                // 4. Commission invoice PDFs
+                foreach ($assocData['commissionInvoices'] as $cinv) {
+                    if (! $cinv->file_path) continue;
+                    $this->appendFile($fpdi, storage_path('app/public/' . $cinv->file_path),
+                        'Commission Invoice — ' . $cinv->invoice_number . ' (' . $cinv->recipient_name . ')');
+                }
+
+                // 6. Generated NOC certificates (rental)
                 foreach ($assoc->noObjectionCertificates as $noc) {
                     if (! $noc->file_path) continue;
                     $this->appendFile($fpdi, storage_path('app/' . $noc->file_path),
                         'NOC Rental — ' . $noc->ref_number);
                 }
 
-                // 5. Generated NOC certificates (sale)
+                // 7. Generated NOC certificates (sale)
                 foreach ($assoc->noObjectionSaleCertificates as $noc) {
                     if (! $noc->file_path) continue;
                     $this->appendFile($fpdi, storage_path('app/' . $noc->file_path),
@@ -242,6 +249,7 @@ class HoaComprehensiveReportController extends Controller
             'maintenance',
             'meetings',
             'reserve_fund',
+            'commission_invoices',
             'attachments',
         ];
     }

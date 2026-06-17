@@ -74,7 +74,7 @@ class WebsiteController extends Controller
 
         // Handle extra fields
         $extra = $section->extra ?? [];
-        foreach (['btn2_text_ar','btn2_text_en','btn2_url','badge_ar','badge_en','whatsapp','twitter','instagram','facebook','linkedin','showcase_property_id','hero_bg_type','hero_video_url'] as $field) {
+        foreach (['btn2_text_ar','btn2_text_en','btn2_url','badge_ar','badge_en','whatsapp','twitter','instagram','facebook','linkedin','tiktok','showcase_property_id','hero_bg_type','hero_video_url'] as $field) {
             if ($request->has($field)) {
                 $extra[$field] = $request->input($field);
             }

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Association;
 use App\Models\AssociationDue;
+use App\Models\CommissionInvoice;
 use App\Models\Expense;
 use App\Models\MaintenanceRequest;
 use App\Models\Property;
@@ -91,6 +92,16 @@ class HoaReportDataService
                 ->orderBy('expense_date')
                 ->get();
         }
+
+        // ── Commission invoices for the property in period ───────────────────
+        $commissionInvoices = collect();
+        if ($property) {
+            $commissionInvoices = CommissionInvoice::where('property_id', $property->id)
+                ->whereBetween('invoice_date', [$from->toDateString(), $to->toDateString()])
+                ->orderBy('invoice_date')
+                ->get();
+        }
+        $totalCommissions = (float) $commissionInvoices->sum('commission_amount');
 
         // ── Maintenance requests through units ────────────────────────────────
         $unitIds     = $units->pluck('id')->all();
@@ -242,15 +253,18 @@ class HoaReportDataService
         // ── Expense by category ───────────────────────────────────────────────
         $expensesByCategory = $expenses->groupBy('category');
 
+        $ownersCount = $owners->count();
+
         return compact(
-            'association', 'property', 'units', 'owners',
+            'association', 'property', 'units', 'owners', 'ownersCount',
             'totalUnits', 'occupiedUnits', 'vacantUnits',
             'dues', 'allDues', 'allOutstanding',
             'expenses', 'expensesByCategory',
             'maintenance', 'meetings',
             'totalDues', 'paidDues', 'unpaidDues', 'waivedDues', 'overdueDues',
             'totalExpenses', 'netBalance', 'collectionRate',
-            'aging', 'ownerStatements', 'unitFeeMap', 'monthlyTrends'
+            'aging', 'ownerStatements', 'unitFeeMap', 'monthlyTrends',
+            'commissionInvoices', 'totalCommissions'
         );
     }
 }

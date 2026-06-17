@@ -261,53 +261,6 @@ body{background:#fff;color:var(--text);overflow-x:clip}
     </div>
   </div>
 
-  {{-- UNITS TABLE --}}
-  @if($units->isNotEmpty())
-  <div class="section-card" id="units">
-    <div class="section-head flex items-center justify-between">
-      <span>{{ $tr('الوحدات المتاحة','Available Units') }} ({{ $availableUnits->count() }})</span>
-      @if($availableUnits->count() > 0)
-      <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:#dcfce7;color:#166534">{{ $availableUnits->count() }} {{ $tr('متاح','available') }}</span>
-      @endif
-    </div>
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead>
-          <tr style="background:var(--off);border-bottom:1px solid var(--border)">
-            <th class="px-4 py-3 text-start text-xs font-semibold" style="color:var(--muted)">{{ $tr('الوحدة','Unit') }}</th>
-            <th class="px-4 py-3 text-start text-xs font-semibold hidden sm:table-cell" style="color:var(--muted)">{{ $tr('المساحة','Area') }}</th>
-            <th class="px-4 py-3 text-start text-xs font-semibold hidden md:table-cell" style="color:var(--muted)">{{ $tr('الغرف','Rooms') }}</th>
-            <th class="px-4 py-3 text-start text-xs font-semibold" style="color:var(--muted)">{{ $tr('السعر','Price') }}</th>
-            <th class="px-4 py-3 text-start text-xs font-semibold" style="color:var(--muted)">{{ $tr('الحالة','Status') }}</th>
-          </tr>
-        </thead>
-        <tbody>
-          @foreach($units as $unit)
-          <tr style="border-bottom:1px solid var(--border)" onmouseover="this.style.background='#f0f4ff'" onmouseout="this.style.background=''">
-            <td class="px-4 py-3 font-bold text-sm" style="color:var(--navy)">{{ $unit->unit_number ?: ('F'.$unit->floor) }}</td>
-            <td class="px-4 py-3 text-xs hidden sm:table-cell" style="color:var(--muted)">{{ $unit->area ? number_format($unit->area).' m²' : '—' }}</td>
-            <td class="px-4 py-3 text-xs hidden md:table-cell" style="color:var(--muted)">
-              @if($unit->bedrooms || $unit->bathrooms) {{ $unit->bedrooms ?? 0 }} {{ $tr('غ','BR') }} · {{ $unit->bathrooms ?? 0 }} {{ $tr('ح','BA') }}
-              @else —
-              @endif
-            </td>
-            <td class="px-4 py-3 text-xs font-bold" style="color:var(--navy)">
-              @if($unit->rent_price) {{ number_format($unit->rent_price) }} <span style="color:var(--muted);font-weight:400">{{ $tr('إيجار','Rent') }}</span><br> @endif
-              @if($unit->sale_price) {{ number_format($unit->sale_price) }} <span style="color:var(--muted);font-weight:400">{{ $tr('بيع','Sale') }}</span> @endif
-              @if(!$unit->rent_price && !$unit->sale_price) — @endif
-            </td>
-            <td class="px-4 py-3">
-              @php $sc = ['available'=>'#dcfce7:#166534','rented'=>'#dbeafe:#1e40af','sold'=>'#fef9c3:#92400e','reserved'=>'#ede9fe:#5b21b6','maintenance'=>'#fee2e2:#991b1b'][$unit->status] ?? '#f1f5f9:#64748b';
-              [$sb,$sc] = explode(':', $sc); @endphp
-              <span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:{{ $sb }};color:{{ $sc }}">{{ $unit->statusLabel() }}</span>
-            </td>
-          </tr>
-          @endforeach
-        </tbody>
-      </table>
-    </div>
-  </div>
-  @endif
 
   {{-- ENQUIRE FORM --}}
   <div class="section-card">

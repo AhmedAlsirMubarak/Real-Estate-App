@@ -47,7 +47,7 @@
     {{-- Documents --}}
     @php
         $docsList = [
-            ['label' => $tr('شهادة عدم الممانعة', 'No Objection Certificate'),       'path' => $association->no_objection_certificate_path],
+            ['label' => $tr('ملكية', 'Ownership'),                                   'path' => $association->no_objection_certificate_path],
             ['label' => $tr('المخطط', 'Sketch'),                                     'path' => $association->sketch_path],
             ['label' => $tr('شهادة جمعية الملاك', 'Owners Association Certificate'), 'path' => $association->association_certificate_path],
             ['label' => $tr('الهوية الشخصية', 'Personal ID'),                       'path' => $association->personal_id_path],

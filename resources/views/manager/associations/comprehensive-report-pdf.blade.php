@@ -261,9 +261,11 @@ $totalExpenses  = $loopData['totalExpenses'];
 $netBalance     = $loopData['netBalance'];
 $collRate       = $loopData['collectionRate'];
 $aging          = $loopData['aging'];
-$ownerStmts     = $loopData['ownerStatements'];
-$unitFeeMap     = $loopData['unitFeeMap'];
-$trends         = $loopData['monthlyTrends'];
+$ownerStmts         = $loopData['ownerStatements'];
+$unitFeeMap         = $loopData['unitFeeMap'];
+$trends             = $loopData['monthlyTrends'];
+$commissionInvoices = $loopData['commissionInvoices'];
+$totalCommissions   = $loopData['totalCommissions'];
 $ownersCount    = $owners->count();
 $tenantsCount   = $units->filter(fn($u) => $u->activeRentalContract)->count();
 $assocName      = $isAr ? ($assoc->name_ar ?? $assoc->name_en ?? '—') : ($assoc->name_en ?? $assoc->name_ar ?? '—');
@@ -786,6 +788,13 @@ $collRateVColor= $collRate >= 90 ? 'v-green'   : ($collRate >= 70 ? 'v-amber'   
         @foreach($stmt['transactions'] as $tx)
         @php
             $txBg = $tx['type']==='credit' ? 'bg-green' : ($tx['status']==='overdue'?'bg-red':($tx['status']==='waived'?'bg-teal':'bg-amber'));
+            $txStatusLabel = match($tx['status']) {
+                'credit'  => $tr('دفعة','Payment'),
+                'paid'    => $tr('مدفوع','Paid'),
+                'overdue' => $tr('متأخر','Overdue'),
+                'waived'  => $tr('معفى','Waived'),
+                default   => $tr('معلق','Pending'),
+            };
         @endphp
         <tr class="{{ $tx['type']==='credit'?'':''.($tx['status']==='overdue'?'overdue-row':'') }}">
             <td class="nowrap">{{ $tx['date'] instanceof \Carbon\Carbon ? $tx['date']->format('Y/m/d') : ($tx['date'] ? \Carbon\Carbon::parse($tx['date'])->format('Y/m/d') : '—') }}</td>
@@ -793,7 +802,7 @@ $collRateVColor= $collRate >= 90 ? 'v-green'   : ($collRate >= 70 ? 'v-amber'   
             <td class="{{ $tx['debit']>0?'neg':'' }}">{{ $tx['debit']>0 ? $fmt($tx['debit']) : '—' }}</td>
             <td class="{{ $tx['credit']>0?'pos':'' }}">{{ $tx['credit']>0 ? $fmt($tx['credit']) : '—' }}</td>
             <td class="{{ $tx['balance']>0?'neg':($tx['balance']<0?'pos':'muted') }} bold">{{ $fmt(abs($tx['balance'])) }}</td>
-            <td><span class="bg {{ $txBg }} xs">{{ $tx['status']==='credit'?$tr('دفعة','Payment'):$due->statusLabel() }}</span></td>
+            <td><span class="bg {{ $txBg }} xs">{{ $txStatusLabel }}</span></td>
         </tr>
         @endforeach
     </tbody>
@@ -1139,12 +1148,12 @@ $hasAnyDoc = $assoc->no_objection_certificate_path
     || $assoc->association_certificate_path
     || $assoc->personal_id_path
     || $assoc->manager_id_path;
-$nocs     = $data['association']->noObjectionCertificates ?? collect();
-$nocSales = $data['association']->noObjectionSaleCertificates ?? collect();
+$nocs     = $assoc->noObjectionCertificates ?? collect();
+$nocSales = $assoc->noObjectionSaleCertificates ?? collect();
 @endphp
 <table class="info-grid">
     <tr>
-        <td class="lbl">{{ $tr('شهادة عدم الممانعة','No Objection Certificate') }}</td>
+        <td class="lbl">{{ $tr('ملكية','Ownership') }}</td>
         <td class="val">{{ $assoc->no_objection_certificate_path ? $tr('متوفر ✓','Available ✓') : $tr('غير متوفر','Not Available') }}</td>
         <td class="lbl">{{ $tr('المخطط','Sketch') }}</td>
         <td class="val">{{ $assoc->sketch_path ? $tr('متوفر ✓','Available ✓') : $tr('غير متوفر','Not Available') }}</td>
@@ -1213,6 +1222,63 @@ $nocSales = $data['association']->noObjectionSaleCertificates ?? collect();
 </table>
 @endif
 @endif {{-- attachments --}}
+
+
+{{-- ══════════════════════════════════════════════════════════════════════════
+     SECTION 13: COMMISSION INVOICES
+══════════════════════════════════════════════════════════════════════════ --}}
+@if($has('commission_invoices'))
+<div style="page-break-inside: avoid;">
+<div class="sec-title">13. {{ $tr('فواتير العمولة التجارية','Business Commission Invoices') }}</div>
+@if($commissionInvoices->count())
+<table class="kpi-row" style="margin-bottom:6px;">
+    <tr>
+        <td class="kpi kpi-teal" style="width:24%; padding:7px 5px;"><div class="kpi-lbl">{{ $tr('إجمالي الفواتير','Total Invoices') }}</div><div class="kpi-val v-teal" style="font-size:12pt;">{{ $commissionInvoices->count() }}</div></td>
+        <td width="4"></td>
+        <td class="kpi kpi-green" style="width:24%; padding:7px 5px;"><div class="kpi-lbl">{{ $tr('إجمالي العمولات','Total Commission') }}</div><div class="kpi-val v-green" style="font-size:12pt;">{{ $fmt($totalCommissions) }}</div><div class="kpi-unit">{{ $cur }}</div></td>
+        <td width="4"></td>
+        <td class="kpi kpi-blue" style="width:24%; padding:7px 5px;"><div class="kpi-lbl">{{ $tr('فواتير المالك','Owner Invoices') }}</div><div class="kpi-val v-blue" style="font-size:12pt;">{{ $commissionInvoices->where('invoice_for','owner')->count() }}</div></td>
+        <td width="4"></td>
+        <td class="kpi kpi-violet" style="width:24%; padding:7px 5px;"><div class="kpi-lbl">{{ $tr('فواتير العميل','Client Invoices') }}</div><div class="kpi-val v-violet" style="font-size:12pt;">{{ $commissionInvoices->where('invoice_for','client')->count() }}</div></td>
+    </tr>
+</table>
+<table class="tbl tbl-teal" style="font-size:7pt;">
+    <thead>
+        <tr>
+            <th style="padding:4px 5px;">{{ $tr('رقم الفاتورة','Invoice No.') }}</th>
+            <th style="padding:4px 5px;">{{ $tr('التاريخ','Date') }}</th>
+            <th style="padding:4px 5px;">{{ $tr('نوع','For') }}</th>
+            <th style="padding:4px 5px;">{{ $tr('المستلم','Recipient') }}</th>
+            <th style="padding:4px 5px;">{{ $tr('المدة','Dur.') }}</th>
+            <th style="padding:4px 5px;">{{ $tr('الإيجار الشهري','Monthly Rent') }}</th>
+            <th style="padding:4px 5px;">{{ $tr('النسبة','Rate') }}</th>
+            <th style="padding:4px 5px;">{{ $tr('العمولة','Commission') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($commissionInvoices as $cinv)
+        <tr>
+            <td class="bold xs" style="padding:3px 5px;">{{ $cinv->invoice_number }}</td>
+            <td class="nowrap" style="padding:3px 5px; font-size:6.5pt;">{{ $cinv->invoice_date->format('Y/m/d') }}</td>
+            <td style="padding:3px 5px;"><span class="bg {{ $cinv->invoice_for==='owner'?'bg-blue':'bg-violet' }}" style="font-size:6.5pt;">{{ $cinv->invoice_for === 'owner' ? $tr('مالك','Owner') : $tr('عميل','Client') }}</span></td>
+            <td style="padding:3px 5px; font-size:7pt;">{{ $cinv->recipient_name }}</td>
+            <td class="center" style="padding:3px 5px;">{{ $cinv->duration_months }}</td>
+            <td style="padding:3px 5px;">{{ $fmt($cinv->monthly_rent) }}</td>
+            <td class="center" style="padding:3px 5px;">{{ $cinv->commission_rate }}%</td>
+            <td class="bold pos" style="padding:3px 5px;">{{ $fmt($cinv->commission_amount) }}</td>
+        </tr>
+        @endforeach
+        <tr class="tr-total">
+            <td colspan="7" style="padding:4px 5px;">{{ $tr('إجمالي العمولات','Total Commissions') }} ({{ $commissionInvoices->count() }} {{ $tr('فاتورة','invoices') }})</td>
+            <td style="padding:4px 5px;">{{ $fmt($totalCommissions) }} {{ $cur }}</td>
+        </tr>
+    </tbody>
+</table>
+@else
+<p class="muted sm">{{ $tr('لا توجد فواتير عمولة في الفترة المحددة.','No commission invoices in this period.') }}</p>
+@endif
+</div>
+@endif {{-- commission_invoices --}}
 
 
 {{-- Association footer --}}

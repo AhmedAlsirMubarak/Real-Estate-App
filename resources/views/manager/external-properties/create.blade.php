@@ -2,20 +2,26 @@
     @php
         $isAr = app()->getLocale() === 'ar';
         $tr = fn (string $ar, string $en) => $isAr ? $ar : $en;
-        $isExternal = $isExternal ?? false;
-        $routePrefix = $routePrefix ?? 'manager.properties';
     @endphp
-    <x-slot name="title">{{ $tr('إضافة عقار', 'Add Property') }}</x-slot>
+    <x-slot name="title">{{ $tr('إضافة عقار خارجي', 'Add External Property') }}</x-slot>
 
     <div class="max-w-3xl mx-auto">
-        <a href="{{ route($routePrefix . '.index') }}" class="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-block">← {{ $tr('رجوع', 'Back') }}</a>
+        <a href="{{ route('manager.external-properties.index') }}" class="text-sm text-gray-500 hover:text-gray-700 mb-4 inline-block">← {{ $tr('العقارات الخارجية', 'External Properties') }}</a>
 
-        <form method="POST" action="{{ route($routePrefix . '.store') }}" enctype="multipart/form-data" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+        <form method="POST" action="{{ route('manager.external-properties.store') }}" enctype="multipart/form-data" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
             @csrf
+            <input type="hidden" name="section" value="external">
 
-            <h2 class="text-lg font-bold text-gray-800 mb-2">{{ $tr('إضافة عقار جديد', 'Create New Property') }}</h2>
+            <h2 class="text-lg font-bold text-gray-800 mb-2">{{ $tr('إضافة عقار خارجي جديد', 'Create New External Property') }}</h2>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('القسم', 'Section') }}</label>
+                    <div class="inline-flex items-center gap-2 px-3 py-2 bg-teal-50 border border-teal-200 rounded-lg text-sm font-medium text-teal-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        {{ $tr('عقار خارجي', 'External Properties') }}
+                    </div>
+                </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('اسم العقار (عربي)', 'Property Name (Arabic)') }} <span class="text-red-500">*</span></label>
                     <input type="text" name="name_ar" value="{{ old('name_ar') }}" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
@@ -30,7 +36,7 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الكود (اختياري)', 'Code (optional)') }}</label>
-                    <input type="text" name="code" value="{{ old('code') }}" placeholder="{{ $tr('مثل: TH-B-003', 'Example: TH-B-003') }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                    <input type="text" name="code" value="{{ old('code') }}" placeholder="{{ $tr('مثل: EX-B-001', 'Example: EX-B-001') }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                     <p class="text-xs text-gray-400 mt-1">{{ $tr('سيُولّد تلقائياً إذا تُرك فارغاً', 'Will be generated automatically if left empty') }}</p>
                 </div>
 
@@ -38,11 +44,11 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('نوع العقار', 'Property Type') }} <span class="text-red-500">*</span></label>
                     <select name="type" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" onchange="toggleFloors(this.value)">
                         <option value="apartment_building" @selected(old('type')==='apartment_building')>{{ $tr('عمارة', 'Apartment Building') }}</option>
-                        <option value="flat" @selected(old('type')==='flat')>{{ $tr('شقة', 'Flat') }}</option>
-                        <option value="villa" @selected(old('type')==='villa')>{{ $tr('فيلا', 'Villa') }}</option>
-                        <option value="farm" @selected(old('type')==='farm')>{{ $tr('مزرعة', 'Farm') }}</option>
-                        <option value="chalet" @selected(old('type')==='chalet')>{{ $tr('شاليه', 'Chalet') }}</option>
-                        <option value="land" @selected(old('type')==='land')>{{ $tr('أرض', 'Land') }}</option>
+                        <option value="flat"    @selected(old('type')==='flat')>{{ $tr('شقة', 'Flat') }}</option>
+                        <option value="villa"   @selected(old('type')==='villa')>{{ $tr('فيلا', 'Villa') }}</option>
+                        <option value="farm"    @selected(old('type')==='farm')>{{ $tr('مزرعة', 'Farm') }}</option>
+                        <option value="chalet"  @selected(old('type')==='chalet')>{{ $tr('شاليه', 'Chalet') }}</option>
+                        <option value="land"    @selected(old('type')==='land')>{{ $tr('أرض', 'Land') }}</option>
                     </select>
                 </div>
 
@@ -57,20 +63,6 @@
                     </select>
                 </div>
 
-                @if($isExternal)
-                <input type="hidden" name="section" value="external">
-                @else
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('القسم', 'Section') }} <span class="text-red-500">*</span></label>
-                    @php $oldSection = old('section', request('section', 'management')); @endphp
-                    <select name="section" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                        <option value="management" @selected($oldSection==='management')>{{ $tr('إدارة المباني', 'Building Management') }}</option>
-                        <option value="hoa" @selected($oldSection==='hoa')>{{ $tr('جمعية الملاك', 'Owners Association') }}</option>
-                    </select>
-                    @error('section') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-                </div>
-                @endif
-
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('العنوان (عربي)', 'Address (Arabic)') }} <span class="text-red-500">*</span></label>
                     <input type="text" name="address_ar" value="{{ old('address_ar') }}" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
@@ -80,7 +72,6 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Address (English)</label>
                     <input type="text" name="address_en" value="{{ old('address_en') }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                    @error('address_en') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
@@ -115,7 +106,7 @@
                     </select>
                 </div>
 
-                {{-- Referral employee who brought this property --}}
+                {{-- Referral employee --}}
                 <div class="col-span-2 border-t border-dashed border-gray-200 pt-4 mt-1">
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{{ $tr('موظف الإحالة (من أحضر العقار)', 'Referral (Who Sourced This Property)') }}</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -127,7 +118,7 @@
                                 <option value="{{ $emp->id }}" data-rate="{{ $emp->commission_rate }}" @selected(old('referral_employee_id') == $emp->id)>{{ $emp->name }}</option>
                                 @endforeach
                             </select>
-                            <p class="text-xs text-gray-400 mt-1">{{ $tr('الموظف الذي أحضر هذا العقار أو الوحدة للشركة', 'Employee who sourced or referred this property to the company') }}</p>
+                            <p class="text-xs text-gray-400 mt-1">{{ $tr('الموظف الذي أحضر هذا العقار للشركة', 'Employee who sourced or referred this property to the company') }}</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('نسبة عمولة الإحالة %', 'Referral Commission %') }}</label>
@@ -138,12 +129,11 @@
                                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm pr-8">
                                 <span class="absolute inset-y-0 {{ app()->getLocale() === 'ar' ? 'left-3' : 'right-3' }} flex items-center text-gray-400 text-sm">%</span>
                             </div>
-                            <p class="text-xs text-gray-400 mt-1">{{ $tr('تُحتسب من إجمالي الإيجار المحصَّل لهذا العقار', 'Calculated from total collected rent for this property') }}</p>
                         </div>
                     </div>
                 </div>
 
-                {{-- Utility account numbers --}}
+                {{-- Utility accounts --}}
                 <div class="col-span-2 border-t border-dashed border-gray-200 pt-4 mt-1">
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">{{ $tr('أرقام حسابات الخدمات', 'Utility Account Numbers') }}</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -157,7 +147,6 @@
                             <input type="text" name="electricity_account_number" value="{{ old('electricity_account_number') }}"
                                    placeholder="{{ $tr('اختياري', 'Optional') }}"
                                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                            @error('electricity_account_number') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -169,7 +158,6 @@
                             <input type="text" name="water_account_number" value="{{ old('water_account_number') }}"
                                    placeholder="{{ $tr('اختياري', 'Optional') }}"
                                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                            @error('water_account_number') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
                         </div>
                     </div>
                 </div>
@@ -202,20 +190,18 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('عمولة الإيجار (%)', 'Rent Commission (%)') }}</label>
                         <input type="number" step="0.01" min="0" max="100" name="rent_commission_rate"
-                               value="{{ old('rent_commission_rate') }}"
-                               placeholder="{{ $tr('مثال: 5', 'e.g. 5') }}"
-                               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none">
+                               value="{{ old('rent_commission_rate') }}" placeholder="{{ $tr('مثال: 5', 'e.g. 5') }}"
+                               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-300 outline-none">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('عمولة البيع (%)', 'Sale Commission (%)') }}</label>
                         <input type="number" step="0.01" min="0" max="100" name="sale_commission_rate"
-                               value="{{ old('sale_commission_rate') }}"
-                               placeholder="{{ $tr('مثال: 2.5', 'e.g. 2.5') }}"
-                               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none">
+                               value="{{ old('sale_commission_rate') }}" placeholder="{{ $tr('مثال: 2.5', 'e.g. 2.5') }}"
+                               class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-300 outline-none">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('يدفع العمولة', 'Commission Paid By') }}</label>
-                        <select name="commission_payer" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-300">
+                        <select name="commission_payer" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-300">
                             <option value="">{{ $tr('-- اختر --', '-- Select --') }}</option>
                             <option value="owner"  @selected(old('commission_payer') === 'owner')>{{ $tr('المالك', 'Owner') }}</option>
                             <option value="tenant" @selected(old('commission_payer') === 'tenant')>{{ $tr('المستأجر', 'Tenant') }}</option>
@@ -227,7 +213,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('ملاحظات العمولة', 'Commission Notes') }}</label>
                         <textarea name="commission_notes" rows="2"
                                   placeholder="{{ $tr('أي تفاصيل إضافية...', 'Any additional details...') }}"
-                                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none resize-none">{{ old('commission_notes') }}</textarea>
+                                  class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-300 outline-none resize-none">{{ old('commission_notes') }}</textarea>
                     </div>
                 </div>
             </div>
@@ -243,14 +229,14 @@
             </div>
 
             <div id="unit-price-fields" class="border-t border-gray-100 pt-4 hidden">
-                <p class="text-xs text-gray-500 mb-3">{{ $tr('هذه الأسعار تُستخدم لإنشاء الوحدة الواحدة تلقائياً (للفيلا/المزرعة/الشاليه):', 'These prices are used to auto-create the single unit (villa/farm/chalet):') }}</p>
+                <p class="text-xs text-gray-500 mb-3">{{ $tr('هذه الأسعار تُستخدم لإنشاء الوحدة الواحدة تلقائياً:', 'These prices are used to auto-create the single unit:') }}</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('سعر الإيجار (للوحدة الواحدة)', 'Rent price (single unit)') }}</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('سعر الإيجار', 'Rent price') }}</label>
                         <input type="number" step="0.01" name="rent_price" value="{{ old('rent_price') }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('سعر البيع (للوحدة الواحدة)', 'Sale price (single unit)') }}</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('سعر البيع', 'Sale price') }}</label>
                         <input type="number" step="0.01" name="sale_price" value="{{ old('sale_price') }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                     </div>
                 </div>
@@ -266,10 +252,7 @@
                          this.sizeErrors = [];
                          const max = 2 * 1024 * 1024;
                          Array.from(e.target.files).forEach(f => {
-                             if (f.size > max) {
-                                 this.sizeErrors.push(f.name);
-                                 return;
-                             }
+                             if (f.size > max) { this.sizeErrors.push(f.name); return; }
                              const r = new FileReader();
                              r.onload = ev => this.previews.push(ev.target.result);
                              r.readAsDataURL(f);
@@ -277,77 +260,56 @@
                      }
                  }">
                 <label class="block text-sm font-medium text-gray-700 mb-2">{{ $tr('صور العقار (اختياري)', 'Property Images (optional)') }}</label>
-                <label :class="sizeErrors.length ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-gray-50 hover:border-blue-400'"
+                <label :class="sizeErrors.length ? 'border-red-400 bg-red-50' : 'border-gray-300 bg-gray-50 hover:border-teal-400'"
                        class="flex items-center gap-2 cursor-pointer border border-dashed rounded-lg px-4 py-3 text-sm text-gray-500 transition w-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0" :class="sizeErrors.length ? 'text-red-500' : 'text-blue-500'"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 flex-shrink-0" :class="sizeErrors.length ? 'text-red-500' : 'text-teal-500'"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></svg>
                     <span x-text="previews.length ? `${previews.length} {{ $tr('صورة محددة', 'image(s) selected') }}` : '{{ $tr('اختر صوراً للعقار…', 'Choose property images…') }}'"></span>
                     <input type="file" name="images[]" multiple accept="image/jpeg,image/png,image/webp" class="hidden" @change="pick($event)">
                 </label>
-                {{-- Client-side size errors --}}
                 <template x-if="sizeErrors.length > 0">
-                    <div class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 space-y-1">
+                    <div class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2">
                         <p class="text-red-600 text-xs font-semibold">{{ $tr('الملفات التالية تتجاوز الحد الأقصى (2 ميجا):', 'The following files exceed the 2 MB limit:') }}</p>
                         <template x-for="name in sizeErrors" :key="name">
-                            <p class="text-red-500 text-xs flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 flex-shrink-0"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
-                                <span x-text="name"></span>
-                            </p>
+                            <p class="text-red-500 text-xs" x-text="name"></p>
                         </template>
                     </div>
                 </template>
-                {{-- Server-side validation errors --}}
                 @php $imgErrors = collect($errors->getMessages())->filter(fn($m,$k) => str_starts_with($k,'images.'))->flatten(); @endphp
                 @if($imgErrors->isNotEmpty())
-                <div class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 space-y-1">
+                <div class="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2">
                     @foreach($imgErrors as $msg)
-                    <p class="text-red-500 text-xs flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 flex-shrink-0"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
-                        {{ $msg }}
-                    </p>
+                    <p class="text-red-500 text-xs">{{ $msg }}</p>
                     @endforeach
                 </div>
                 @endif
-                <p class="text-xs text-gray-400 mt-1">{{ $tr('JPG، PNG، WebP — حد أقصى 2 ميجا للصورة. يمكن إضافة المزيد لاحقاً من صفحة التعديل.', 'JPG, PNG, WebP — max 2 MB each. More can be added later from the edit page.') }}</p>
-                {{-- Preview grid --}}
-                <div x-show="previews.length > 0" x-transition class="mt-3 grid grid-cols-4 sm:grid-cols-6 gap-2">
+                <p class="text-xs text-gray-400 mt-1">{{ $tr('JPG، PNG، WebP — حد أقصى 2 ميجا للصورة', 'JPG, PNG, WebP — max 2 MB each') }}</p>
+                <div x-show="previews.length > 0" class="mt-3 grid grid-cols-4 sm:grid-cols-6 gap-2">
                     <template x-for="(src, i) in previews" :key="i">
                         <div class="relative rounded-lg overflow-hidden border border-gray-200 aspect-square">
                             <img :src="src" class="w-full h-full object-cover">
-                            <div x-show="i === 0" class="absolute top-0.5 start-0.5 bg-blue-600 text-white text-[9px] font-bold px-1 rounded">{{ $tr('رئيسية', 'Main') }}</div>
+                            <div x-show="i === 0" class="absolute top-0.5 start-0.5 bg-teal-600 text-white text-[9px] font-bold px-1 rounded">{{ $tr('رئيسية', 'Main') }}</div>
                         </div>
                     </template>
                 </div>
             </div>
 
             <div class="flex gap-2 pt-2">
-                <button class="bg-blue-900 hover:bg-blue-800 text-white px-5 py-2 rounded-lg text-sm font-medium">{{ $tr('حفظ', 'Save') }}</button>
-                <a href="{{ route($routePrefix . '.index') }}" class="bg-gray-100 text-gray-700 px-5 py-2 rounded-lg text-sm">{{ $tr('إلغاء', 'Cancel') }}</a>
+                <button class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 rounded-lg text-sm font-medium">{{ $tr('حفظ', 'Save') }}</button>
+                <a href="{{ route('manager.external-properties.index') }}" class="bg-gray-100 text-gray-700 px-5 py-2 rounded-lg text-sm">{{ $tr('إلغاء', 'Cancel') }}</a>
             </div>
         </form>
     </div>
 
     <script>
         function toggleFloors(type) {
-            const floorsField = document.getElementById('floors-field');
-            const priceFields = document.getElementById('unit-price-fields');
-            if (type === 'apartment_building') {
-                floorsField.style.display = '';
-                priceFields.classList.add('hidden');
-            } else {
-                floorsField.style.display = 'none';
-                priceFields.classList.remove('hidden');
-            }
+            document.getElementById('floors-field').style.display = type === 'apartment_building' ? '' : 'none';
+            document.getElementById('unit-price-fields').classList.toggle('hidden', type === 'apartment_building');
         }
         toggleFloors(document.querySelector('[name=type]').value);
 
         document.getElementById('referral-employee-select').addEventListener('change', function () {
             const rate = this.options[this.selectedIndex].dataset.rate;
-            const rateInput = document.getElementById('referral-commission-rate');
-            if (rate) {
-                rateInput.value = rate;
-            } else {
-                rateInput.value = '';
-            }
+            document.getElementById('referral-commission-rate').value = rate || '';
         });
     </script>
 </x-app-layout>

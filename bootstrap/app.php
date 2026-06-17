@@ -21,5 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', \App\Http\Middleware\EnsureUserIsNotBlocked::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->respond(function (\Illuminate\Http\Response $response) {
+            if ($response->getStatusCode() === 419) {
+                return redirect()->route('login')->withErrors(['session' => 'Your session expired. Please log in again.']);
+            }
+            return $response;
+        });
+
         \Sentry\Laravel\Integration::handles($exceptions);
     })->create();

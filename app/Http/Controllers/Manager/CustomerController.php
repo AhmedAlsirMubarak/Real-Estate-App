@@ -146,7 +146,8 @@ class CustomerController extends Controller
             'max_budget'    => 'nullable|numeric|min:0',
             'bedrooms'      => 'nullable|integer|min:0|max:20',
             'notes'         => 'nullable|string',
-            'status'        => 'required|in:new,contacted,interested,closed',
+            'status'        => 'required|in:new,contacted,interested,closed,done',
+            'source'        => 'nullable|in:open_market,instagram,facebook,tiktok,dubizzle,website,billboard,referral,other',
         ]);
     }
 }

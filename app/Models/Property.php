@@ -40,6 +40,10 @@ class Property extends Model
         'water_account_number',
         'latitude',
         'longitude',
+        'rent_commission_rate',
+        'sale_commission_rate',
+        'commission_payer',
+        'commission_notes',
     ];
 
     public function owner()
@@ -92,6 +96,11 @@ class Property extends Model
     public function images()
     {
         return $this->hasMany(PropertyImage::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function commissionInvoices()
+    {
+        return $this->hasMany(CommissionInvoice::class)->latest();
     }
 
     public function primaryImage(): ?PropertyImage
@@ -178,18 +187,22 @@ class Property extends Model
     {
         if (app()->getLocale() === 'en') {
             return match ($this->purpose) {
-                'rent' => 'Rent',
-                'sale' => 'Sale',
-                'both' => 'Rent & Sale',
-                default => $this->purpose,
+                'rent'           => 'Rent',
+                'sale'           => 'Sale',
+                'both'           => 'Rent & Sale',
+                'exclusive_rent' => 'Exclusive Rent',
+                'exclusive_sale' => 'Exclusive Sale',
+                default          => $this->purpose,
             };
         }
 
         return match ($this->purpose) {
-            'rent' => 'إيجار',
-            'sale' => 'بيع',
-            'both' => 'إيجار وبيع',
-            default => $this->purpose,
+            'rent'           => 'إيجار',
+            'sale'           => 'بيع',
+            'both'           => 'إيجار وبيع',
+            'exclusive_rent' => 'ايجار حصري',
+            'exclusive_sale' => 'بيع حصري',
+            default          => $this->purpose,
         };
     }
 
@@ -197,17 +210,19 @@ class Property extends Model
     {
         if (app()->getLocale() === 'en') {
             return match ($this->status) {
-                'active' => 'Active',
-                'sold' => 'Sold',
+                'active'            => 'Active',
+                'sold'              => 'Sold',
+                'rented'            => 'Rented',
                 'under_maintenance' => 'Under Maintenance',
-                'archived' => 'Archived',
-                default => $this->status,
+                'archived'          => 'Archived',
+                default             => $this->status,
             };
         }
 
         return match ($this->status) {
             'active'            => 'نشط',
             'sold'              => 'مباع',
+            'rented'            => 'مؤجر',
             'under_maintenance' => 'قيد الصيانة',
             'archived'          => 'مؤرشف',
             default             => $this->status,

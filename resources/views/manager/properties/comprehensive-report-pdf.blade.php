@@ -36,6 +36,8 @@ $monthlyTrends      = $data['monthlyTrends'];
 $propProfit         = $data['propertyProfitability'];
 $vacantList         = $data['vacantUnitsList'];
 $alerts             = $data['alerts'];
+$commissionInvoices = $data['commissionInvoices'];
+$totalCommissions   = $data['totalCommissions'];
 $today              = now()->startOfDay();
 @endphp
 <!DOCTYPE html>
@@ -1015,13 +1017,75 @@ $mAvgResol   = $maintenance->where('status','completed')->filter(fn($r)=>$r->res
 
 
 {{-- ══════════════════════════════════════════════════════════════════════════
-     15. ATTACHMENTS
+     15. COMMISSION INVOICES
+══════════════════════════════════════════════════════════════════════════ --}}
+@if($has('commission_invoices'))
+<div class="sec-title">15. {{ $tr('فواتير العمولة', 'Commission Invoices') }}</div>
+@if($commissionInvoices->count())
+<table class="kpi-row" style="margin-bottom:8px;">
+    <tr>
+        <td class="kpi kpi-teal" style="width:30%;"><div class="kpi-lbl">{{ $tr('إجمالي الفواتير', 'Total Invoices') }}</div><div class="kpi-val v-teal">{{ $commissionInvoices->count() }}</div></td>
+        <td width="4"></td>
+        <td class="kpi kpi-green" style="width:30%;"><div class="kpi-lbl">{{ $tr('إجمالي العمولات', 'Total Commission') }}</div><div class="kpi-val v-green">{{ number_format($totalCommissions, 3) }}</div><div class="kpi-unit">OMR</div></td>
+        <td width="4"></td>
+        <td class="kpi kpi-blue" style="width:30%;"><div class="kpi-lbl">{{ $tr('فواتير المالك', 'Owner Invoices') }}</div><div class="kpi-val v-blue">{{ $commissionInvoices->where('invoice_for','owner')->count() }}</div></td>
+        <td width="4"></td>
+        <td class="kpi kpi-indigo" style="width:30%;"><div class="kpi-lbl">{{ $tr('فواتير العميل', 'Client Invoices') }}</div><div class="kpi-val v-indigo">{{ $commissionInvoices->where('invoice_for','client')->count() }}</div></td>
+    </tr>
+</table>
+<table class="tbl tbl-teal" style="font-size:7.5pt;">
+    <thead>
+        <tr>
+            <th style="width:18%;">{{ $tr('رقم الفاتورة', 'Invoice No.') }}</th>
+            <th style="width:10%;">{{ $tr('التاريخ', 'Date') }}</th>
+            <th style="width:14%;">{{ $tr('العقار', 'Property') }}</th>
+            <th style="width:8%;">{{ $tr('موجهة إلى', 'For') }}</th>
+            <th style="width:16%;">{{ $tr('المستلم', 'Recipient') }}</th>
+            <th style="width:8%;">{{ $tr('المدة (شهر)', 'Months') }}</th>
+            <th style="width:10%;">{{ $tr('الإيجار الشهري', 'Monthly') }}</th>
+            <th style="width:8%;">{{ $tr('النسبة %', 'Rate %') }}</th>
+            <th style="width:12%;">{{ $tr('مبلغ العمولة', 'Commission') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($commissionInvoices as $cinv)
+        <tr>
+            <td class="bold xs">{{ $cinv->invoice_number }}</td>
+            <td class="sm nowrap">{{ $cinv->invoice_date->format('Y/m/d') }}</td>
+            <td class="sm">{{ $isAr ? ($cinv->property->name_ar ?? $cinv->property->name_en) : ($cinv->property->name_en ?? $cinv->property->name_ar) }}</td>
+            <td>
+                <span class="bg {{ $cinv->invoice_for === 'owner' ? 'bg-blue' : 'bg-green' }}">
+                    {{ $cinv->invoice_for === 'owner' ? $tr('المالك','Owner') : $tr('العميل','Client') }}
+                </span>
+            </td>
+            <td>{{ $cinv->recipient_name }}</td>
+            <td class="center">{{ $cinv->duration_months }}</td>
+            <td>{{ number_format($cinv->monthly_rent, 3) }}</td>
+            <td class="center">{{ $cinv->commission_rate }}%</td>
+            <td class="bold pos">{{ number_format($cinv->commission_amount, 3) }}</td>
+        </tr>
+        @endforeach
+        <tr class="tr-total">
+            <td colspan="8">{{ $tr('إجمالي العمولات', 'Total Commissions') }} ({{ $commissionInvoices->count() }} {{ $tr('فاتورة','invoices') }})</td>
+            <td>{{ number_format($totalCommissions, 3) }}</td>
+        </tr>
+    </tbody>
+</table>
+@else
+<p class="muted sm">{{ $tr('لا توجد فواتير عمولة في الفترة المحددة.', 'No commission invoices in this period.') }}</p>
+@endif
+@endif {{-- commission_invoices --}}
+
+
+{{-- ══════════════════════════════════════════════════════════════════════════
+     16. ATTACHMENTS
 ══════════════════════════════════════════════════════════════════════════ --}}
 @if($has('attachments'))
-<div class="sec-title">15. {{ $tr('المرفقات والوثائق','Attachments & Supporting Documents') }}</div>
+<div class="sec-title">16. {{ $tr('المرفقات والوثائق','Attachments & Supporting Documents') }}</div>
 @php
-$contractsWithFiles = $allContracts->filter(fn($c) => $c->contract_file);
+$contractsWithFiles   = $allContracts->filter(fn($c) => $c->contract_file);
 $expensesWithInvoices = $expenses->filter(fn($e) => $e->invoices->count() || $e->receipt_path);
+$commInvWithFiles     = $commissionInvoices->filter(fn($i) => $i->file_path);
 @endphp
 <table class="info-grid">
     <tr>
@@ -1029,6 +1093,12 @@ $expensesWithInvoices = $expenses->filter(fn($e) => $e->invoices->count() || $e-
         <td class="bold">{{ $contractsWithFiles->count() }}</td>
         <td class="lbl">{{ $tr('فواتير المصروفات','Expense Invoices') }}</td>
         <td class="bold">{{ $expensesWithInvoices->count() }}</td>
+    </tr>
+    <tr>
+        <td class="lbl">{{ $tr('فواتير العمولة المرفقة','Commission Invoice PDFs') }}</td>
+        <td class="bold pos">{{ $commInvWithFiles->count() }}</td>
+        <td class="lbl"></td>
+        <td></td>
     </tr>
 </table>
 
@@ -1048,6 +1118,32 @@ $expensesWithInvoices = $expenses->filter(fn($e) => $e->invoices->count() || $e-
             <td class="bold">{{ $c->unit?->unit_number ?? '—' }}</td>
             <td class="sm">{{ $isAr?($c->unit?->property?->name_ar??'—'):($c->unit?->property?->name_en??'—') }}</td>
             <td class="sm muted">{{ basename($c->contract_file) }} <span class="bg bg-green xs">{{ $tr('مرفق','Attached') }}</span></td>
+        </tr>
+        @endforeach
+    </tbody>
+</table>
+@endif
+
+@if($commInvWithFiles->count())
+<div class="sub-title">{{ $tr('فواتير العمولة المرفقة','Attached Commission Invoices') }}</div>
+<table class="tbl">
+    <thead><tr>
+        <th>{{ $tr('رقم الفاتورة','Invoice No.') }}</th>
+        <th>{{ $tr('التاريخ','Date') }}</th>
+        <th>{{ $tr('العقار','Property') }}</th>
+        <th>{{ $tr('المستلم','Recipient') }}</th>
+        <th>{{ $tr('مبلغ العمولة','Commission') }}</th>
+        <th>{{ $tr('الملف','File') }}</th>
+    </tr></thead>
+    <tbody>
+        @foreach($commInvWithFiles as $ci)
+        <tr>
+            <td class="bold xs">{{ $ci->invoice_number }}</td>
+            <td class="sm">{{ $ci->invoice_date->format('Y/m/d') }}</td>
+            <td class="sm">{{ $isAr?($ci->property->name_ar??$ci->property->name_en):($ci->property->name_en??$ci->property->name_ar) }}</td>
+            <td>{{ $ci->recipient_name }}</td>
+            <td class="pos bold">{{ number_format($ci->commission_amount, 3) }} OMR</td>
+            <td class="sm muted">{{ basename($ci->file_path) }} <span class="bg bg-green xs">{{ $tr('مرفق','Attached') }}</span></td>
         </tr>
         @endforeach
     </tbody>
