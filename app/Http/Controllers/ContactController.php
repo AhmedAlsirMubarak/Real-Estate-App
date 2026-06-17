@@ -26,7 +26,7 @@ class ContactController extends Controller
             'name'    => 'required|string|max:255',
             'email'   => 'required|email:rfc|max:255',
             'phone'   => ['nullable', 'string', 'max:20', 'regex:/^[+0-9\s\-\(\)]*$/'],
-            'subject' => 'required|in:استفسار عام,طلب عرض سعر,الإبلاغ عن مشكلة,طلب شراكة,أخرى',
+            'subject' => 'required|in:استفسار عام,طلب عرض سعر,الإبلاغ عن مشكلة,طلب شراكة,أخرى,استفسار عن عقار,Property Inquiry',
             'message' => 'required|string|min:10|max:5000',
         ], $isAr ? [
             'name.required'    => 'الاسم مطلوب',

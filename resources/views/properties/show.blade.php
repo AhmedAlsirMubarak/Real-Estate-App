@@ -282,7 +282,7 @@ body{background:#fff;color:var(--text);overflow-x:clip}
           </div>
           <div>
             <label class="block text-xs font-semibold mb-1.5" style="color:var(--muted)">{{ $tr('الهاتف','Phone') }}</label>
-            <input type="text" name="phone" value="{{ old('phone') }}" class="f-input">
+            <input type="tel" name="phone" value="{{ old('phone') }}" class="f-input">
           </div>
         </div>
         <div>
@@ -290,7 +290,9 @@ body{background:#fff;color:var(--text);overflow-x:clip}
           <input type="email" name="email" value="{{ old('email') }}" class="f-input" required>
           @error('email')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
         </div>
-        <input type="hidden" name="subject" value="{{ $tr('استفسار عن عقار','Property Inquiry') }}: {{ $pName }}">
+        <input type="hidden" name="subject" value="{{ $tr('استفسار عن عقار','Property Inquiry') }}">
+        {{-- Honeypot: left empty by real users; bots fill it and get silently rejected --}}
+        <input type="text" name="website" value="" autocomplete="off" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
         <div>
           <label class="block text-xs font-semibold mb-1.5" style="color:var(--muted)">{{ $tr('الرسالة','Message') }} <span style="color:var(--gold)">*</span></label>
           <textarea name="message" rows="4" class="f-input resize-none" required>{{ old('message', $tr('السلام عليكم، أودّ الاستفسار عن هذا العقار: ','Hello, I am interested in this property: ') . $pName) }}</textarea>
