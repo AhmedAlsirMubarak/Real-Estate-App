@@ -107,6 +107,15 @@
         .pagination-link:hover, .pagination-link.active { background: var(--navy); color: #fff; border-color: var(--navy); }
 
         #filter-sidebar { transition: transform .3s ease; }
+
+        /* Property card responsive layout */
+        .prop-card-gallery { width: 100%; height: 11rem; flex-shrink: 0; }
+        .prop-card-side-imgs { display: none; }
+        @media (min-width: 640px) {
+            .prop-card { height: 195px; }
+            .prop-card-gallery { width: 52%; height: 100%; }
+            .prop-card-side-imgs { display: flex; }
+        }
     </style>
 </head>
 <body>
@@ -420,10 +429,11 @@
                     $maxBath = $property->units->max('bathrooms');
                     $maxArea = $property->units->max('area') ?? $property->total_area;
                 @endphp
-                <div class="prop-card bg-white rounded-2xl border overflow-hidden flex" style="border-color:var(--border); height:195px;">
+                <div class="prop-card bg-white rounded-2xl border overflow-hidden flex flex-col sm:flex-row" style="border-color:var(--border);">
+
 
                     {{-- ── Gallery ── --}}
-                    <div class="relative flex-shrink-0 flex overflow-hidden" style="width:52%">
+                    <div class="prop-card-gallery relative flex overflow-hidden">
                         {{-- Main large image --}}
                         <div class="relative overflow-hidden" style="{{ ($img2 || $img3) ? 'flex:3' : 'flex:1' }}">
                             @if($img1)
@@ -438,7 +448,7 @@
 
                         {{-- Side: 2 stacked images --}}
                         @if($img2 || $img3)
-                        <div class="flex flex-col gap-0.5 flex-shrink-0" style="flex:2;margin-{{ $isAr ? 'right' : 'left' }}:2px">
+                        <div class="prop-card-side-imgs flex-col gap-0.5 flex-shrink-0" style="flex:2;margin-{{ $isAr ? 'right' : 'left' }}:2px">
                             <div class="overflow-hidden" style="flex:1;min-height:0">
                                 @if($img2)
                                 <img src="{{ $img2->url() }}" loading="lazy" alt="{{ $property->name . ' - 2' }}"
@@ -525,7 +535,7 @@
                         </p>
 
                         {{-- Action buttons — pushed to bottom --}}
-                        <div class="flex items-center justify-end gap-2 mt-auto">
+                        <div class="flex items-center flex-wrap gap-2 mt-auto sm:justify-end">
                             <a href="{{ route('properties.show', $property) }}"
                                style="display:flex;align-items:center;gap:5px;padding:7px 13px;background:var(--navy);border:1.5px solid var(--navy);border-radius:8px;font-size:.75rem;font-weight:700;color:#fff;text-decoration:none;transition:all .2s"
                                onmouseover="this.style.background='#1a3a6b';this.style.borderColor='#1a3a6b'"
