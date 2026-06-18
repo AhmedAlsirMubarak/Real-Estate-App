@@ -22,7 +22,7 @@ class PropertyController extends Controller
         }
 
         // Type filter
-        if ($request->filled('type') && in_array($request->type, ['apartment_building', 'villa', 'farm', 'chalet'])) {
+        if ($request->filled('type') && in_array($request->type, ['apartment_building', 'villa', 'farm', 'chalet', 'flat', 'land'])) {
             $query->where('type', $request->type);
         }
 

@@ -27,6 +27,7 @@
 
   $metaImage = $property->primaryImage()?->url() ?? asset('img/logo.png');
 @endphp
+@php $errors ??= new \Illuminate\Support\ViewErrorBag; @endphp
 <title>{{ $metaTitle }}</title>
 <meta name="description" content="{{ $metaDescription }}">
 <link rel="canonical" href="{{ url()->current() }}">
@@ -43,9 +44,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--navy:#0f2444;--navy-mid:#1a3a6b;--gold:#c9a84c;--gold-light:#e8c96e;--text:#1a2437;--muted:#64748b;--border:#e2e8f0;--off:#f8fafc}
-*{font-family:{{ app()->getLocale()==='ar' ? "'Cairo'" : "'Sora'" }},sans-serif}
-html{scroll-behavior:smooth}
-body{background:#fff;color:var(--text);overflow-x:clip}
+*{font-family:{!! app()->getLocale()==='ar' ? 'Cairo' : 'Sora' !!},sans-serif}
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{background:#fff;color:var(--text);overflow-x:hidden}
 
 /* Gallery */
 .gal-main{position:relative;overflow:hidden;border-radius:14px 14px 0 0;cursor:pointer;background:#0f2444}
@@ -292,7 +293,7 @@ body{background:#fff;color:var(--text);overflow-x:clip}
         </div>
         <input type="hidden" name="subject" value="{{ $tr('استفسار عن عقار','Property Inquiry') }}">
         {{-- Honeypot: left empty by real users; bots fill it and get silently rejected --}}
-        <input type="text" name="website" value="" autocomplete="off" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+        <input type="text" name="website" value="" autocomplete="off" tabindex="-1" aria-hidden="true" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;">
         <div>
           <label class="block text-xs font-semibold mb-1.5" style="color:var(--muted)">{{ $tr('الرسالة','Message') }} <span style="color:var(--gold)">*</span></label>
           <textarea name="message" rows="4" class="f-input resize-none" required>{{ old('message', $tr('السلام عليكم، أودّ الاستفسار عن هذا العقار: ','Hello, I am interested in this property: ') . $pName) }}</textarea>
@@ -369,28 +370,34 @@ body{background:#fff;color:var(--text);overflow-x:clip}
     @if($property->latitude && $property->longitude)
     <div class="p-2">
       <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
       <div id="prop-map" style="height:220px;border-radius:10px;border:1px solid var(--border);z-index:0"></div>
       <script>
       (function(){
-        var map = L.map('prop-map', { zoomControl: true, scrollWheelZoom: false, dragging: false })
-          .setView([{{ $property->latitude }}, {{ $property->longitude }}], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19
-        }).addTo(map);
-        var icon = L.divIcon({
-          html: '<div style="width:32px;height:32px;background:#0f2444;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #c9a84c;box-shadow:0 4px 12px rgba(15,36,68,.4)"><div style="width:8px;height:8px;background:#c9a84c;border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(45deg)"></div></div>',
-          iconSize:[32,32], iconAnchor:[16,32], className:''
-        });
         @php
           $popupHtml = '<strong style="color:#0f2444">' . e($pName) . '</strong>'
             . ($pCity ? '<br><span style="color:#64748b;font-size:.75rem">' . e($pCity) . '</span>' : '');
         @endphp
-        L.marker([{{ $property->latitude }}, {{ $property->longitude }}], {icon:icon})
-          .addTo(map)
-          .bindPopup({!! json_encode($popupHtml) !!})
-          .openPopup();
-        map.on('click', function(){ window.open('{{ $mapsLink }}', '_blank'); });
+        var _lat = {{ $property->latitude }}, _lng = {{ $property->longitude }};
+        var _popup = {!! json_encode($popupHtml) !!};
+        var _mapLink = '{!! addslashes($mapsLink) !!}';
+        function initMap() {
+          var map = L.map('prop-map', { zoomControl: true, scrollWheelZoom: false, dragging: false })
+            .setView([_lat, _lng], 15);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19
+          }).addTo(map);
+          var icon = L.divIcon({
+            html: '<div style="width:32px;height:32px;background:#0f2444;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #c9a84c;box-shadow:0 4px 12px rgba(15,36,68,.4)"><div style="width:8px;height:8px;background:#c9a84c;border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(45deg)"></div></div>',
+            iconSize:[32,32], iconAnchor:[16,32], className:''
+          });
+          L.marker([_lat, _lng], {icon:icon}).addTo(map).bindPopup(_popup).openPopup();
+          map.on('click', function(){ window.open(_mapLink, '_blank'); });
+        }
+        var s = document.createElement('script');
+        s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        s.crossOrigin = '';
+        s.onload = initMap;
+        document.head.appendChild(s);
       })();
       </script>
       <p class="text-xs text-center mt-1.5" style="color:var(--muted)">{{ $tr('انقر على الخريطة لفتح الاتجاهات','Click map to open directions') }}</p>

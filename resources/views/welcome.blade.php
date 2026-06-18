@@ -1,8 +1,4 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" id="html-root">
-<head>
-@include('_partials.gtm-head')
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
 @php
@@ -13,6 +9,7 @@
       ? 'ثروة للعقارات — شركة رائدة في إدارة وبيع وإيجار العقارات في سلطنة عُمان. تصفح شققاً وفللاً ومزارع وشاليهات للبيع والإيجار بأفضل الأسعار.'
       : 'Tharwa Real Estate — a leading property management, sales, and rental company in Oman. Browse apartments, villas, farms, and chalets for sale and rent at the best prices.';
 @endphp
+@php $errors ??= new \Illuminate\Support\ViewErrorBag; @endphp
 <title>{{ $metaTitle }}</title>
 <meta name="description" content="{{ $metaDescription }}">
 <link rel="canonical" href="{{ url('/') }}">
@@ -1221,7 +1218,7 @@ $firstCity = $cities->first() ?? null;
           <form method="POST" action="{{ route('contact.store') }}" class="space-y-4">
             @csrf
             {{-- Honeypot: left empty by real users; bots fill it and get silently rejected --}}
-            <input type="text" name="website" value="" autocomplete="off" tabindex="-1" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;">
+            <input type="text" name="website" value="" autocomplete="off" tabindex="-1" aria-hidden="true" style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;">
             <div class="grid sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-xs font-semibold mb-1.5" style="color:var(--text)">
