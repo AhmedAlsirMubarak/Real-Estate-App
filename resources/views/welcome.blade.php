@@ -1481,7 +1481,7 @@ function toggleLang(){
 }
 function applyLang(l){
   const isAr = l === 'ar';
-  const root = document.getElementById('html-root');
+  const root = document.getElementById('html-root') || document.documentElement;
   root.setAttribute('lang', l);
   root.setAttribute('dir', isAr ? 'rtl' : 'ltr');
   document.querySelectorAll('[data-ar]:not(option)').forEach(e => e.classList.toggle('hidden', !isAr));
