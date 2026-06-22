@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Manager;
 
-use App\Exports\TenantExport;
 use App\Exports\TenantTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\TenantImport;
@@ -345,11 +344,15 @@ class TenantController extends Controller
         $spreadsheet = (new TenantTemplateExport())->build();
         $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
 
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, 'tenants-import-template.xlsx', [
+        $temp    = storage_path('app/export_' . uniqid() . '.xlsx');
+        $writer->save($temp);
+        $content = file_get_contents($temp);
+        @unlink($temp);
+
+        return response($content, 200, [
             'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename="tenants-import-template.xlsx"',
+            'Content-Length'      => strlen($content),
         ]);
     }
 
@@ -379,15 +382,45 @@ class TenantController extends Controller
 
     public function export()
     {
-        $spreadsheet = (new TenantExport())->build();
-        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
-        $filename    = 'tenants-' . now()->format('Y-m-d') . '.xlsx';
+        $tenants = Tenant::with(['user', 'rentalContracts.unit.property'])->get();
 
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, $filename, [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        $rows = [['ID', 'Arabic Name', 'English Name', 'Email', 'Phone',
+                   'National ID', 'Emergency Contact',
+                   'Property Code', 'Property Name', 'Unit Number',
+                   'Contract Status', 'Contract Start', 'Contract End',
+                   'Monthly Rent', 'Deposit', 'Created At']];
+
+        foreach ($tenants as $tenant) {
+            $contract = $tenant->rentalContracts->where('status', 'active')->first()
+                     ?? $tenant->rentalContracts->sortByDesc('created_at')->first();
+            $rows[] = [
+                $tenant->id,
+                $tenant->user?->name_ar ?? $tenant->user?->name ?? '',
+                $tenant->user?->name_en ?? $tenant->user?->name ?? '',
+                $tenant->user?->email ?? '',
+                $tenant->user?->phone ?? '',
+                $tenant->national_id ?? '',
+                $tenant->emergency_contact ?? '',
+                $contract?->unit?->property?->code ?? '',
+                $contract?->unit?->property?->name_en ?? $contract?->unit?->property?->name ?? '',
+                $contract?->unit?->unit_number ?? '',
+                $contract?->status ?? '',
+                $contract?->start_date?->format('Y-m-d') ?? '',
+                $contract?->end_date?->format('Y-m-d') ?? '',
+                $contract?->monthly_rent ?? '',
+                $contract?->deposit ?? '',
+                $tenant->created_at?->format('Y-m-d') ?? '',
+            ];
+        }
+
+        $csv = "\xEF\xBB\xBF";
+        foreach ($rows as $row) {
+            $csv .= implode(',', array_map(fn($v) => '"' . str_replace('"', '""', (string)($v ?? '')) . '"', $row)) . "\r\n";
+        }
+
+        return response($csv, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="tenants-' . now()->format('Y-m-d') . '.csv"',
         ]);
     }
 

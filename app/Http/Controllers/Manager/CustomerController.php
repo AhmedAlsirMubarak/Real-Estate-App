@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use Illuminate\Http\Request;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 
 class CustomerController extends Controller
@@ -113,43 +111,29 @@ class CustomerController extends Controller
             ->latest()
             ->get();
 
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-
         $headers = $isAr
             ? ['الاسم', 'الجوال', 'البريد الإلكتروني', 'المنطقة', 'نوع العقار', 'الغرض', 'الحد الأدنى للميزانية', 'الحد الأقصى للميزانية', 'غرف النوم', 'الحالة', 'المصدر', 'ملاحظات', 'تاريخ الإضافة']
             : ['Name', 'Mobile', 'Email', 'Location', 'Property Type', 'Purpose', 'Min Budget', 'Max Budget', 'Bedrooms', 'Status', 'Source', 'Notes', 'Created At'];
 
-        $sheet->fromArray([$headers], null, 'A1');
-
-        $row = 2;
+        $rows = [$headers];
         foreach ($customers as $c) {
-            $sheet->fromArray([[
-                $c->name,
-                $c->mobile,
-                $c->email,
-                $c->location,
-                $c->typeLabel($locale),
-                $c->purposeLabel($locale),
-                $c->min_budget,
-                $c->max_budget,
-                $c->bedrooms,
-                $c->statusLabel($locale),
-                $c->source,
-                $c->notes,
+            $rows[] = [
+                $c->name, $c->mobile, $c->email, $c->location,
+                $c->typeLabel($locale), $c->purposeLabel($locale),
+                $c->min_budget, $c->max_budget, $c->bedrooms,
+                $c->statusLabel($locale), $c->source, $c->notes,
                 $c->created_at?->format('Y-m-d'),
-            ]], null, "A{$row}");
-            $row++;
+            ];
         }
 
-        $writer   = IOFactory::createWriter($spreadsheet, 'Xlsx');
-        $filename = 'customers-' . now()->format('Y-m-d') . '.xlsx';
+        $csv = "\xEF\xBB\xBF";
+        foreach ($rows as $row) {
+            $csv .= implode(',', array_map(fn($v) => '"' . str_replace('"', '""', (string)($v ?? '')) . '"', $row)) . "\r\n";
+        }
 
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, $filename, [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        return response($csv, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="customers-' . now()->format('Y-m-d') . '.csv"',
         ]);
     }
 

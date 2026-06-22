@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Manager;
 
-use App\Exports\PropertyExport;
 use App\Exports\PropertyTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\PropertyImport;
@@ -223,11 +222,15 @@ class PropertyController extends Controller
         $spreadsheet = (new PropertyTemplateExport())->build();
         $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
 
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, 'properties-import-template.xlsx', [
+        $temp    = storage_path('app/export_' . uniqid() . '.xlsx');
+        $writer->save($temp);
+        $content = file_get_contents($temp);
+        @unlink($temp);
+
+        return response($content, 200, [
             'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename="properties-import-template.xlsx"',
+            'Content-Length'      => strlen($content),
         ]);
     }
 
@@ -259,15 +262,39 @@ class PropertyController extends Controller
 
     public function export()
     {
-        $spreadsheet = (new PropertyExport())->build();
-        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
-        $filename    = 'properties-' . now()->format('Y-m-d') . '.xlsx';
+        $properties = Property::with(['owner.user', 'employee', 'units'])->get();
 
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, $filename, [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        $rows = [['ID', 'Code', 'Arabic Name', 'English Name', 'Type', 'Purpose', 'Section',
+                   'Address', 'City', 'Owner', 'Commission %', 'Employee',
+                   'Floors', 'Total Area (m²)', 'Bedrooms', 'Bathrooms',
+                   'Status', 'Total Units', 'Available', 'Rented', 'Created At']];
+
+        foreach ($properties as $p) {
+            $units = $p->units;
+            $rows[] = [
+                $p->id, $p->code ?? '',
+                $p->name_ar ?? $p->name ?? '', $p->name_en ?? $p->name ?? '',
+                $p->type ?? '', $p->purpose ?? '', $p->section ?? '',
+                $p->address_en ?? $p->address ?? '', $p->city_en ?? $p->city ?? '',
+                $p->owner?->user?->name ?? 'Company', $p->owner?->commission_rate ?? '',
+                $p->employee?->name ?? '',
+                $p->floors ?? '', $p->total_area ?? '', $p->bedrooms ?? '', $p->bathrooms ?? '',
+                ucfirst($p->status ?? ''),
+                $units->count(),
+                $units->where('status', 'available')->count(),
+                $units->where('status', 'rented')->count(),
+                $p->created_at?->format('Y-m-d') ?? '',
+            ];
+        }
+
+        $csv = "\xEF\xBB\xBF";
+        foreach ($rows as $row) {
+            $csv .= implode(',', array_map(fn($v) => '"' . str_replace('"', '""', (string)($v ?? '')) . '"', $row)) . "\r\n";
+        }
+
+        return response($csv, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="properties-' . now()->format('Y-m-d') . '.csv"',
         ]);
     }
 

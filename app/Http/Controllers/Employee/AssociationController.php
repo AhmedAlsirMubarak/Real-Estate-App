@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Employee;
 
-use App\Exports\AssociationExport;
 use App\Exports\AssociationTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\AssociationImport;
@@ -124,11 +123,15 @@ class AssociationController extends Controller
         $spreadsheet = (new AssociationTemplateExport())->build();
         $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
 
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, 'associations-import-template.xlsx', [
+        $temp    = storage_path('app/export_' . uniqid() . '.xlsx');
+        $writer->save($temp);
+        $content = file_get_contents($temp);
+        @unlink($temp);
+
+        return response($content, 200, [
             'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename="associations-import-template.xlsx"',
+            'Content-Length'      => strlen($content),
         ]);
     }
 
@@ -165,14 +168,41 @@ class AssociationController extends Controller
 
     public function export()
     {
-        $spreadsheet = (new AssociationExport())->build();
-        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $associations = Association::with(['property.owners', 'property.units'])->latest()->get();
 
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, 'associations-' . date('Y-m-d') . '.xlsx', [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="associations-' . date('Y-m-d') . '.xlsx"',
+        $rows = [['ID', 'Property Code', 'Property Name', 'Name (AR)', 'Name (EN)',
+                   'Monthly Fee / Unit', 'Established Date', 'Status',
+                   'Electricity Account', 'Water Account', 'Owners Count', 'Units Count',
+                   'Description (AR)', 'Description (EN)', 'Created At']];
+
+        foreach ($associations as $a) {
+            $rows[] = [
+                $a->id,
+                $a->property?->code ?? '',
+                $a->property?->name ?? '',
+                $a->name_ar ?? '',
+                $a->name_en ?? '',
+                $a->monthly_fee_per_unit ?? '',
+                $a->established_date?->format('Y-m-d') ?? '',
+                $a->status ?? 'active',
+                $a->electricity_account_number ?? '',
+                $a->water_account_number ?? '',
+                $a->property?->owners?->count() ?? 0,
+                $a->property?->units?->count() ?? 0,
+                $a->description_ar ?? '',
+                $a->description_en ?? '',
+                $a->created_at?->format('Y-m-d') ?? '',
+            ];
+        }
+
+        $csv = "\xEF\xBB\xBF";
+        foreach ($rows as $row) {
+            $csv .= implode(',', array_map(fn($v) => '"' . str_replace('"', '""', (string)($v ?? '')) . '"', $row)) . "\r\n";
+        }
+
+        return response($csv, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="associations-' . date('Y-m-d') . '.csv"',
         ]);
     }
 

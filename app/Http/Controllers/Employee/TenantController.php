@@ -15,8 +15,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Mpdf\Mpdf;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class TenantController extends Controller
 {
@@ -82,14 +80,35 @@ class TenantController extends Controller
             $row++;
         }
 
-        $writer   = IOFactory::createWriter($spreadsheet, 'Xlsx');
-        $filename = 'tenants-' . now()->format('Y-m-d') . '.xlsx';
+        $csv = "\xEF\xBB\xBF";
+        $headers = ['Name', 'Phone', 'Email', 'National ID', 'Property Code',
+                    'Property Name', 'Unit', 'Contract Status', 'Start Date',
+                    'End Date', 'Monthly Rent', 'Deposit'];
+        $csv .= implode(',', array_map(fn($v) => '"' . $v . '"', $headers)) . "\r\n";
 
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, $filename, [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        foreach ($tenants as $tenant) {
+            $contract = $tenant->rentalContracts->where('status', 'active')->first()
+                     ?? $tenant->rentalContracts->sortByDesc('created_at')->first();
+            $row = [
+                $tenant->user?->name ?? '',
+                $tenant->user?->phone ?? '',
+                $tenant->user?->email ?? '',
+                $tenant->national_id ?? '',
+                $contract?->unit?->property?->code ?? '',
+                $contract?->unit?->property?->name_en ?? $contract?->unit?->property?->name ?? '',
+                $contract?->unit?->unit_number ?? '',
+                $contract?->status ?? '',
+                $contract?->start_date?->format('Y-m-d') ?? '',
+                $contract?->end_date?->format('Y-m-d') ?? '',
+                $contract?->monthly_rent ?? '',
+                $contract?->deposit ?? '',
+            ];
+            $csv .= implode(',', array_map(fn($v) => '"' . str_replace('"', '""', (string)($v ?? '')) . '"', $row)) . "\r\n";
+        }
+
+        return response($csv, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="tenants-' . now()->format('Y-m-d') . '.csv"',
         ]);
     }
 

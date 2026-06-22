@@ -158,11 +158,15 @@ class ExternalPropertyController extends Controller
         $spreadsheet = (new ExternalPropertyTemplateExport())->build();
         $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
 
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, 'external-properties-import-template.xlsx', [
+        $temp    = storage_path('app/export_' . uniqid() . '.xlsx');
+        $writer->save($temp);
+        $content = file_get_contents($temp);
+        @unlink($temp);
+
+        return response($content, 200, [
             'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename="external-properties-import-template.xlsx"',
+            'Content-Length'      => strlen($content),
         ]);
     }
 
@@ -215,66 +219,34 @@ class ExternalPropertyController extends Controller
             ->latest()
             ->get();
 
-        $spreadsheet = new Spreadsheet();
-        $spreadsheet->getProperties()->setTitle('External Properties');
-        $sheet = $spreadsheet->getSheet(0);
-        $sheet->setTitle('External Properties');
+        $rows = [['ID', 'Code', 'Name (AR)', 'Name (EN)', 'Type', 'Purpose',
+                   'Address (AR)', 'City', 'Floors', 'Area (m²)', 'Beds', 'Baths',
+                   'Status', 'Owner', 'Rent Commission %', 'Sale Commission %',
+                   'Commission Payer', 'Units Count', 'Created At']];
 
-        $headers = [
-            'ID', 'Code', 'Name (AR)', 'Name (EN)', 'Type', 'Purpose',
-            'Address (AR)', 'City', 'Floors', 'Area (m²)', 'Beds', 'Baths',
-            'Status', 'Owner', 'Rent Commission %', 'Sale Commission %',
-            'Commission Payer', 'Units Count', 'Created At',
-        ];
-        $lastCol = Coordinate::stringFromColumnIndex(count($headers));
-
-        foreach ($headers as $i => $h) {
-            $sheet->setCellValue(Coordinate::stringFromColumnIndex($i + 1) . '1', $h);
-        }
-        $sheet->getStyle('A1:' . $lastCol . '1')->applyFromArray([
-            'font'      => ['bold' => true, 'size' => 11, 'color' => ['argb' => 'FFFFFFFF']],
-            'fill'      => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF1E3A5F']],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-            'borders'   => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FF9CA3AF']]],
-        ]);
-        $sheet->getRowDimension(1)->setRowHeight(22);
-
-        $rowNum = 2;
         foreach ($properties as $p) {
-            $row = [
-                $p->id, $p->code, $p->name_ar, $p->name_en, $p->type, $p->purpose,
-                $p->address_ar, $p->city_ar ?? $p->city,
-                $p->floors, $p->total_area, $p->bedrooms, $p->bathrooms,
+            $rows[] = [
+                $p->id, $p->code, $p->name_ar ?? '', $p->name_en ?? '',
+                $p->type, $p->purpose,
+                $p->address_ar ?? '', $p->city_ar ?? $p->city ?? '',
+                $p->floors ?? '', $p->total_area ?? '', $p->bedrooms ?? '', $p->bathrooms ?? '',
                 $p->status ?? 'active',
                 $p->owner?->user?->name ?? '',
-                $p->rent_commission_rate, $p->sale_commission_rate,
-                $p->commission_payer,
+                $p->rent_commission_rate ?? '', $p->sale_commission_rate ?? '',
+                $p->commission_payer ?? '',
                 $p->units->count(),
                 $p->created_at?->format('Y-m-d') ?? '',
             ];
-            foreach ($row as $j => $val) {
-                $sheet->setCellValue(Coordinate::stringFromColumnIndex($j + 1) . $rowNum, $val);
-            }
-            $bgColor = $rowNum % 2 === 0 ? 'FFF8FAFC' : 'FFFFFFFF';
-            $sheet->getStyle('A' . $rowNum . ':' . $lastCol . $rowNum)->applyFromArray([
-                'fill'    => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => $bgColor]],
-                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['argb' => 'FFE5E7EB']]],
-            ]);
-            $sheet->getRowDimension($rowNum)->setRowHeight(18);
-            $rowNum++;
         }
 
-        foreach ([6, 16, 28, 28, 18, 18, 32, 16, 10, 12, 8, 8, 14, 24, 16, 16, 16, 12, 14] as $i => $w) {
-            $sheet->getColumnDimensionByColumn($i + 1)->setWidth($w);
+        $csv = "\xEF\xBB\xBF";
+        foreach ($rows as $row) {
+            $csv .= implode(',', array_map(fn($v) => '"' . str_replace('"', '""', (string)($v ?? '')) . '"', $row)) . "\r\n";
         }
-        $sheet->freezePane('A2');
 
-        $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, 'external-properties-' . date('Y-m-d') . '.xlsx', [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="external-properties-' . date('Y-m-d') . '.xlsx"',
+        return response($csv, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="external-properties-' . date('Y-m-d') . '.csv"',
         ]);
     }
 
