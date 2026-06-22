@@ -43,6 +43,7 @@
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('المالك', 'Owner') }}</th>
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('الوحدات', 'Units') }}</th>
                             <th class="px-4 py-3 text-right font-medium">{{ $tr('دوري', 'Role') }}</th>
+                            <th class="px-4 py-3 text-right font-medium">{{ $tr('إجراءات', 'Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-50">
@@ -102,10 +103,23 @@
                                     @endif
                                 </div>
                             </td>
+                            <td class="px-4 py-3">
+                                @if($property->created_by === auth()->id())
+                                <form method="POST" action="{{ route('employee.properties.destroy', $property) }}"
+                                      onsubmit="return confirm('{{ $tr('هل أنت متأكد من حذف هذا العقار؟', 'Are you sure you want to delete this property?') }}')"
+                                      class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="inline-flex items-center bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium px-2.5 py-1.5 rounded-lg transition">
+                                        {{ $tr('حذف', 'Delete') }}
+                                    </button>
+                                </form>
+                                @endif
+                            </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-10 text-center text-gray-400">
+                            <td colspan="8" class="px-4 py-10 text-center text-gray-400">
                                 {{ $tr('لا توجد عقارات مرتبطة بك', 'No properties linked to you yet') }}
                             </td>
                         </tr>

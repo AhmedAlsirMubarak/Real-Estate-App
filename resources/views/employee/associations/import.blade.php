@@ -4,29 +4,26 @@
     $tr = fn (string $ar, string $en) => $isAr ? $ar : $en;
     $results = session('import_results');
 @endphp
-<x-slot name="title">{{ $tr('استيراد عملاء من Excel', 'Import Customers from Excel') }}</x-slot>
+<x-slot name="title">{{ $tr('استيراد جمعيات من Excel', 'Import Associations from Excel') }}</x-slot>
 
 <div class="max-w-3xl mx-auto py-4">
-    {{-- Back link --}}
-    <a href="{{ route('manager.customers.index') }}"
+    <a href="{{ route('employee.associations.index') }}"
        class="text-sm text-gray-500 hover:text-gray-700 mb-5 inline-flex items-center gap-1">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
         </svg>
-        {{ $tr('رجوع إلى العملاء', 'Back to Customers') }}
+        {{ $tr('رجوع إلى الجمعيات', 'Back to Associations') }}
     </a>
 
-    {{-- Page title --}}
     <div class="mb-6">
         <h2 class="text-xl font-bold text-gray-800">
-            {{ $tr('استيراد عملاء من Excel', 'Import Customers from Excel') }}
+            {{ $tr('استيراد جمعيات من Excel', 'Import Associations from Excel') }}
         </h2>
         <p class="text-sm text-gray-500 mt-1">
-            {{ $tr('ارفع ملف Excel يحتوي على بيانات العملاء ومتطلباتهم لاستيرادها دفعة واحدة', 'Upload an Excel file containing customers and their requirements to import them in bulk') }}
+            {{ $tr('ارفع ملف Excel يحتوي على بيانات جمعيات الملاك لاستيرادها دفعة واحدة', 'Upload an Excel file containing owners association data to import them in bulk') }}
         </p>
     </div>
 
-    {{-- ── Results panel ──────────────────────────────────────────────────── --}}
     @if($results)
     <div class="mb-6 space-y-3">
         @if($results['imported'] > 0)
@@ -36,8 +33,8 @@
             </svg>
             <p class="text-green-800 text-sm font-medium">
                 {{ $tr(
-                    'تم استيراد ' . $results['imported'] . ' عميل بنجاح.',
-                    $results['imported'] . ' ' . ($results['imported'] === 1 ? 'customer' : 'customers') . ' imported successfully.'
+                    'تم استيراد ' . $results['imported'] . ' جمعية بنجاح.',
+                    $results['imported'] . ' ' . ($results['imported'] === 1 ? 'association' : 'associations') . ' imported successfully.'
                 ) }}
             </p>
         </div>
@@ -47,7 +44,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <p class="text-yellow-800 text-sm font-medium">
-                {{ $tr('لم يتم استيراد أي عميل. راجع الأخطاء أدناه.', 'No customers were imported. Review the errors below.') }}
+                {{ $tr('لم يتم استيراد أي جمعية. راجع الأخطاء أدناه.', 'No associations were imported. Review the errors below.') }}
             </p>
         </div>
         @endif
@@ -68,8 +65,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 <span class="text-sm font-semibold text-red-700">
-                    {{ $tr('أخطاء التحقق', 'Validation Errors') }}
-                    ({{ count($results['errors']) }})
+                    {{ $tr('أخطاء التحقق', 'Validation Errors') }} ({{ count($results['errors']) }})
                 </span>
             </div>
             <div class="overflow-x-auto">
@@ -101,21 +97,19 @@
     </div>
     @endif
 
-    {{-- ── Step 1: Download template ──────────────────────────────────────── --}}
+    {{-- Step 1 --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-4">
         <div class="flex items-start gap-4">
             <div class="w-9 h-9 rounded-full bg-blue-900 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">1</div>
             <div class="flex-1">
-                <h3 class="font-semibold text-gray-800 text-sm mb-1">
-                    {{ $tr('تحميل القالب', 'Download the Template') }}
-                </h3>
+                <h3 class="font-semibold text-gray-800 text-sm mb-1">{{ $tr('تحميل القالب', 'Download the Template') }}</h3>
                 <p class="text-xs text-gray-500 mb-3">
                     {{ $tr(
-                        'حمّل ملف Excel القالب الذي يحتوي على أسماء الأعمدة الصحيحة. بيانات العملاء تبدأ من الصف الثاني.',
+                        'حمّل ملف Excel القالب الذي يحتوي على أسماء الأعمدة الصحيحة. بيانات الجمعيات تبدأ من الصف الثاني.',
                         'Download the Excel template with the correct column headers. Row 1 is the header — enter your data from row 2 onwards.'
                     ) }}
                 </p>
-                <a href="{{ route('manager.customers.import.template') }}"
+                <a href="{{ route('employee.associations.import.template') }}"
                    class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
@@ -126,70 +120,61 @@
         </div>
     </div>
 
-    {{-- ── Step 2: Fill template ──────────────────────────────────────────── --}}
+    {{-- Step 2 --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-4">
         <div class="flex items-start gap-4">
             <div class="w-9 h-9 rounded-full bg-blue-900 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">2</div>
             <div class="flex-1">
-                <h3 class="font-semibold text-gray-800 text-sm mb-3">
-                    {{ $tr('ملء البيانات', 'Fill in Your Data') }}
-                </h3>
+                <h3 class="font-semibold text-gray-800 text-sm mb-3">{{ $tr('ملء البيانات', 'Fill in Your Data') }}</h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                     <div class="bg-red-50 border border-red-100 rounded-lg p-3">
-                        <p class="text-xs font-bold text-red-700 mb-1.5">
-                            {{ $tr('الحقول المطلوبة *', 'Required Fields *') }}
-                        </p>
+                        <p class="text-xs font-bold text-red-700 mb-1.5">{{ $tr('الحقول المطلوبة *', 'Required Fields *') }}</p>
                         <ul class="space-y-0.5 text-xs text-red-600">
-                            <li class="font-mono">name</li>
-                            <li class="font-mono">property_type</li>
-                            <li class="font-mono">purpose</li>
+                            <li class="font-mono">property_code</li>
+                            <li class="font-mono">name_ar</li>
+                            <li class="font-mono">monthly_fee_per_unit</li>
                         </ul>
                     </div>
                     <div class="bg-gray-50 border border-gray-100 rounded-lg p-3">
-                        <p class="text-xs font-bold text-gray-600 mb-1.5">
-                            {{ $tr('الحقول الاختيارية', 'Optional Fields') }}
-                        </p>
+                        <p class="text-xs font-bold text-gray-600 mb-1.5">{{ $tr('الحقول الاختيارية', 'Optional Fields') }}</p>
                         <ul class="space-y-0.5 text-xs text-gray-500 columns-2">
-                            <li class="font-mono">mobile</li>
-                            <li class="font-mono">email</li>
-                            <li class="font-mono">location</li>
-                            <li class="font-mono">min_budget</li>
-                            <li class="font-mono">max_budget</li>
-                            <li class="font-mono">bedrooms</li>
+                            <li class="font-mono">name_en</li>
+                            <li class="font-mono">established_date</li>
                             <li class="font-mono">status</li>
-                            <li class="font-mono">notes</li>
+                            <li class="font-mono">electricity_account_number</li>
+                            <li class="font-mono">water_account_number</li>
+                            <li class="font-mono">description_ar</li>
+                            <li class="font-mono">description_en</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                     <div class="bg-indigo-50 rounded-lg p-2.5 text-xs">
-                        <p class="font-bold text-indigo-700 mb-1">property_type</p>
-                        <p class="font-mono text-indigo-600 leading-relaxed">any<br>apartment_building<br>villa<br>farm<br>chalet</p>
-                    </div>
-                    <div class="bg-purple-50 rounded-lg p-2.5 text-xs">
-                        <p class="font-bold text-purple-700 mb-1">purpose</p>
-                        <p class="font-mono text-purple-600 leading-relaxed">rent<br>sale<br>both</p>
+                        <p class="font-bold text-indigo-700 mb-1">property_code</p>
+                        <p class="text-indigo-600 leading-relaxed">{{ $tr('يجب أن يطابق رمز عقار موجود لا يملك جمعية بالفعل', 'Must match an existing property\'s code that doesn\'t already have an association') }}</p>
                     </div>
                     <div class="bg-amber-50 rounded-lg p-2.5 text-xs">
                         <p class="font-bold text-amber-700 mb-1">status <span class="font-normal">(optional)</span></p>
-                        <p class="font-mono text-amber-600 leading-relaxed">new<br>contacted<br>interested<br>closed</p>
-                        <p class="text-amber-500 mt-1">{{ $tr('يُعيَّن "new" إذا تُرك فارغاً', 'Defaults to "new" if blank') }}</p>
+                        <p class="font-mono text-amber-600 leading-relaxed">active<br>inactive</p>
+                        <p class="text-amber-500 mt-1">{{ $tr('يُعيَّن "active" إذا تُرك فارغاً', 'Defaults to "active" if blank') }}</p>
+                    </div>
+                    <div class="bg-purple-50 rounded-lg p-2.5 text-xs">
+                        <p class="font-bold text-purple-700 mb-1">established_date <span class="font-normal">(optional)</span></p>
+                        <p class="font-mono text-purple-600 leading-relaxed">YYYY-MM-DD</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- ── Step 3: Upload ─────────────────────────────────────────────────── --}}
+    {{-- Step 3 --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div class="flex items-start gap-4">
             <div class="w-9 h-9 rounded-full bg-blue-900 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">3</div>
             <div class="flex-1">
-                <h3 class="font-semibold text-gray-800 text-sm mb-3">
-                    {{ $tr('رفع الملف', 'Upload the File') }}
-                </h3>
+                <h3 class="font-semibold text-gray-800 text-sm mb-3">{{ $tr('رفع الملف', 'Upload the File') }}</h3>
 
                 @if($errors->has('file'))
                 <div class="mb-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700">
@@ -197,7 +182,7 @@
                 </div>
                 @endif
 
-                <form method="POST" action="{{ route('manager.customers.import') }}"
+                <form method="POST" action="{{ route('employee.associations.import') }}"
                       enctype="multipart/form-data"
                       x-data="{
                           fileName: '',
@@ -209,12 +194,11 @@
                       }">
                     @csrf
 
-                    <label
-                        class="relative flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-8 cursor-pointer transition"
-                        :class="dragging ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'"
-                        @dragover.prevent="dragging = true"
-                        @dragleave.prevent="dragging = false"
-                        @drop.prevent="dragging = false; onFile($event); $refs.fileInput.files = $event.dataTransfer.files">
+                    <label class="relative flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-8 cursor-pointer transition"
+                           :class="dragging ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'"
+                           @dragover.prevent="dragging = true"
+                           @dragleave.prevent="dragging = false"
+                           @drop.prevent="dragging = false; onFile($event); $refs.fileInput.files = $event.dataTransfer.files">
 
                         <svg class="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -234,7 +218,7 @@
                                 class="bg-blue-900 hover:bg-blue-800 text-white px-5 py-2 rounded-lg text-sm font-medium transition">
                             {{ $tr('استيراد الآن', 'Import Now') }}
                         </button>
-                        <a href="{{ route('manager.customers.index') }}"
+                        <a href="{{ route('employee.associations.index') }}"
                            class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2 rounded-lg text-sm transition">
                             {{ $tr('إلغاء', 'Cancel') }}
                         </a>

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Customer extends Model
 {
     protected $fillable = [
+        'created_by',
         'name', 'mobile', 'email', 'location',
         'property_type', 'purpose',
         'min_budget', 'max_budget', 'bedrooms',
@@ -46,6 +47,40 @@ class Customer extends Model
         'closed'     => ['ar' => 'مغلق',          'en' => 'Closed',     'color' => 'bg-gray-100 text-gray-600'],
         'done'       => ['ar' => 'تم',            'en' => 'Done',       'color' => 'bg-green-100 text-green-700'],
     ];
+
+    public static array $locations = [
+        'بوشر'               => 'Bowsher',
+        'مرتفعات بوشر'       => 'Bowsher Heights',
+        'الانصب'             => 'Al Ansab',
+        'العذيبة الشمالية'   => 'Al Azaiba North',
+        'العذيبة الجنوبية'   => 'Al Azaiba South',
+        'الخوض السادسة'      => 'Al Khoud 6',
+        'الخوض السابعة'      => 'Al Khoud 7',
+        'الخوض الرابعة'      => 'Al Khoud 4',
+        'الخوض الكوثر'       => 'Al Khoud Al Kawthar',
+        'الموالح الجنوبية'   => 'Al Mawaleh South',
+        'الموالح الشمالية'   => 'Al Mawaleh North',
+        'الموج'              => 'Al Mouj',
+        'مسقط هيلز'          => 'Muscat Hills',
+        'القرم'              => 'Al Qurum',
+        'الخوير'             => 'Al Khuwair',
+        'مدينة الاعلام'      => 'Media City',
+        'مدينة السلطان قابوس' => 'Madinat Sultan Qaboos',
+        'مدينة السلطان هيثم'  => 'Madinat Sultan Haitham',
+        'الغبرة الشمالية'    => 'Al Ghubra North',
+        'الغبرة الجنوبية'    => 'Al Ghubra South',
+        'السيب'              => 'Al Seeb',
+        'المعبيلة'           => 'Al Mabelah',
+    ];
+
+    public function locationLabel(string $locale = 'ar'): string
+    {
+        if (!$this->location) return '—';
+        if ($locale === 'en') {
+            return self::$locations[$this->location] ?? $this->location;
+        }
+        return $this->location;
+    }
 
     public function statusLabel(string $locale = 'ar'): string
     {

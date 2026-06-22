@@ -60,6 +60,7 @@ class PropertyController extends Controller
         $validated['employee_id']              = $request->user()->id;
         $validated['referral_employee_id']     = $request->user()->id;
         $validated['referral_commission_rate'] = $request->user()->commission_rate ?? null;
+        $validated['created_by']               = $request->user()->id;
         $validated['code']                     = $validated['code'] ?? $this->generateCode($validated['type']);
         $validated['name']        = $validated['name_ar'];
         $validated['address']     = $validated['address_ar'];
@@ -82,7 +83,7 @@ class PropertyController extends Controller
         }
 
         $msg = app()->getLocale() === 'ar' ? 'تم إضافة العقار بنجاح.' : 'Property added successfully.';
-        return redirect()->route('employee.dashboard')->with('success', $msg);
+        return redirect()->route('employee.properties.index')->with('success', $msg);
     }
 
     public function markSold(Request $request, Property $property)
@@ -138,6 +139,14 @@ class PropertyController extends Controller
         );
     }
 
+    public function destroy(Property $property): RedirectResponse
+    {
+        abort_if($property->created_by !== auth()->id(), 403);
+        $property->delete();
+        $msg = app()->getLocale() === 'ar' ? 'تم حذف العقار بنجاح' : 'Property deleted successfully';
+        return redirect()->route('employee.properties.index')->with('success', $msg);
+    }
+
     private function generateCode(string $type): string
     {
         $prefix = match ($type) {
@@ -149,8 +158,14 @@ class PropertyController extends Controller
             'land'               => 'TH-L',
             default              => 'TH',
         };
-        $count = Property::where('type', $type)->count() + 1;
-        return sprintf('%s-%03d', $prefix, $count);
+        do {
+            $last = Property::where('code', 'like', $prefix . '-%')
+                ->orderByRaw('CAST(SUBSTRING_INDEX(code, \'-\', -1) AS UNSIGNED) DESC')
+                ->value('code');
+            $next = $last ? ((int) preg_replace('/.*-(\d+)$/', '$1', $last)) + 1 : 1;
+            $code = sprintf('%s-%03d', $prefix, $next);
+        } while (Property::where('code', $code)->exists());
+        return $code;
     }
 
     private function propertySupportsSale(Property $property): bool

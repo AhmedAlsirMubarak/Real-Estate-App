@@ -27,13 +27,13 @@ class CustomerTemplateExport
     private const GUIDE_ROWS = [
         ['name',          'Customer Name *',   'Yes', '',                                                  'Full name of the customer'],
         ['mobile',        'Mobile',             'No',  '',                                                  'Used for the WhatsApp quick-contact button'],
-        ['email',         'Email',              'No',  'Valid email address',                              ''],
+        ['email',         'Email',              'No',  'Valid email address',                               ''],
         ['location',      'Desired Location',   'No',  '',                                                  'City or area the customer is looking in'],
         ['property_type', 'Property Type *',    'Yes', 'any | apartment_building | villa | farm | chalet', 'Must match exactly'],
-        ['purpose',       'Purpose *',          'Yes', 'rent | sale | both',                                'Must match exactly'],
-        ['min_budget',    'Min Budget',         'No',  'Number >= 0',                                       ''],
-        ['max_budget',    'Max Budget',         'No',  'Number >= 0',                                       ''],
-        ['bedrooms',      'Bedrooms',           'No',  'Integer >= 0',                                      ''],
+        ['purpose',       'Purpose *',          'Yes', 'rent | sale | both',                               'Must match exactly'],
+        ['min_budget',    'Min Budget',         'No',  'Number >= 0',                                      ''],
+        ['max_budget',    'Max Budget',         'No',  'Number >= 0',                                      ''],
+        ['bedrooms',      'Bedrooms',           'No',  'Integer >= 0',                                     ''],
         ['status',        'Status',             'No',  'new | contacted | interested | closed',            'Defaults to "new" if blank'],
         ['notes',         'Notes',              'No',  '',                                                  ''],
     ];
@@ -72,10 +72,10 @@ class CustomerTemplateExport
         ]);
 
         $example = [
-            'name'          => 'أحمد السعيدي',
+            'name'          => 'Ahmed Al Saidi',
             'mobile'        => '99123456',
             'email'         => 'ahmed@example.com',
-            'location'      => 'مسقط',
+            'location'      => 'Bowsher',
             'property_type' => 'villa',
             'purpose'       => 'sale',
             'min_budget'    => 80000,

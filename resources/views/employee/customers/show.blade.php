@@ -55,7 +55,7 @@
             </div>
             <div>
                 <p class="text-xs text-gray-400 mb-1">{{ $tr('المنطقة / الموقع المطلوب', 'Desired Area / Location') }}</p>
-                <p class="text-sm font-medium text-gray-800">{{ $customer->location ?: '—' }}</p>
+                <p class="text-sm font-medium text-gray-800">{{ $customer->locationLabel($locale) }}</p>
             </div>
             <div>
                 <p class="text-xs text-gray-400 mb-1">{{ $tr('مصدر العميل', 'Customer Source') }}</p>

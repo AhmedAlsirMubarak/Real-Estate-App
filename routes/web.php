@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use App\Http\Controllers\Accountant;
 use App\Http\Controllers\Buyer;
@@ -49,7 +49,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')->group(function () {
     Route::get('/dashboard', [Manager\DashboardController::class, 'index'])->name('dashboard');
 
-    // Building Comprehensive Report — must be before resource() to avoid {property} wildcard capture
+    // Building Comprehensive Report â€” must be before resource() to avoid {property} wildcard capture
     Route::get('properties/comprehensive-report', [Manager\BuildingComprehensiveReportController::class, 'create'])->name('properties.report.create');
     Route::post('properties/comprehensive-report', [Manager\BuildingComprehensiveReportController::class, 'generate'])->name('properties.report.generate');
     Route::get('properties/commissions', [Manager\PropertyController::class, 'managementCommissions'])->name('properties.commissions');
@@ -64,6 +64,10 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
 
     Route::get('external-properties/comprehensive-report', [Manager\ExternalPropertyReportController::class, 'create'])->name('external-properties.report.create');
     Route::post('external-properties/comprehensive-report', [Manager\ExternalPropertyReportController::class, 'generate'])->name('external-properties.report.generate');
+    Route::get('external-properties/import', [Manager\ExternalPropertyController::class, 'importForm'])->name('external-properties.import.form');
+    Route::post('external-properties/import', [Manager\ExternalPropertyController::class, 'import'])->name('external-properties.import');
+    Route::get('external-properties/import/template', [Manager\ExternalPropertyController::class, 'downloadTemplate'])->name('external-properties.import.template');
+    Route::get('external-properties/export', [Manager\ExternalPropertyController::class, 'export'])->name('external-properties.export');
     Route::resource('external-properties', Manager\ExternalPropertyController::class)->parameters(['external-properties' => 'property']);
     Route::get('external-properties-commissions', [Manager\ExternalPropertyController::class, 'commissions'])->name('external-properties.commissions');
     Route::post('properties/{property}/commission-invoice', [Manager\PropertyController::class, 'commissionInvoice'])->name('properties.commission-invoice');
@@ -95,14 +99,14 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::delete('rental-contracts/{contract}/delete-file', [Manager\RentalContractController::class, 'deleteFile'])->name('rental-contracts.delete-file');
     Route::resource('employees', Manager\EmployeeController::class);
 
-    // HR — Leaves
+    // HR â€” Leaves
     Route::get('hr/leaves', [Manager\HrLeaveController::class, 'index'])->name('hr.leaves.index');
     Route::post('employees/{employee}/leaves', [Manager\HrLeaveController::class, 'store'])->name('employees.leaves.store');
     Route::patch('employees/{employee}/leaves/{leave}/approve', [Manager\HrLeaveController::class, 'approve'])->name('employees.leaves.approve');
     Route::patch('employees/{employee}/leaves/{leave}/reject', [Manager\HrLeaveController::class, 'reject'])->name('employees.leaves.reject');
     Route::delete('employees/{employee}/leaves/{leave}', [Manager\HrLeaveController::class, 'destroy'])->name('employees.leaves.destroy');
 
-    // HR — Attendance
+    // HR â€” Attendance
     Route::get('hr/attendance', [Manager\HrAttendanceController::class, 'index'])->name('hr.attendance.index');
     Route::post('employees/{employee}/attendance', [Manager\HrAttendanceController::class, 'store'])->name('employees.attendance.store');
     Route::patch('employees/{employee}/attendance/{attendance}', [Manager\HrAttendanceController::class, 'update'])->name('employees.attendance.update');
@@ -114,7 +118,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::get('reports', [Manager\ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/properties/{property}', [Manager\ReportController::class, 'propertyReport'])->name('reports.property');
 
-    // Scheduled reports (HOA + Building Mgmt) — period_months + custom cadence
+    // Scheduled reports (HOA + Building Mgmt) â€” period_months + custom cadence
     Route::get('scheduled-reports', [Manager\ScheduledReportController::class, 'index'])->name('scheduled-reports.index');
     Route::get('scheduled-reports/create', [Manager\ScheduledReportController::class, 'create'])->name('scheduled-reports.create');
     Route::post('scheduled-reports', [Manager\ScheduledReportController::class, 'store'])->name('scheduled-reports.store');
@@ -124,7 +128,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::post('scheduled-reports/{scheduledReport}/run', [Manager\ScheduledReportController::class, 'runNow'])->name('scheduled-reports.run');
     Route::get('scheduled-reports/runs/{run}/download', [Manager\ScheduledReportController::class, 'download'])->name('scheduled-reports.download');
 
-    // Owners Association (HOA) — specific routes MUST come before resource() to avoid {association} wildcard capture
+    // Owners Association (HOA) â€” specific routes MUST come before resource() to avoid {association} wildcard capture
     Route::get('associations/comprehensive-report', [Manager\HoaComprehensiveReportController::class, 'create'])->name('associations.report.create');
     Route::post('associations/comprehensive-report', [Manager\HoaComprehensiveReportController::class, 'generate'])->name('associations.report.generate');
     Route::get('associations/no-objection-certs/{noc}/download', [Manager\AssociationController::class, 'downloadNoc'])->name('associations.noc.download');
@@ -135,6 +139,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::get('associations/import', [Manager\AssociationController::class, 'importForm'])->name('associations.import.form');
     Route::post('associations/import', [Manager\AssociationController::class, 'import'])->name('associations.import');
     Route::get('associations/import/template', [Manager\AssociationController::class, 'downloadTemplate'])->name('associations.import.template');
+    Route::get('associations/export', [Manager\AssociationController::class, 'export'])->name('associations.export');
     Route::resource('associations', Manager\AssociationController::class);
     Route::post('associations/{association}/dues/generate', [Manager\AssociationDueController::class, 'generate'])->name('associations.dues.generate');
     Route::delete('associations/{association}/documents/{field}', [Manager\AssociationController::class, 'deleteDocument'])->name('associations.documents.delete');
@@ -181,12 +186,10 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
 
     // Customers (leads / requirements)
     Route::delete('customers/bulk-destroy', [Manager\CustomerController::class, 'bulkDestroy'])->name('customers.bulk-destroy');
-    Route::get('customers/import', [Manager\CustomerController::class, 'importForm'])->name('customers.import.form');
-    Route::post('customers/import', [Manager\CustomerController::class, 'import'])->name('customers.import');
-    Route::get('customers/import/template', [Manager\CustomerController::class, 'downloadTemplate'])->name('customers.import.template');
+    Route::get('customers/export', [Manager\CustomerController::class, 'export'])->name('customers.export');
     Route::resource('customers', Manager\CustomerController::class);
 
-    // Company Departments — HR (manager only)
+    // Company Departments â€” HR (manager only)
     Route::resource('contracts', Manager\EmployeeContractController::class)->except(['show']);
 });
 
@@ -204,7 +207,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::delete('development/{development}/documents/{document}', [Manager\DevelopmentDocumentController::class, 'destroy'])->name('development.documents.destroy');
 });
 
-// Finance routes — shared between manager and accountant
+// Finance routes â€” shared between manager and accountant
 Route::middleware(['auth', 'role:manager|accountant'])->prefix('manager')->name('manager.')->group(function () {
     Route::get('finance', [Manager\FinanceDashboardController::class, 'index'])->name('finance.dashboard');
     Route::resource('budgets', Manager\CompanyBudgetController::class)->except(['show']);
@@ -241,8 +244,10 @@ Route::middleware(['auth', 'role:employee'])->prefix('employee')->name('employee
     Route::patch('payments/{payment}/overdue', [Employee\PaymentController::class, 'markOverdue'])->name('payments.overdue');
 
     Route::get('tenants', [Employee\TenantController::class, 'index'])->name('tenants.index');
+    Route::get('tenants/export', [Employee\TenantController::class, 'export'])->name('tenants.export');
     Route::get('tenants/create', [Employee\TenantController::class, 'create'])->name('tenants.create');
     Route::post('tenants', [Employee\TenantController::class, 'store'])->name('tenants.store');
+    Route::delete('tenants/{tenant}', [Employee\TenantController::class, 'destroy'])->name('tenants.destroy');
     Route::get('tenants/{tenant}', [Employee\TenantController::class, 'show'])->name('tenants.show');
     Route::post('tenants/{tenant}/payments', [Employee\TenantController::class, 'generatePayment'])->name('tenants.payments.generate');
     Route::patch('tenants/{tenant}/payments/{payment}/paid', [Employee\TenantController::class, 'markPaymentPaid'])->name('tenants.payments.mark-paid');
@@ -253,6 +258,7 @@ Route::middleware(['auth', 'role:employee'])->prefix('employee')->name('employee
     Route::get('properties/create', [Employee\PropertyController::class, 'create'])->name('properties.create');
     Route::post('properties', [Employee\PropertyController::class, 'store'])->name('properties.store');
     Route::patch('properties/{property}/mark-sold', [Employee\PropertyController::class, 'markSold'])->name('properties.mark-sold');
+    Route::delete('properties/{property}', [Employee\PropertyController::class, 'destroy'])->name('properties.destroy');
 
     Route::get('leaves', [Employee\LeaveController::class, 'index'])->name('leaves.index');
     Route::get('leaves/create', [Employee\LeaveController::class, 'create'])->name('leaves.create');
@@ -261,9 +267,32 @@ Route::middleware(['auth', 'role:employee'])->prefix('employee')->name('employee
     Route::get('contacts', [Employee\ContactController::class, 'index'])->name('contacts.index');
     Route::get('contacts/{contact}', [Employee\ContactController::class, 'show'])->name('contacts.show');
 
+    Route::get('associations/import', [Employee\AssociationController::class, 'importForm'])->name('associations.import.form');
+    Route::post('associations/import', [Employee\AssociationController::class, 'import'])->name('associations.import');
+    Route::get('associations/import/template', [Employee\AssociationController::class, 'downloadTemplate'])->name('associations.import.template');
+    Route::get('associations/export', [Employee\AssociationController::class, 'export'])->name('associations.export');
+    Route::get('associations', [Employee\AssociationController::class, 'index'])->name('associations.index');
+    Route::get('associations/create', [Employee\AssociationController::class, 'create'])->name('associations.create');
+    Route::post('associations', [Employee\AssociationController::class, 'store'])->name('associations.store');
+    Route::get('associations/{association}', [Employee\AssociationController::class, 'show'])->name('associations.show');
+    Route::get('associations/{association}/edit', [Employee\AssociationController::class, 'edit'])->name('associations.edit');
+    Route::put('associations/{association}', [Employee\AssociationController::class, 'update'])->name('associations.update');
+    Route::delete('associations/{association}', [Employee\AssociationController::class, 'destroy'])->name('associations.destroy');
+
+    Route::get('external-properties/export', [Employee\ExternalPropertyController::class, 'export'])->name('external-properties.export');
+    Route::get('external-properties', [Employee\ExternalPropertyController::class, 'index'])->name('external-properties.index');
+    Route::get('external-properties/create', [Employee\ExternalPropertyController::class, 'create'])->name('external-properties.create');
+    Route::post('external-properties', [Employee\ExternalPropertyController::class, 'store'])->name('external-properties.store');
+    Route::get('external-properties/{property}', [Employee\ExternalPropertyController::class, 'show'])->name('external-properties.show');
+    Route::get('external-properties/{property}/edit', [Employee\ExternalPropertyController::class, 'edit'])->name('external-properties.edit');
+    Route::put('external-properties/{property}', [Employee\ExternalPropertyController::class, 'update'])->name('external-properties.update');
+    Route::delete('external-properties/{property}', [Employee\ExternalPropertyController::class, 'destroy'])->name('external-properties.destroy');
+
     Route::get('customers', [Employee\CustomerController::class, 'index'])->name('customers.index');
+    Route::get('customers/export', [Employee\CustomerController::class, 'export'])->name('customers.export');
     Route::get('customers/create', [Employee\CustomerController::class, 'create'])->name('customers.create');
     Route::post('customers', [Employee\CustomerController::class, 'store'])->name('customers.store');
+    Route::delete('customers/{customer}', [Employee\CustomerController::class, 'destroy'])->name('customers.destroy');
     Route::get('customers/{customer}', [Employee\CustomerController::class, 'show'])->name('customers.show');
     Route::get('customers/{customer}/edit', [Employee\CustomerController::class, 'edit'])->name('customers.edit');
     Route::put('customers/{customer}', [Employee\CustomerController::class, 'update'])->name('customers.update');
@@ -315,3 +344,4 @@ Route::middleware(['auth', 'role:tenant'])->prefix('tenant')->name('tenant.')->g
 });
 
 require __DIR__.'/auth.php';
+

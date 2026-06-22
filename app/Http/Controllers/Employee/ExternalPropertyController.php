@@ -1,11 +1,8 @@
 <?php
 
-namespace App\Http\Controllers\Manager;
+namespace App\Http\Controllers\Employee;
 
-use App\Exports\ExternalPropertyTemplateExport;
 use App\Http\Controllers\Controller;
-use App\Imports\ExternalPropertyImport;
-use App\Models\CommissionInvoice;
 use App\Models\Owner;
 use App\Models\Property;
 use App\Models\User;
@@ -28,40 +25,38 @@ class ExternalPropertyController extends Controller
         $typeFilter    = $request->input('type');
         $purposeFilter = $request->input('purpose');
 
-        $properties = Property::with(['employee', 'owner.user', 'units', 'createdBy'])
+        $properties = Property::with(['employee', 'owner.user', 'units'])
             ->where('section', 'external')
             ->when($search, fn($q) => $q->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
+                $q->where('name',    'like', "%{$search}%")
                   ->orWhere('name_ar', 'like', "%{$search}%")
                   ->orWhere('name_en', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('code',    'like', "%{$search}%")
                   ->orWhere('address', 'like', "%{$search}%")
-                  ->orWhere('city', 'like', "%{$search}%");
+                  ->orWhere('city',    'like', "%{$search}%");
             }))
-            ->when($typeFilter, fn($q) => $q->where('type', $typeFilter))
+            ->when($typeFilter,    fn($q) => $q->where('type', $typeFilter))
             ->when($purposeFilter, fn($q) => $q->where('purpose', $purposeFilter))
             ->latest()
             ->paginate(15)
             ->appends($request->query());
 
-        return view('manager.external-properties.index', compact('properties', 'search', 'typeFilter', 'purposeFilter'));
+        return view('employee.external-properties.index', compact('properties', 'search', 'typeFilter', 'purposeFilter'));
     }
 
     public function create()
     {
         $employees = User::role('employee')->get();
         $owners    = Owner::with('user')->get();
-        return view('manager.external-properties.create', [
-            'employees' => $employees,
-            'owners'    => $owners,
-        ]);
+        return view('employee.external-properties.create', compact('employees', 'owners'));
     }
 
     public function store(Request $request)
     {
         $validated = $this->validated($request);
-        $validated['section'] = 'external';
-        $validated['code'] = $validated['code'] ?? $this->generateCode($validated['type']);
+        $validated['section']    = 'external';
+        $validated['code']       = $validated['code'] ?? $this->generateCode($validated['type']);
+        $validated['created_by'] = auth()->id();
         $validated = $this->mergeLocalizedData($validated);
 
         $property = Property::create($validated);
@@ -85,8 +80,8 @@ class ExternalPropertyController extends Controller
 
         $this->saveImages($request, $property);
 
-        return redirect()->route('manager.external-properties.index')
-            ->with('success', 'تم إضافة العقار الخارجي بنجاح');
+        $msg = app()->getLocale() === 'ar' ? 'تم إضافة العقار الخارجي بنجاح' : 'External property added successfully';
+        return redirect()->route('employee.external-properties.index')->with('success', $msg);
     }
 
     public function show(Property $property)
@@ -107,15 +102,7 @@ class ExternalPropertyController extends Controller
             ->where('status', 'active')
             ->get();
 
-        $commissionInvoices = $property->commissionInvoices;
-        $employees = User::role('employee')->get();
-
-        return view('manager.external-properties.show', [
-            'property'           => $property,
-            'employees'          => $employees,
-            'rentalContracts'    => $rentalContracts,
-            'commissionInvoices' => $commissionInvoices,
-        ]);
+        return view('employee.external-properties.show', compact('property', 'rentalContracts'));
     }
 
     public function edit(Property $property)
@@ -126,11 +113,7 @@ class ExternalPropertyController extends Controller
         $employees = User::role('employee')->get();
         $owners    = Owner::with('user')->get();
 
-        return view('manager.external-properties.edit', [
-            'property'  => $property,
-            'employees' => $employees,
-            'owners'    => $owners,
-        ]);
+        return view('employee.external-properties.edit', compact('property', 'employees', 'owners'));
     }
 
     public function update(Request $request, Property $property)
@@ -144,57 +127,17 @@ class ExternalPropertyController extends Controller
 
         $this->saveImages($request, $property);
 
-        return redirect()->route('manager.external-properties.index')
-            ->with('success', 'تم تحديث العقار بنجاح');
+        $msg = app()->getLocale() === 'ar' ? 'تم تحديث العقار بنجاح' : 'Property updated successfully';
+        return redirect()->route('employee.external-properties.show', $property)->with('success', $msg);
     }
 
-    public function importForm()
+    public function destroy(Property $property)
     {
-        return view('manager.external-properties.import');
-    }
-
-    public function downloadTemplate()
-    {
-        $spreadsheet = (new ExternalPropertyTemplateExport())->build();
-        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
-
-        return response()->streamDownload(function () use ($writer) {
-            $writer->save('php://output');
-        }, 'external-properties-import-template.xlsx', [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="external-properties-import-template.xlsx"',
-        ]);
-    }
-
-    public function import(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240',
-        ], [
-            'file.required' => 'Please select a file to upload.',
-            'file.mimes'    => 'Only Excel files (.xlsx, .xls) are accepted.',
-            'file.max'      => 'The file must not exceed 10 MB.',
-        ]);
-
-        $uploaded = $request->file('file');
-        $ext      = strtolower($uploaded->getClientOriginalExtension()) ?: 'xlsx';
-        $tempPath = tempnam(sys_get_temp_dir(), 'import_') . '.' . $ext;
-
-        try {
-            copy($uploaded->getPathname(), $tempPath);
-            $importer = new ExternalPropertyImport($tempPath);
-            $importer->run();
-        } catch (\Throwable) {
-            return back()->withErrors(['file' => 'Could not read the file. Make sure it is a valid Excel file.']);
-        } finally {
-            if (file_exists($tempPath)) @unlink($tempPath);
-        }
-
-        return back()->with('import_results', [
-            'imported' => $importer->imported,
-            'errors'   => $importer->rowErrors,
-            'warnings' => $importer->warnings,
-        ]);
+        abort_if($property->section !== 'external', 404);
+        abort_if($property->created_by !== auth()->id(), 403);
+        $property->delete();
+        $msg = app()->getLocale() === 'ar' ? 'تم حذف العقار بنجاح' : 'Property deleted successfully';
+        return redirect()->route('employee.external-properties.index')->with('success', $msg);
     }
 
     public function export(Request $request)
@@ -276,48 +219,6 @@ class ExternalPropertyController extends Controller
             'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename="external-properties-' . date('Y-m-d') . '.xlsx"',
         ]);
-    }
-
-    public function commissions(Request $request)
-    {
-        $search        = $request->input('search');
-        $invoiceFor    = $request->input('invoice_for');
-        $from          = $request->input('from');
-        $to            = $request->input('to');
-
-        $externalPropertyIds = Property::where('section', 'external')->pluck('id');
-
-        $baseQuery = fn() => CommissionInvoice::with('property')
-            ->whereIn('property_id', $externalPropertyIds)
-            ->when($search, fn($q) => $q->where(function ($q) use ($search) {
-                $q->where('invoice_number', 'like', "%{$search}%")
-                  ->orWhere('recipient_name', 'like', "%{$search}%")
-                  ->orWhereHas('property', fn($q) => $q->where('name', 'like', "%{$search}%"));
-            }))
-            ->when($invoiceFor, fn($q) => $q->where('invoice_for', $invoiceFor))
-            ->when($from, fn($q) => $q->whereDate('invoice_date', '>=', $from))
-            ->when($to,   fn($q) => $q->whereDate('invoice_date', '<=', $to));
-
-        $invoices = $baseQuery()
-            ->orderByDesc('invoice_date')
-            ->paginate(20)
-            ->appends($request->query());
-
-        $totalCommissions = $baseQuery()->sum('commission_amount');
-        $ownerCount       = $baseQuery()->where('invoice_for', 'owner')->count();
-        $clientCount      = $baseQuery()->where('invoice_for', 'client')->count();
-
-        return view('manager.external-properties.commissions', compact(
-            'invoices', 'search', 'invoiceFor', 'from', 'to', 'totalCommissions', 'ownerCount', 'clientCount'
-        ));
-    }
-
-    public function destroy(Property $property)
-    {
-        abort_if($property->section !== 'external', 404);
-        $property->delete();
-        return redirect()->route('manager.external-properties.index')
-            ->with('success', 'تم حذف العقار بنجاح');
     }
 
     private function saveImages(Request $request, Property $property): void

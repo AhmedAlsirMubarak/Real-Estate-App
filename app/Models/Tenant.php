@@ -11,6 +11,7 @@ class Tenant extends Model
 
     protected $fillable = [
         'user_id',
+        'created_by',
         'national_id',
         'phone',
         'emergency_contact',

@@ -9,11 +9,18 @@
     <div class="py-4">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
             <h2 class="text-xl font-bold text-gray-800">{{ $tr('مستأجريّ', 'My Tenants') }}</h2>
-            <a href="{{ route('employee.tenants.create') }}"
-               class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                {{ $tr('إضافة مستأجر', 'Add Tenant') }}
-            </a>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('employee.tenants.export') }}"
+                   class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    {{ $tr('تصدير Excel', 'Export Excel') }}
+                </a>
+                <a href="{{ route('employee.tenants.create') }}"
+                   class="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    {{ $tr('إضافة مستأجر', 'Add Tenant') }}
+                </a>
+            </div>
         </div>
 
         @if(session('success'))
@@ -73,8 +80,21 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3">
-                                <a href="{{ route('employee.tenants.show', $tenant) }}"
-                                   class="text-blue-600 hover:text-blue-800 text-xs font-medium">{{ $tr('عرض', 'View') }}</a>
+                                <div class="flex items-center gap-2">
+                                    <a href="{{ route('employee.tenants.show', $tenant) }}"
+                                       class="text-blue-600 hover:text-blue-800 text-xs font-medium">{{ $tr('عرض', 'View') }}</a>
+                                    @if($tenant->created_by === auth()->id())
+                                    <form method="POST" action="{{ route('employee.tenants.destroy', $tenant) }}"
+                                          onsubmit="return confirm('{{ $tr('هل أنت متأكد من حذف هذا المستأجر؟', 'Are you sure you want to delete this tenant?') }}')"
+                                          class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="inline-flex items-center bg-red-50 hover:bg-red-100 text-red-700 text-xs font-medium px-2.5 py-1.5 rounded-lg transition">
+                                            {{ $tr('حذف', 'Delete') }}
+                                        </button>
+                                    </form>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                         @empty

@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Mpdf\Mpdf;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class TenantController extends Controller
 {
@@ -36,6 +38,59 @@ class TenantController extends Controller
             ->paginate(20);
 
         return view('employee.tenants.index', compact('tenants'));
+    }
+
+    public function export(Request $request)
+    {
+        $employee = $request->user();
+
+        $managedIds  = Tenant::whereHas('activeContract.unit.property', fn($q) => $q->where('employee_id', $employee->id))->pluck('id');
+        $referredIds = Tenant::where('referral_employee_id', $employee->id)->pluck('id');
+        $allIds      = $managedIds->merge($referredIds)->unique()->values();
+
+        $tenants = Tenant::whereIn('id', $allIds)
+            ->with(['user', 'rentalContracts.unit.property'])
+            ->latest()
+            ->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet       = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Tenants');
+
+        $headers = ['Name', 'Phone', 'Email', 'National ID', 'Property Code', 'Property Name', 'Unit', 'Contract Status', 'Start Date', 'End Date', 'Monthly Rent', 'Deposit'];
+        $sheet->fromArray([$headers], null, 'A1');
+
+        $row = 2;
+        foreach ($tenants as $tenant) {
+            $contract = $tenant->rentalContracts->where('status', 'active')->first()
+                     ?? $tenant->rentalContracts->sortByDesc('created_at')->first();
+
+            $sheet->fromArray([[
+                $tenant->user?->name ?? '',
+                $tenant->user?->phone ?? '',
+                $tenant->user?->email ?? '',
+                $tenant->national_id ?? '',
+                $contract?->unit?->property?->code ?? '',
+                $contract?->unit?->property?->name_en ?? $contract?->unit?->property?->name ?? '',
+                $contract?->unit?->unit_number ?? '',
+                $contract?->status ?? '',
+                $contract?->start_date?->format('Y-m-d') ?? '',
+                $contract?->end_date?->format('Y-m-d') ?? '',
+                $contract?->monthly_rent ?? '',
+                $contract?->deposit ?? '',
+            ]], null, 'A' . $row);
+            $row++;
+        }
+
+        $writer   = IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $filename = 'tenants-' . now()->format('Y-m-d') . '.xlsx';
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, $filename, [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     public function create()
@@ -79,6 +134,7 @@ class TenantController extends Controller
 
         $tenant = Tenant::create([
             'user_id'                  => $user->id,
+            'created_by'               => $request->user()->id,
             'national_id'              => $validated['national_id'] ?? null,
             'phone'                    => $validated['phone'] ?? null,
             'emergency_contact'        => $validated['emergency_contact'] ?? null,
@@ -241,6 +297,15 @@ class TenantController extends Controller
         return response($mpdf->Output('', 'S'))
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+    }
+
+    public function destroy(Tenant $tenant): RedirectResponse
+    {
+        abort_if($tenant->created_by !== auth()->id(), 403);
+        $tenant->user?->delete();
+        $tenant->delete();
+        $msg = app()->getLocale() === 'ar' ? 'تم حذف المستأجر بنجاح' : 'Tenant deleted successfully';
+        return redirect()->route('employee.tenants.index')->with('success', $msg);
     }
 
     private function authorizeEmployee(User $employee, Tenant $tenant): void

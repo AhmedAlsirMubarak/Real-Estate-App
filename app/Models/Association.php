@@ -11,6 +11,7 @@ class Association extends Model
 
     protected $fillable = [
         'property_id',
+        'created_by',
         'name_ar',
         'name_en',
         'established_date',
@@ -35,6 +36,11 @@ class Association extends Model
     public function property()
     {
         return $this->belongsTo(Property::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
     }
 
     public function dues()

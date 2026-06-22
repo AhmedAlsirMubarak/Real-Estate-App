@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Manager;
 
+use App\Exports\AssociationExport;
 use App\Exports\AssociationTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\AssociationImport;
@@ -18,7 +19,7 @@ class AssociationController extends Controller
 {
     public function index()
     {
-        $associations = Association::with(['property.owners', 'dues'])
+        $associations = Association::with(['property.owners', 'dues', 'createdBy'])
             ->latest()
             ->paginate(15);
 
@@ -184,19 +185,39 @@ class AssociationController extends Controller
             'file.max'      => 'The file must not exceed 10 MB.',
         ]);
 
+        $uploaded = $request->file('file');
+        $ext      = strtolower($uploaded->getClientOriginalExtension()) ?: 'xlsx';
+        $tempPath = tempnam(sys_get_temp_dir(), 'import_') . '.' . $ext;
+
         try {
-            $importer = new AssociationImport($request->file('file')->getPathname());
+            copy($uploaded->getPathname(), $tempPath);
+            $importer = new AssociationImport($tempPath);
             $importer->run();
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             return back()->withErrors([
                 'file' => 'Could not read the file. Make sure it is a valid Excel or CSV file.',
             ]);
+        } finally {
+            if (file_exists($tempPath)) @unlink($tempPath);
         }
 
         return back()->with('import_results', [
             'imported' => $importer->imported,
             'errors'   => $importer->rowErrors,
             'warnings' => $importer->warnings,
+        ]);
+    }
+
+    public function export()
+    {
+        $spreadsheet = (new AssociationExport())->build();
+        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, 'associations-' . date('Y-m-d') . '.xlsx', [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="associations-' . date('Y-m-d') . '.xlsx"',
         ]);
     }
 

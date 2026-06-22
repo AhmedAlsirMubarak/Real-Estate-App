@@ -23,6 +23,13 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 <span id="bulk-delete-label">{{ $tr('حذف المحدد', 'Delete selected') }}</span>
             </button>
+            <a href="{{ route('manager.associations.export') }}"
+               class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                </svg>
+                {{ $tr('تصدير Excel', 'Export Excel') }}
+            </a>
             <a href="{{ route('manager.associations.import.form') }}"
                class="inline-flex items-center gap-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,6 +66,7 @@
                         <th class="px-4 py-3 text-right">{{ $tr('الملاك', 'Owners') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('الرسوم الشهرية لكل وحدة', 'Monthly Fee per Unit') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('الحالة', 'Status') }}</th>
+                        <th class="px-4 py-3 text-right">{{ $tr('أنشئ بواسطة', 'Created By') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('إجراءات', 'Actions') }}</th>
                     </tr>
                 </thead>
@@ -78,6 +86,7 @@
                                 {{ $assoc->status === 'active' ? $tr('نشط', 'Active') : $tr('غير نشط', 'Inactive') }}
                             </span>
                         </td>
+                        <td class="px-4 py-3 text-xs text-gray-600">{{ $assoc->createdBy?->name ?? '—' }}</td>
                         <td class="px-4 py-3 text-xs">
                             <a href="{{ route('manager.associations.show', $assoc) }}" class="text-blue-700 hover:text-blue-900 mx-1">{{ $tr('عرض التفاصيل', 'View Details') }}</a>
                             <a href="{{ route('manager.associations.report.create', ['association_id' => $assoc->id]) }}" class="text-teal-700 hover:text-teal-900 mx-1">{{ $tr('تقرير', 'Report') }}</a>
@@ -90,7 +99,7 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="7" class="py-10 text-center text-gray-400">{{ $tr('لا توجد بيانات', 'No data available') }}</td></tr>
+                    <tr><td colspan="8" class="py-10 text-center text-gray-400">{{ $tr('لا توجد بيانات', 'No data available') }}</td></tr>
                     @endforelse
                 </tbody>
             </table>

@@ -537,6 +537,62 @@
                             </a>
                         </div>
                     </div>
+
+                    {{-- ===== HOA ===== --}}
+                    <div class="px-3 mt-4 mb-2">
+                        <p class="text-xs text-green-400 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('جمعية الملاك', 'Owners Association') }}</p>
+                    </div>
+
+                    {{-- Associations accordion --}}
+                    @php $assocActive = request()->routeIs('employee.associations.*'); @endphp
+                    <div x-data="{ open: @js($assocActive) }" class="mb-0.5">
+                        <button @click="open = !open"
+                                class="sidebar-link w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ $assocActive ? 'active' : '' }}">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <span class="text-sm font-medium flex-1">{{ $tr('الجمعيات', 'Associations') }}</span>
+                            <svg class="w-4 h-4 flex-shrink-0 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-cloak x-transition class="ms-6 border-s border-white/10 ps-1 space-y-0.5 pb-1">
+                            <a href="{{ route('employee.associations.index') }}"
+                               class="sidebar-link flex items-center gap-3 px-4 py-2.5 {{ request()->routeIs('employee.associations.index') || request()->routeIs('employee.associations.show') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                                <span class="text-sm font-medium">{{ $tr('كل الجمعيات', 'All Associations') }}</span>
+                            </a>
+                            <a href="{{ route('employee.associations.create') }}"
+                               class="sidebar-link flex items-center gap-3 px-4 py-2.5 {{ request()->routeIs('employee.associations.create') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                <span class="text-sm font-medium">{{ $tr('إضافة جمعية', 'Add Association') }}</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    {{-- ===== EXTERNAL PROPERTIES ===== --}}
+                    <div class="px-3 mt-4 mb-2">
+                        <p class="text-xs text-teal-400 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('العقارات الخارجية', 'External Properties') }}</p>
+                    </div>
+
+                    {{-- External Properties accordion --}}
+                    @php $extActive = request()->routeIs('employee.external-properties.*'); @endphp
+                    <div x-data="{ open: @js($extActive) }" class="mb-0.5">
+                        <button @click="open = !open"
+                                class="sidebar-link w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ $extActive ? 'active' : '' }}">
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span class="text-sm font-medium flex-1">{{ $tr('العقارات الخارجية', 'External Properties') }}</span>
+                            <svg class="w-4 h-4 flex-shrink-0 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-cloak x-transition class="ms-6 border-s border-white/10 ps-1 space-y-0.5 pb-1">
+                            <a href="{{ route('employee.external-properties.index') }}"
+                               class="sidebar-link flex items-center gap-3 px-4 py-2.5 {{ request()->routeIs('employee.external-properties.index') || request()->routeIs('employee.external-properties.show') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                                <span class="text-sm font-medium">{{ $tr('كل العقارات', 'All Properties') }}</span>
+                            </a>
+                            <a href="{{ route('employee.external-properties.create') }}"
+                               class="sidebar-link flex items-center gap-3 px-4 py-2.5 {{ request()->routeIs('employee.external-properties.create') ? 'active' : '' }}">
+                                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                                <span class="text-sm font-medium">{{ $tr('إضافة عقار خارجي', 'Add External Property') }}</span>
+                            </a>
+                        </div>
+                    </div>
                 @endif
 
                 @if($user->hasRole('accountant'))

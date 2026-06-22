@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Employee;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 class CustomerController extends Controller
 {
@@ -40,6 +42,7 @@ class CustomerController extends Controller
     public function store(Request $request)
     {
         $data = $this->validated($request);
+        $data['created_by'] = auth()->id();
         Customer::create($data);
 
         return redirect()->route('employee.customers.index')
@@ -63,6 +66,74 @@ class CustomerController extends Controller
 
         return redirect()->route('employee.customers.show', $customer)
             ->with('success', app()->getLocale() === 'ar' ? 'تم تحديث العميل بنجاح' : 'Customer updated successfully');
+    }
+
+    public function export(Request $request)
+    {
+        $isAr    = app()->getLocale() === 'ar';
+        $search  = $request->input('search');
+        $status  = $request->input('status');
+        $purpose = $request->input('purpose');
+
+        $customers = Customer::query()
+            ->when($search, fn($q) => $q->where(fn($q) => $q
+                ->where('name',     'like', "%{$search}%")
+                ->orWhere('mobile', 'like', "%{$search}%")
+                ->orWhere('email',  'like', "%{$search}%")
+                ->orWhere('location', 'like', "%{$search}%")
+            ))
+            ->when($status,  fn($q) => $q->where('status', $status))
+            ->when($purpose, fn($q) => $q->where('purpose', $purpose))
+            ->latest()
+            ->get();
+
+        $locale = $isAr ? 'ar' : 'en';
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = $isAr
+            ? ['الاسم', 'الجوال', 'البريد الإلكتروني', 'المنطقة', 'نوع العقار', 'الغرض', 'الحد الأدنى للميزانية', 'الحد الأقصى للميزانية', 'غرف النوم', 'الحالة', 'المصدر', 'ملاحظات', 'تاريخ الإضافة']
+            : ['Name', 'Mobile', 'Email', 'Location', 'Property Type', 'Purpose', 'Min Budget', 'Max Budget', 'Bedrooms', 'Status', 'Source', 'Notes', 'Created At'];
+
+        $sheet->fromArray([$headers], null, 'A1');
+
+        $row = 2;
+        foreach ($customers as $c) {
+            $sheet->fromArray([[
+                $c->name,
+                $c->mobile,
+                $c->email,
+                $c->location,
+                $c->typeLabel($locale),
+                $c->purposeLabel($locale),
+                $c->min_budget,
+                $c->max_budget,
+                $c->bedrooms,
+                $c->statusLabel($locale),
+                $c->source,
+                $c->notes,
+                $c->created_at?->format('Y-m-d'),
+            ]], null, "A{$row}");
+            $row++;
+        }
+
+        $writer = IOFactory::createWriter($spreadsheet, 'Xlsx');
+
+        return response()->streamDownload(function () use ($writer) {
+            $writer->save('php://output');
+        }, 'customers-' . now()->format('Y-m-d') . '.xlsx', [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="customers-' . now()->format('Y-m-d') . '.xlsx"',
+        ]);
+    }
+
+    public function destroy(Customer $customer)
+    {
+        abort_if($customer->created_by !== auth()->id(), 403);
+        $customer->delete();
+        $msg = app()->getLocale() === 'ar' ? 'تم حذف العميل بنجاح' : 'Customer deleted successfully';
+        return redirect()->route('employee.customers.index')->with('success', $msg);
     }
 
     public function reply(Request $request, Customer $customer)

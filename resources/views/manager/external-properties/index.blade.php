@@ -14,6 +14,20 @@
             <p class="text-sm text-gray-500 mt-0.5">{{ $tr('عقارات مُدارة خارج نطاق البناء والجمعية', 'Properties managed outside buildings & HOA') }}</p>
         </div>
         <div class="flex gap-2">
+            <a href="{{ route('manager.external-properties.export', request()->only('search', 'type', 'purpose')) }}"
+               class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                </svg>
+                {{ $tr('تصدير Excel', 'Export Excel') }}
+            </a>
+            <a href="{{ route('manager.external-properties.import.form') }}"
+               class="inline-flex items-center gap-1.5 border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+                </svg>
+                {{ $tr('استيراد من Excel', 'Import from Excel') }}
+            </a>
             <a href="{{ route('manager.external-properties.create') }}"
                class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-2 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -65,6 +79,7 @@
                         <th class="px-4 py-3 text-right">{{ $tr('الغرض', 'Purpose') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('المالك', 'Owner') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('المسؤول', 'Assigned') }}</th>
+                        <th class="px-4 py-3 text-right">{{ $tr('أنشئ بواسطة', 'Created By') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('الحالة', 'Status') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('إجراءات', 'Actions') }}</th>
                     </tr>
@@ -98,6 +113,7 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 text-gray-600 text-xs">{{ $property->employee?->name ?? '—' }}</td>
+                        <td class="px-4 py-3 text-gray-600 text-xs">{{ $property->createdBy?->name ?? '—' }}</td>
                         <td class="px-4 py-3">
                             @php $sl = $property->statusLabel(); @endphp
                             <span class="inline-flex px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">{{ $sl }}</span>
@@ -120,7 +136,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center py-16 text-gray-400">
+                        <td colspan="9" class="text-center py-16 text-gray-400">
                             <svg class="w-10 h-10 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             <p class="text-sm">{{ $tr('لا توجد عقارات خارجية', 'No external properties found') }}</p>
                             <a href="{{ route('manager.external-properties.create') }}" class="mt-2 inline-block text-teal-600 text-xs hover:underline">{{ $tr('+ إضافة أول عقار خارجي', '+ Add the first external property') }}</a>

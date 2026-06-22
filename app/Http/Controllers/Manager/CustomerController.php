@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Manager;
 
-use App\Exports\CustomerTemplateExport;
 use App\Http\Controllers\Controller;
-use App\Imports\CustomerImport;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+
 
 class CustomerController extends Controller
 {
@@ -89,49 +89,70 @@ class CustomerController extends Controller
         return back()->with('success', 'تم حذف ' . $count . ' عميل');
     }
 
-    public function importForm()
+    public function export(Request $request)
     {
-        return view('manager.customers.import');
-    }
+        $isAr    = app()->getLocale() === 'ar';
+        $locale  = $isAr ? 'ar' : 'en';
+        $search  = $request->input('search');
+        $status  = $request->input('status');
+        $purpose = $request->input('purpose');
+        $type    = $request->input('type');
 
-    public function downloadTemplate()
-    {
-        $spreadsheet = (new CustomerTemplateExport())->build();
-        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $customers = Customer::query()
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($q) use ($search) {
+                    $q->where('name',     'like', "%{$search}%")
+                      ->orWhere('mobile', 'like', "%{$search}%")
+                      ->orWhere('email',  'like', "%{$search}%")
+                      ->orWhere('location', 'like', "%{$search}%");
+                });
+            })
+            ->when($status,  fn($q) => $q->where('status', $status))
+            ->when($purpose, fn($q) => $q->where('purpose', $purpose))
+            ->when($type && $type !== 'any', fn($q) => $q->where('property_type', $type))
+            ->latest()
+            ->get();
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $headers = $isAr
+            ? ['الاسم', 'الجوال', 'البريد الإلكتروني', 'المنطقة', 'نوع العقار', 'الغرض', 'الحد الأدنى للميزانية', 'الحد الأقصى للميزانية', 'غرف النوم', 'الحالة', 'المصدر', 'ملاحظات', 'تاريخ الإضافة']
+            : ['Name', 'Mobile', 'Email', 'Location', 'Property Type', 'Purpose', 'Min Budget', 'Max Budget', 'Bedrooms', 'Status', 'Source', 'Notes', 'Created At'];
+
+        $sheet->fromArray([$headers], null, 'A1');
+
+        $row = 2;
+        foreach ($customers as $c) {
+            $sheet->fromArray([[
+                $c->name,
+                $c->mobile,
+                $c->email,
+                $c->location,
+                $c->typeLabel($locale),
+                $c->purposeLabel($locale),
+                $c->min_budget,
+                $c->max_budget,
+                $c->bedrooms,
+                $c->statusLabel($locale),
+                $c->source,
+                $c->notes,
+                $c->created_at?->format('Y-m-d'),
+            ]], null, "A{$row}");
+            $row++;
+        }
+
+        $writer   = IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $filename = 'customers-' . now()->format('Y-m-d') . '.xlsx';
 
         return response()->streamDownload(function () use ($writer) {
             $writer->save('php://output');
-        }, 'customers-import-template.xlsx', [
+        }, $filename, [
             'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="customers-import-template.xlsx"',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }
 
-    public function import(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240',
-        ], [
-            'file.required' => 'Please select a file to upload.',
-            'file.mimes'    => 'Only Excel files (.xlsx, .xls) are accepted.',
-            'file.max'      => 'The file must not exceed 10 MB.',
-        ]);
-
-        try {
-            $importer = new CustomerImport($request->file('file')->getPathname());
-            $importer->run();
-        } catch (\Throwable $e) {
-            return back()->withErrors([
-                'file' => 'Could not read the file. Make sure it is a valid Excel or CSV file.',
-            ]);
-        }
-
-        return back()->with('import_results', [
-            'imported' => $importer->imported,
-            'errors'   => $importer->rowErrors,
-            'warnings' => $importer->warnings,
-        ]);
-    }
 
     private function validated(Request $request): array
     {

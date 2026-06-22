@@ -474,7 +474,13 @@ class PropertyController extends Controller
             'land'               => 'TH-L',
             default              => 'TH',
         };
-        $count = Property::where('type', $type)->count() + 1;
-        return sprintf('%s-%03d', $prefix, $count);
+        do {
+            $last = Property::where('code', 'like', $prefix . '-%')
+                ->orderByRaw('CAST(SUBSTRING_INDEX(code, \'-\', -1) AS UNSIGNED) DESC')
+                ->value('code');
+            $next = $last ? ((int) preg_replace('/.*-(\d+)$/', '$1', $last)) + 1 : 1;
+            $code = sprintf('%s-%03d', $prefix, $next);
+        } while (Property::where('code', $code)->exists());
+        return $code;
     }
 }

@@ -44,11 +44,17 @@ class Property extends Model
         'sale_commission_rate',
         'commission_payer',
         'commission_notes',
+        'created_by',
     ];
 
     public function owner()
     {
         return $this->belongsTo(Owner::class);
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function owners()
