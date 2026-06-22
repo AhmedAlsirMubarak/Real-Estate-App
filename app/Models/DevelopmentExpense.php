@@ -21,7 +21,7 @@ class DevelopmentExpense extends Model
     public static function categories(): array
     {
         return [
-            'construction', 'manpower', 'materials', 'contractor_fees',
+            'land_cost', 'construction', 'manpower', 'materials', 'contractor_fees',
             'permits', 'equipment_rental', 'design_engineering', 'utilities',
         ];
     }
@@ -30,6 +30,7 @@ class DevelopmentExpense extends Model
     {
         if ($isAr) {
             return [
+                'land_cost'          => 'تكلفة الأرض',
                 'construction'       => 'أعمال البناء والإنشاء',
                 'manpower'           => 'العمالة والأيدي العاملة',
                 'materials'          => 'المواد والمستلزمات',
@@ -41,6 +42,7 @@ class DevelopmentExpense extends Model
             ];
         }
         return [
+            'land_cost'          => 'Land Cost',
             'construction'       => 'Building & Construction',
             'manpower'           => 'Manpower & Labour',
             'materials'          => 'Materials & Supplies',
