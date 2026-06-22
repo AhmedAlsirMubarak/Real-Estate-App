@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Manager;
 
-use App\Exports\ExternalPropertyTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\ExternalPropertyImport;
 use App\Models\CommissionInvoice;
@@ -11,12 +10,6 @@ use App\Models\Property;
 use App\Models\User;
 use App\Traits\StoresUploadedFiles;
 use Illuminate\Http\Request;
-use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class ExternalPropertyController extends Controller
 {
@@ -155,28 +148,36 @@ class ExternalPropertyController extends Controller
 
     public function downloadTemplate()
     {
-        $spreadsheet = (new ExternalPropertyTemplateExport())->build();
-        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $q = fn($v) => '"' . str_replace('"', '""', (string)($v ?? '')) . '"';
 
-        $temp    = storage_path('app/export_' . uniqid() . '.xlsx');
-        $writer->save($temp);
-        $content = file_get_contents($temp);
-        @unlink($temp);
+        $rows = [
+            ['code', 'name_ar', 'name_en', 'type', 'purpose', 'address_ar', 'address_en',
+             'city_ar', 'city_en', 'floors', 'total_area', 'bedrooms', 'bathrooms', 'status',
+             'electricity_account_number', 'water_account_number', 'rent_commission_rate',
+             'sale_commission_rate', 'commission_payer', 'description_ar', 'description_en'],
+            ['', 'فيلا الياسمين', 'Jasmine Villa', 'villa', 'rent',
+             'شارع 10، بوشر', 'Street 10, Bowsher', 'مسقط', 'Muscat',
+             '', '450', '4', '3', 'active', '', '', '5', '', 'owner', '', ''],
+        ];
 
-        return response($content, 200, [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="external-properties-import-template.xlsx"',
-            'Content-Length'      => strlen($content),
+        $csv = "\xEF\xBB\xBF";
+        foreach ($rows as $row) {
+            $csv .= implode(',', array_map($q, $row)) . "\r\n";
+        }
+
+        return response($csv, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="external-properties-import-template.csv"',
         ]);
     }
 
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240',
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
         ], [
             'file.required' => 'Please select a file to upload.',
-            'file.mimes'    => 'Only Excel files (.xlsx, .xls) are accepted.',
+            'file.mimes'    => 'Only Excel (.xlsx, .xls) or CSV (.csv) files are accepted.',
             'file.max'      => 'The file must not exceed 10 MB.',
         ]);
 

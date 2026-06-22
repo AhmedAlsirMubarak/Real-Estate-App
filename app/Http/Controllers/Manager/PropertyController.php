@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Manager;
 
-use App\Exports\PropertyTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\PropertyImport;
 use App\Models\CommissionInvoice;
@@ -13,7 +12,6 @@ use App\Models\User;
 use App\Traits\StoresUploadedFiles;
 use Illuminate\Http\Request;
 use Mpdf\Mpdf;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class PropertyController extends Controller
 {
@@ -219,38 +217,52 @@ class PropertyController extends Controller
 
     public function downloadTemplate()
     {
-        $spreadsheet = (new PropertyTemplateExport())->build();
-        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $q = fn($v) => '"' . str_replace('"', '""', (string)($v ?? '')) . '"';
 
-        $temp    = storage_path('app/export_' . uniqid() . '.xlsx');
-        $writer->save($temp);
-        $content = file_get_contents($temp);
-        @unlink($temp);
+        $rows = [
+            ['name_ar', 'name_en', 'type', 'purpose', 'section', 'city_ar', 'city_en',
+             'address_ar', 'address_en', 'floors', 'total_area', 'bedrooms', 'bathrooms',
+             'status', 'description_ar', 'description_en'],
+            ['برج النخيل', 'Palm Tower', 'apartment_building', 'rent', 'management',
+             'الرياض', 'Riyadh', 'شارع الملك فهد', 'King Fahd Road',
+             '10', '5000', '', '', 'active', 'برج سكني حديث', 'Modern residential tower'],
+        ];
 
-        return response($content, 200, [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="properties-import-template.xlsx"',
-            'Content-Length'      => strlen($content),
+        $csv = "\xEF\xBB\xBF";
+        foreach ($rows as $row) {
+            $csv .= implode(',', array_map($q, $row)) . "\r\n";
+        }
+
+        return response($csv, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="properties-import-template.csv"',
         ]);
     }
 
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240',
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
         ], [
             'file.required' => 'Please select a file to upload.',
-            'file.mimes'    => 'Only Excel files (.xlsx, .xls) are accepted.',
+            'file.mimes'    => 'Only Excel (.xlsx, .xls) or CSV (.csv) files are accepted.',
             'file.max'      => 'The file must not exceed 10 MB.',
         ]);
 
+        $uploaded = $request->file('file');
+        $ext      = strtolower($uploaded->getClientOriginalExtension()) ?: 'xlsx';
+        $tempPath = tempnam(sys_get_temp_dir(), 'import_') . '.' . $ext;
+
         try {
-            $importer = new PropertyImport($request->file('file')->getPathname());
+            copy($uploaded->getPathname(), $tempPath);
+            $importer = new PropertyImport($tempPath);
             $importer->run();
         } catch (\Throwable $e) {
             return back()->withErrors([
                 'file' => 'Could not read the file. Make sure it is a valid Excel or CSV file.',
             ]);
+        } finally {
+            if (file_exists($tempPath)) @unlink($tempPath);
         }
 
         return back()->with('import_results', [

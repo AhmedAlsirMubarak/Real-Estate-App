@@ -114,7 +114,7 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
                     </svg>
-                    {{ $tr('تحميل القالب (.xlsx)', 'Download Template (.xlsx)') }}
+                    {{ $tr('تحميل القالب (.csv)', 'Download Template (.csv)') }}
                 </a>
             </div>
         </div>
@@ -209,9 +209,9 @@
                         </svg>
 
                         <p class="text-sm text-gray-600 font-medium" x-text="fileName || '{{ $tr('اسحب الملف هنا أو انقر للاختيار', 'Drag file here or click to choose') }}'"></p>
-                        <p class="text-xs text-gray-400 mt-1">{{ $tr('Excel (.xlsx, .xls) — بحد أقصى 10 ميجابايت', 'Excel (.xlsx, .xls) — max 10 MB') }}</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ $tr('Excel (.xlsx, .xls) أو CSV (.csv) — بحد أقصى 10 ميجابايت', 'Excel (.xlsx, .xls) or CSV (.csv) — max 10 MB') }}</p>
 
-                        <input type="file" name="file" accept=".xlsx,.xls"
+                        <input type="file" name="file" accept=".xlsx,.xls,.csv"
                                x-ref="fileInput"
                                @change="onFile($event)"
                                class="absolute inset-0 opacity-0 cursor-pointer">

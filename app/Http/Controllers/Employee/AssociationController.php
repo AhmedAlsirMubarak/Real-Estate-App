@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers\Employee;
 
-use App\Exports\AssociationTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\AssociationImport;
 use App\Models\Association;
 use App\Models\Property;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class AssociationController extends Controller
 {
@@ -120,28 +118,33 @@ class AssociationController extends Controller
 
     public function downloadTemplate()
     {
-        $spreadsheet = (new AssociationTemplateExport())->build();
-        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $q = fn($v) => '"' . str_replace('"', '""', (string)($v ?? '')) . '"';
 
-        $temp    = storage_path('app/export_' . uniqid() . '.xlsx');
-        $writer->save($temp);
-        $content = file_get_contents($temp);
-        @unlink($temp);
+        $rows = [
+            ['property_code', 'name_ar', 'name_en', 'monthly_fee_per_unit', 'established_date',
+             'status', 'electricity_account_number', 'water_account_number', 'description_ar', 'description_en'],
+            ['TH-V-001', 'جمعية ملاك برج النخيل', 'Palm Tower Owners Association', '50', '2024-01-15',
+             'active', '', '', '', ''],
+        ];
 
-        return response($content, 200, [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="associations-import-template.xlsx"',
-            'Content-Length'      => strlen($content),
+        $csv = "\xEF\xBB\xBF";
+        foreach ($rows as $row) {
+            $csv .= implode(',', array_map($q, $row)) . "\r\n";
+        }
+
+        return response($csv, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="associations-import-template.csv"',
         ]);
     }
 
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240',
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
         ], [
             'file.required' => 'Please select a file to upload.',
-            'file.mimes'    => 'Only Excel files (.xlsx, .xls) are accepted.',
+            'file.mimes'    => 'Only Excel (.xlsx, .xls) or CSV (.csv) files are accepted.',
             'file.max'      => 'The file must not exceed 10 MB.',
         ]);
 

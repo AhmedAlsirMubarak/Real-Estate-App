@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Manager;
 
-use App\Exports\TenantTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Imports\TenantImport;
 use App\Models\Payment;
@@ -15,7 +14,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Mpdf\Mpdf;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class TenantController extends Controller
 {
@@ -341,36 +339,49 @@ class TenantController extends Controller
 
     public function downloadTemplate()
     {
-        $spreadsheet = (new TenantTemplateExport())->build();
-        $writer      = IOFactory::createWriter($spreadsheet, 'Xlsx');
+        $q = fn($v) => '"' . str_replace('"', '""', (string)($v ?? '')) . '"';
 
-        $temp    = storage_path('app/export_' . uniqid() . '.xlsx');
-        $writer->save($temp);
-        $content = file_get_contents($temp);
-        @unlink($temp);
+        $rows = [
+            ['name_ar', 'name_en', 'email', 'phone', 'password', 'national_id', 'emergency_contact',
+             'property_code', 'unit_number', 'start_date', 'end_date', 'monthly_rent', 'deposit'],
+            ['أحمد العمري', 'Ahmed Al-Omari', 'ahmed@example.com', '0501234567', '',
+             '1234567890', 'Mohammed 0507654321', 'TH-B-001', '101',
+             '2026-01-01', '2026-12-31', '2500', '5000'],
+        ];
 
-        return response($content, 200, [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename="tenants-import-template.xlsx"',
-            'Content-Length'      => strlen($content),
+        $csv = "\xEF\xBB\xBF";
+        foreach ($rows as $row) {
+            $csv .= implode(',', array_map($q, $row)) . "\r\n";
+        }
+
+        return response($csv, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="tenants-import-template.csv"',
         ]);
     }
 
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:10240',
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
         ], [
             'file.required' => 'Please select a file to upload.',
-            'file.mimes'    => 'Only Excel files (.xlsx, .xls) are accepted.',
+            'file.mimes'    => 'Only Excel (.xlsx, .xls) or CSV (.csv) files are accepted.',
             'file.max'      => 'The file must not exceed 10 MB.',
         ]);
 
+        $uploaded = $request->file('file');
+        $ext      = strtolower($uploaded->getClientOriginalExtension()) ?: 'xlsx';
+        $tempPath = tempnam(sys_get_temp_dir(), 'import_') . '.' . $ext;
+
         try {
-            $importer = new TenantImport($request->file('file')->getPathname());
+            copy($uploaded->getPathname(), $tempPath);
+            $importer = new TenantImport($tempPath);
             $importer->run();
         } catch (\Throwable $e) {
-            return back()->withErrors(['file' => 'Could not read the file. Make sure it is a valid Excel file.']);
+            return back()->withErrors(['file' => 'Could not read the file. Make sure it is a valid Excel or CSV file.']);
+        } finally {
+            if (file_exists($tempPath)) @unlink($tempPath);
         }
 
         return back()->with('import_results', [
