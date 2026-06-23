@@ -50,7 +50,7 @@ body{background:#fff;color:var(--text);overflow-x:hidden}
 
 /* Gallery */
 .gal-main{position:relative;overflow:hidden;border-radius:14px 14px 0 0;cursor:pointer;background:#0f2444}
-.gal-main img{width:100%;height:420px;object-fit:cover;transition:transform .5s}
+.gal-main img{width:100%;height:420px;object-fit:cover;object-position:center center;transition:transform .5s}
 .gal-main:hover img{transform:scale(1.03)}
 .gal-thumb{height:90px;overflow:hidden;cursor:pointer;position:relative;background:#0f2444}
 .gal-thumb img{width:100%;height:100%;object-fit:cover;transition:transform .4s,opacity .3s}
@@ -463,40 +463,131 @@ body{background:#fff;color:var(--text);overflow-x:hidden}
     <h2 class="text-base font-black" style="color:var(--navy)">{{ $tr('عقارات مشابهة','Similar Listings') }}</h2>
     <div class="h-px flex-1" style="background:var(--border)"></div>
   </div>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+  <div class="sim-grid">
     @foreach($similar as $sim)
     @php
-      $simImg = $sim->images->first();
-      $simPrice = $sim->units->whereNotNull('sale_price')->min('sale_price') ?? $sim->units->whereNotNull('rent_price')->min('rent_price');
-      $simName = $isAr ? ($sim->name_ar ?: $sim->name) : ($sim->name_en ?: $sim->name);
+      $simImg    = $sim->images->first();
+      $simPrice  = $sim->units->whereNotNull('sale_price')->min('sale_price') ?? $sim->units->whereNotNull('rent_price')->min('rent_price');
+      $simName   = $isAr ? ($sim->name_ar ?: $sim->name) : ($sim->name_en ?: $sim->name);
+      $simCity   = $isAr ? ($sim->city_ar ?: $sim->city ?? '') : ($sim->city_en ?: $sim->city ?? '');
+      $simTypeAr = match($sim->type ?? '') {
+        'apartment_building'=>'عمارة','villa'=>'فيلا','farm'=>'مزرعة','chalet'=>'شاليه',
+        'apartment'=>'شقة','office'=>'مكتب','shop'=>'محل','studio'=>'استوديو','land'=>'أرض',default=>$sim->type ?? '',
+      };
+      $simTypeEn = match($sim->type ?? '') {
+        'apartment_building'=>'Building','villa'=>'Villa','farm'=>'Farm','chalet'=>'Chalet',
+        'apartment'=>'Apartment','office'=>'Office','shop'=>'Shop','studio'=>'Studio','land'=>'Land',default=>ucfirst($sim->type ?? ''),
+      };
+      $simPurposeAr = match($sim->purpose ?? ''){'rent'=>'للإيجار','sale'=>'للبيع','both'=>'إيجار/بيع',default=>''};
+      $simPurposeEn = match($sim->purpose ?? ''){'rent'=>'For Rent','sale'=>'For Sale','both'=>'Rent/Sale',default=>''};
+      $simMaxBeds = $sim->units->max('bedrooms');
+      $simMaxBath = $sim->units->max('bathrooms');
+      $simMaxArea = $sim->units->max('area');
     @endphp
-    <a href="{{ route('properties.show', $sim) }}" class="sim-card block">
-      <div style="height:180px;overflow:hidden;position:relative">
+    <div class="sim-card">
+
+      {{-- Image --}}
+      <a href="{{ route('properties.show', $sim) }}" class="sim-img-wrap">
         @if($simImg)
-        <img src="{{ $simImg->url() }}" class="w-full h-full object-cover" alt="{{ $simName }}" loading="lazy">
+        <img src="{{ $simImg->url() }}" class="sim-img" alt="{{ $simName }}" loading="lazy">
         @else
-        <div class="w-full h-full" style="background:linear-gradient(135deg,#0f2444,#1a3a6b)"></div>
-        @endif
-        @if($simPrice)
-        <div style="position:absolute;bottom:10px;end:10px;background:rgba(255,255,255,.95);color:var(--navy);font-size:.75rem;font-weight:900;padding:4px 12px;border-radius:10px">
-          {{ number_format($simPrice) }} {{ $currency }}
+        <div class="sim-img-placeholder">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>
         </div>
         @endif
-      </div>
-      <div class="p-4">
-        <p class="text-xs font-bold mb-1" style="color:var(--gold);text-transform:uppercase">{{ $sim->typeLabel() }}</p>
-        <p class="text-sm font-bold leading-snug" style="color:var(--navy);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ $simName }}</p>
-        @if($sim->city)
-        <p class="text-xs mt-1.5 flex items-center gap-1" style="color:var(--muted)">
-          <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
-          {{ $isAr ? ($sim->city_ar ?: $sim->city) : ($sim->city_en ?: $sim->city) }}
-        </p>
+        {{-- Badges --}}
+        <div class="sim-badges">
+          <span class="sim-badge-type">{{ $isAr ? $simTypeAr : $simTypeEn }}</span>
+          @if($simPurposeAr)
+          <span class="sim-badge-purpose">{{ $isAr ? $simPurposeAr : $simPurposeEn }}</span>
+          @endif
+        </div>
+      </a>
+
+      {{-- Details --}}
+      <div class="sim-details">
+        <a href="{{ route('properties.show', $sim) }}" class="sim-name">{{ $simName }}</a>
+
+        @if($simCity)
+        <div class="sim-location">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/></svg>
+          <span>{{ $simCity }}</span>
+        </div>
         @endif
+
+        @if($simMaxBeds || $simMaxBath || $simMaxArea)
+        <div class="sim-specs">
+          @if($simMaxBeds)
+          <span class="sim-spec">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m8.25 3v6.75m0-6.75H8.25m3.75 0H15.75M3.75 7.5h16.5"/></svg>
+            {{ $simMaxBeds }} <span data-ar>غرف</span><span data-en class="hidden">bd</span>
+          </span>
+          @endif
+          @if($simMaxBath)
+          <span class="sim-spec">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+            {{ $simMaxBath }} <span data-ar>حمام</span><span data-en class="hidden">ba</span>
+          </span>
+          @endif
+          @if($simMaxArea)
+          <span class="sim-spec">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/></svg>
+            {{ number_format($simMaxArea) }} م²
+          </span>
+          @endif
+        </div>
+        @endif
+
+        <div class="sim-footer">
+          <div class="sim-price">
+            @if($simPrice)
+            <span class="sim-price-val">{{ number_format($simPrice) }}</span>
+            <span class="sim-price-cur">{{ $currency }}</span>
+            @else
+            <span class="sim-price-na">{{ $tr('السعر عند الطلب','Price on request') }}</span>
+            @endif
+          </div>
+          <a href="{{ route('properties.show', $sim) }}" class="sim-btn">
+            {{ $tr('التفاصيل','Details') }}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:11px;height:11px"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
+          </a>
+        </div>
       </div>
-    </a>
+    </div>
     @endforeach
   </div>
 </div>
+
+<style>
+.sim-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.sim-card{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .25s,transform .25s}
+.sim-card:hover{box-shadow:0 8px 32px rgba(15,36,68,.12);transform:translateY(-2px)}
+.sim-img-wrap{display:block;position:relative;aspect-ratio:1/1;overflow:hidden;flex-shrink:0;background:#f1f5f9}
+.sim-img{width:100%;height:100%;object-fit:cover;object-position:center center;transition:transform .5s}
+.sim-card:hover .sim-img{transform:scale(1.04)}
+.sim-img-placeholder{width:100%;height:100%;background:linear-gradient(135deg,#0f2444,#1a3a6b);display:flex;align-items:center;justify-content:center}
+.sim-img-placeholder svg{width:3rem;height:3rem;opacity:.2;color:#fff}
+.sim-badges{position:absolute;top:10px;inset-inline-start:10px;display:flex;gap:5px;flex-wrap:wrap}
+.sim-badge-type{font-size:.58rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;background:rgba(15,36,68,.72);backdrop-filter:blur(4px);color:#f0c060;padding:3px 8px;border-radius:5px}
+.sim-badge-purpose{font-size:.58rem;font-weight:700;background:rgba(255,255,255,.85);backdrop-filter:blur(4px);color:#0f2444;padding:3px 8px;border-radius:5px}
+.sim-details{padding:14px 16px;display:flex;flex-direction:column;flex:1}
+.sim-name{font-size:.9rem;font-weight:800;color:var(--navy);text-decoration:none;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:5px;transition:color .2s}
+.sim-name:hover{color:var(--gold)}
+.sim-location{display:flex;align-items:center;gap:4px;font-size:.7rem;color:#94a3b8;font-weight:500;margin-bottom:10px}
+.sim-location svg{width:12px;height:12px;color:var(--gold);flex-shrink:0}
+.sim-specs{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.sim-spec{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:600;color:#475569}
+.sim-spec svg{width:13px;height:13px;color:var(--gold)}
+.sim-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:10px;border-top:1px solid #f1f5f9}
+.sim-price{display:flex;align-items:baseline;gap:3px}
+.sim-price-val{font-size:1.05rem;font-weight:900;color:var(--navy);letter-spacing:-.02em}
+.sim-price-cur{font-size:.65rem;font-weight:700;color:#a0856a}
+.sim-price-na{font-size:.72rem;color:#94a3b8;font-style:italic}
+.sim-btn{display:inline-flex;align-items:center;gap:4px;padding:6px 12px;background:var(--navy);border-radius:8px;font-size:.68rem;font-weight:700;color:#fff;text-decoration:none;transition:background .2s;white-space:nowrap}
+.sim-btn:hover{background:#162f5c}
+@media(max-width:1024px){.sim-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.sim-grid{grid-template-columns:1fr;gap:14px}}
+</style>
 @endif
 
 {{-- LIGHTBOX --}}

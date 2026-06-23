@@ -11,6 +11,7 @@ use App\Models\PropertyImage;
 use App\Models\User;
 use App\Traits\StoresUploadedFiles;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Mpdf\Mpdf;
 
 class PropertyController extends Controller
@@ -109,7 +110,7 @@ class PropertyController extends Controller
                 ]);
                 $saved++;
             } catch (\Throwable $e) {
-                \Log::error('PropertyImage create failed: ' . $e->getMessage(), ['path' => $path, 'property_id' => $property->id]);
+                Log::error('PropertyImage create failed: ' . $e->getMessage(), ['path' => $path, 'property_id' => $property->id]);
                 $errors[] = $file->getClientOriginalName() . ': ' . $e->getMessage();
             }
         }

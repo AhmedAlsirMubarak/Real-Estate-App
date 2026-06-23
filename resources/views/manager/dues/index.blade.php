@@ -106,11 +106,12 @@
                         <td class="px-4 py-3 font-semibold text-blue-900">{{ number_format($due->amount, 2) }} {{ $currency }}</td>
                         <td class="px-4 py-3 text-xs text-gray-600">{{ $due->due_date->format('Y/m/d') }}</td>
                         <td class="px-4 py-3">
-                            <span class="text-xs px-2.5 py-0.5 rounded-full font-medium
-                                @if($due->status === 'paid')    bg-green-50 text-green-700
-                                @elseif($due->status === 'overdue') bg-red-50 text-red-700
-                                @elseif($due->status === 'waived')  bg-gray-100 text-gray-600
-                                @else bg-yellow-50 text-yellow-700 @endif">
+                            <span @class(['text-xs px-2.5 py-0.5 rounded-full font-medium',
+                                'bg-green-50 text-green-700'   => $due->status === 'paid',
+                                'bg-red-50 text-red-700'       => $due->status === 'overdue',
+                                'bg-gray-100 text-gray-600'    => $due->status === 'waived',
+                                'bg-yellow-50 text-yellow-700' => !in_array($due->status, ['paid','overdue','waived']),
+                            ])>
                                 {{ $due->statusLabel() }}
                             </span>
                         </td>

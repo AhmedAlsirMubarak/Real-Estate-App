@@ -116,10 +116,11 @@
                             <span class="inline-flex px-2 py-0.5 rounded-full text-xs bg-indigo-50 text-indigo-700">{{ $property->typeLabel() }}</span>
                         </td>
                         <td class="px-4 py-3">
-                            <span class="inline-flex px-2 py-0.5 rounded-full text-xs
-                                @if($property->purpose === 'rent') bg-blue-50 text-blue-700
-                                @elseif($property->purpose === 'sale') bg-green-50 text-green-700
-                                @else bg-purple-50 text-purple-700 @endif">
+                            <span @class(['inline-flex px-2 py-0.5 rounded-full text-xs',
+                                'bg-blue-50 text-blue-700'     => $property->purpose === 'rent',
+                                'bg-green-50 text-green-700'   => $property->purpose === 'sale',
+                                'bg-purple-50 text-purple-700' => !in_array($property->purpose, ['rent','sale']),
+                            ])>
                                 {{ $property->purposeLabel() }}
                             </span>
                         </td>

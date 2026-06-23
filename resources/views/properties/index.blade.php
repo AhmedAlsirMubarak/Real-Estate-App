@@ -78,18 +78,6 @@
         .filter-input:focus { outline: none; border-color: var(--navy-mid);
             box-shadow: 0 0 0 3px rgba(26,58,107,.1); }
 
-        .prop-card {
-            background: #fff;
-            border: 1px solid var(--border);
-            transition: box-shadow .3s, border-color .3s;
-        }
-        .prop-card:hover {
-            box-shadow: 0 8px 32px rgba(15,36,68,.12);
-            border-color: rgba(201,168,76,.4);
-        }
-        .prop-card img { transition: transform .5s ease; }
-        .prop-card:hover img { transform: scale(1.05); }
-
         .badge-rent   { background: #dbeafe; color: #1e40af; }
         .badge-sale   { background: #fef9c3; color: #92400e; }
         .badge-both   { background: #ede9fe; color: #5b21b6; }
@@ -108,14 +96,57 @@
 
         #filter-sidebar { transition: transform .3s ease; }
 
-        /* Property card responsive layout */
-        .prop-card-gallery { width: 100%; height: 11rem; flex-shrink: 0; }
-        .prop-card-side-imgs { display: none; }
-        @media (min-width: 640px) {
-            .prop-card { height: 195px; }
-            .prop-card-gallery { width: 52%; height: 100%; }
-            .prop-card-side-imgs { display: flex; }
-        }
+        /* Property index grid */
+        .idx-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+        .idx-card { background:#fff; border:1px solid var(--border); border-radius:16px; overflow:hidden;
+                    display:flex; flex-direction:column; transition:box-shadow .3s,border-color .3s; }
+        .idx-card:hover { box-shadow:0 8px 32px rgba(15,36,68,.12); border-color:rgba(201,168,76,.4); }
+        .idx-img-wrap { display:block; position:relative; aspect-ratio:3/4; overflow:hidden; flex-shrink:0; }
+        .idx-img { width:100%; height:100%; object-fit:cover; object-position:center center; transition:transform .5s; }
+        .idx-card:hover .idx-img { transform:scale(1.04); }
+        .idx-img-ph { width:100%; height:100%; background:linear-gradient(135deg,#0f2444,#1a3a6b);
+                      display:flex; align-items:center; justify-content:center; }
+        .idx-img-ph svg { width:3rem; height:3rem; opacity:.18; color:#fff; }
+        .idx-badges { position:absolute; top:10px; left:10px; display:flex; flex-direction:column; gap:4px; }
+        .idx-badge-type { font-size:.6rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+                          background:rgba(15,36,68,.75); color:#fff; padding:3px 8px; border-radius:999px; }
+        .idx-badge-purpose { font-size:.6rem; font-weight:700; padding:3px 8px; border-radius:999px;
+                             background:var(--gold); color:var(--navy); }
+        .idx-photo-count { position:absolute; bottom:10px; right:10px; display:flex; align-items:center; gap:4px;
+                           background:rgba(0,0,0,.5); color:#fff; font-size:.65rem; font-weight:700;
+                           padding:3px 8px; border-radius:999px; }
+        .idx-details { display:flex; flex-direction:column; padding:14px; flex:1; gap:6px; }
+        .idx-name { font-size:.9rem; font-weight:700; color:var(--navy); text-decoration:none; line-height:1.3;
+                    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+                    transition:color .2s; }
+        .idx-name:hover { color:var(--gold); }
+        .idx-location { display:flex; align-items:center; gap:4px; font-size:.75rem; color:var(--text-muted); }
+        .idx-location svg { width:13px; height:13px; flex-shrink:0; color:var(--gold); }
+        .idx-specs { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+        .idx-spec { display:flex; align-items:center; gap:4px; font-size:.75rem; color:var(--text-muted); }
+        .idx-spec svg { width:13px; height:13px; color:var(--gold); }
+        .idx-footer { display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:8px;
+                      border-top:1px solid var(--border); }
+        .idx-price { display:flex; align-items:baseline; gap:3px; }
+        .idx-price-val { font-size:1rem; font-weight:800; color:var(--text-dark); }
+        .idx-price-cur { font-size:.7rem; font-weight:600; color:var(--text-muted); }
+        .idx-price-na { font-size:.72rem; color:var(--text-muted); font-style:italic; }
+        .idx-btn-outline { display:flex; align-items:center; justify-content:center; width:30px; height:30px;
+                           border:1.5px solid var(--border); border-radius:8px; color:var(--text-muted);
+                           transition:all .2s; text-decoration:none; }
+        .idx-btn-outline svg { width:14px; height:14px; }
+        .idx-btn-outline:hover { border-color:var(--navy); color:var(--navy); }
+        .idx-btn-wa { display:flex; align-items:center; justify-content:center; width:30px; height:30px;
+                      border:1.5px solid #25d366; border-radius:8px; color:#25d366;
+                      transition:all .2s; text-decoration:none; }
+        .idx-btn-wa svg { width:14px; height:14px; }
+        .idx-btn-wa:hover { background:#25d366; color:#fff; }
+        .idx-btn-primary { display:flex; align-items:center; gap:4px; padding:6px 11px;
+                           background:var(--navy); border-radius:8px; font-size:.72rem; font-weight:700;
+                           color:#fff; text-decoration:none; transition:background .2s; white-space:nowrap; }
+        .idx-btn-primary:hover { background:#1a3a6b; }
+        @media(max-width:1024px){ .idx-grid{ grid-template-columns:repeat(2,1fr); } }
+        @media(max-width:600px){ .idx-grid{ grid-template-columns:1fr; gap:14px; } }
     </style>
 </head>
 <body>
@@ -414,156 +445,106 @@
                 <a href="{{ route('properties.index') }}" class="btn-navy px-6 py-2.5 rounded-xl text-sm inline-block">{{ $tr('مسح الفلاتر', 'Clear filters') }}</a>
             </div>
             @else
-            {{-- Horizontal property list --}}
-            <div class="space-y-4">
+            {{-- 3-column property grid --}}
+            <div class="idx-grid">
                 @foreach($propertiesPaginator as $property)
                 @php
-                    $cardImages = $property->images;
-                    $img1 = $cardImages->get(0);
-                    $img2 = $cardImages->get(1);
-                    $img3 = $cardImages->get(2);
+                    $img1    = $property->images->first();
                     $minRent = $property->units->whereNotNull('rent_price')->min('rent_price');
                     $minSale = $property->units->whereNotNull('sale_price')->min('sale_price');
                     $price   = $minSale ?? $minRent;
                     $maxBeds = $property->units->max('bedrooms');
                     $maxBath = $property->units->max('bathrooms');
                     $maxArea = $property->units->max('area') ?? $property->total_area;
+                    $pName   = $isAr ? ($property->name_ar ?: $property->name) : ($property->name_en ?: $property->name);
+                    $pCity   = $isAr ? ($property->city_ar ?: $property->city ?? '') : ($property->city_en ?: $property->city ?? '');
                 @endphp
-                <div class="prop-card bg-white rounded-2xl border overflow-hidden flex flex-col sm:flex-row" style="border-color:var(--border);">
+                <div class="idx-card">
 
-
-                    {{-- ── Gallery ── --}}
-                    <div class="prop-card-gallery relative flex overflow-hidden">
-                        {{-- Main large image --}}
-                        <div class="relative overflow-hidden" style="{{ ($img2 || $img3) ? 'flex:3' : 'flex:1' }}">
-                            @if($img1)
-                            <img src="{{ $img1->url() }}" loading="lazy" alt="{{ $property->name }}"
-                                 style="width:100%;height:100%;object-fit:cover;transition:transform .5s">
-                            @else
-                            <div style="width:100%;height:100%;background:linear-gradient(135deg,#0f2444,#1a3a6b);display:flex;align-items:center;justify-content:center">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" style="width:3rem;height:3rem;opacity:.18;color:#fff"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>
-                            </div>
+                    {{-- Image --}}
+                    <a href="{{ route('properties.show', $property) }}" class="idx-img-wrap">
+                        @if($img1)
+                        <img src="{{ $img1->url() }}" loading="lazy" alt="{{ $pName }}" class="idx-img">
+                        @else
+                        <div class="idx-img-ph">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg>
+                        </div>
+                        @endif
+                        <div class="idx-badges">
+                            <span class="idx-badge-type">{{ $property->typeLabel() }}</span>
+                            @if($property->purpose)
+                            <span class="idx-badge-purpose">{{ $property->purposeLabel() }}</span>
                             @endif
                         </div>
+                        @if($property->images->count() > 1)
+                        <span class="idx-photo-count">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:11px;height:11px"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0z"/></svg>
+                            {{ $property->images->count() }}
+                        </span>
+                        @endif
+                    </a>
 
-                        {{-- Side: 2 stacked images --}}
-                        @if($img2 || $img3)
-                        <div class="prop-card-side-imgs flex-col gap-0.5 flex-shrink-0" style="flex:2;margin-{{ $isAr ? 'right' : 'left' }}:2px">
-                            <div class="overflow-hidden" style="flex:1;min-height:0">
-                                @if($img2)
-                                <img src="{{ $img2->url() }}" loading="lazy" alt="{{ $property->name . ' - 2' }}"
-                                     style="width:100%;height:100%;object-fit:cover">
-                                @else
-                                <div style="width:100%;height:100%;background:#dde3ec"></div>
-                                @endif
-                            </div>
-                            <div class="overflow-hidden" style="flex:1;min-height:0">
-                                @if($img3)
-                                <img src="{{ $img3->url() }}" loading="lazy" alt="{{ $property->name . ' - 3' }}"
-                                     style="width:100%;height:100%;object-fit:cover">
-                                @else
-                                <div style="width:100%;height:100%;background:#dde3ec"></div>
-                                @endif
-                            </div>
+                    {{-- Details --}}
+                    <div class="idx-details">
+                        <a href="{{ route('properties.show', $property) }}" class="idx-name">{{ $pName }}</a>
+
+                        @if($pCity)
+                        <div class="idx-location">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0z"/></svg>
+                            <span>{{ $pCity }}</span>
                         </div>
                         @endif
 
-                        {{-- Bottom-left icons --}}
-                        <div class="absolute bottom-2.5 {{ $isAr ? 'right-2.5' : 'left-2.5' }} flex items-center gap-1.5 z-10">
-                            <a href="{{ route('properties.show', $property) }}"
-                               onclick="event.stopPropagation()"
-                               style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;transition:background .2s"
-                               onmouseover="this.style.background='#fff'" onmouseout="this.style.background='rgba(255,255,255,.88)'">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;color:#0f2444"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/></svg>
-                            </a>
-                            @if($cardImages->count() > 1)
-                            <span style="background:rgba(0,0,0,.5);color:#fff;font-size:.65rem;font-weight:700;padding:3px 8px;border-radius:999px">
-                                {{ $cardImages->count() }} {{ $tr('صور', 'photos') }}
-                            </span>
-                            @endif
-                        </div>
-
-                        {{-- Purpose badge top-left --}}
-                        <div class="absolute top-2.5 {{ $isAr ? 'right-2.5' : 'left-2.5' }} z-10">
-                            <span class="text-xs font-bold px-2 py-0.5 rounded-full
-                                {{ $property->purpose === 'rent' ? 'badge-rent' : ($property->purpose === 'sale' ? 'badge-sale' : 'badge-both') }}">
-                                {{ $property->purposeLabel() }}
-                            </span>
-                        </div>
-                    </div>
-
-                    {{-- ── Details ── --}}
-                    <div class="flex-1 flex flex-col px-4 py-3 min-w-0">
-                        {{-- Title --}}
-                        <h3 class="font-bold text-base leading-snug mb-1 truncate" style="color:var(--navy)">
-                            {{ $isAr ? ($property->name_ar ?: $property->name) : ($property->name_en ?: $property->name) }}
-                        </h3>
-
-                        {{-- Price --}}
-                        @if($price)
-                        <p class="font-black mb-1.5" style="font-size:1.05rem;color:var(--text-dark)">
-                            {{ number_format($price) }}
-                            <span style="font-size:.78rem;font-weight:600;color:var(--text-muted)">{{ $currency }}</span>
-                        </p>
-                        @endif
-
-                        {{-- Specs row --}}
-                        <div class="flex items-center gap-4 mb-2" style="font-size:.82rem;color:var(--text-muted)">
+                        @if($maxBeds || $maxBath || $maxArea)
+                        <div class="idx-specs">
                             @if($maxBeds)
-                            <span class="flex items-center gap-1">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:15px;height:15px;color:var(--gold)"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m8.25 3v6.75m0-6.75H8.25m3.75 0H15.75M3.75 7.5h16.5"/></svg>
-                                {{ $maxBeds }}
+                            <span class="idx-spec">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m8.25 3v6.75m0-6.75H8.25m3.75 0H15.75M3.75 7.5h16.5"/></svg>
+                                {{ $maxBeds }} {{ $tr('غرف','bd') }}
                             </span>
                             @endif
                             @if($maxBath)
-                            <span class="flex items-center gap-1">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:15px;height:15px;color:var(--gold)"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
-                                {{ $maxBath }}
+                            <span class="idx-spec">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                                {{ $maxBath }} {{ $tr('حمام','ba') }}
                             </span>
                             @endif
                             @if($maxArea)
-                            <span class="flex items-center gap-1">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:15px;height:15px;color:var(--gold)"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/></svg>
+                            <span class="idx-spec">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15"/></svg>
                                 {{ number_format($maxArea) }} م²
                             </span>
                             @endif
                         </div>
+                        @endif
 
-                        {{-- Type label --}}
-                        <p style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted)">
-                            {{ $property->typeLabel() }}
-                        </p>
-
-                        {{-- Action buttons — pushed to bottom --}}
-                        <div class="flex items-center flex-wrap gap-2 mt-auto sm:justify-end">
-                            <a href="{{ route('properties.show', $property) }}"
-                               style="display:flex;align-items:center;gap:5px;padding:7px 13px;background:var(--navy);border:1.5px solid var(--navy);border-radius:8px;font-size:.75rem;font-weight:700;color:#fff;text-decoration:none;transition:all .2s"
-                               onmouseover="this.style.background='#1a3a6b';this.style.borderColor='#1a3a6b'"
-                               onmouseout="this.style.background='var(--navy)';this.style.borderColor='var(--navy)'">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/></svg>
-                                {{ $tr('تفاصيل', 'Details') }}
-                            </a>
-                            @if($contactPhone)
-                            <a href="tel:{{ $waPhone }}"
-                               style="display:flex;align-items:center;gap:5px;padding:7px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.75rem;font-weight:700;color:var(--text-dark);text-decoration:none;transition:all .2s"
-                               onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--navy)'"
-                               onmouseout="this.style.borderColor='#e2e8f0';this.style.color='var(--text-dark)'">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25z"/></svg>
-                                {{ $tr('اتصال', 'Call') }}
-                            </a>
-                            @endif
-                            @if($waPhone)
-                            <a href="https://api.whatsapp.com/send?phone={{ $waPhone }}" target="_blank"
-                               style="display:flex;align-items:center;gap:5px;padding:7px 13px;border:1.5px solid #25d366;border-radius:8px;font-size:.75rem;font-weight:700;color:#25d366;text-decoration:none;transition:all .2s"
-                               onmouseover="this.style.background='#25d366';this.style.color='#fff'"
-                               onmouseout="this.style.background='';this.style.color='#25d366'">
-                                <svg viewBox="0 0 24 24" fill="currentColor" style="width:13px;height:13px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-                                WhatsApp
-                            </a>
-                            @endif
+                        <div class="idx-footer">
+                            <div class="idx-price">
+                                @if($price)
+                                <span class="idx-price-val">{{ number_format($price) }}</span>
+                                <span class="idx-price-cur">{{ $currency }}</span>
+                                @else
+                                <span class="idx-price-na">{{ $tr('السعر عند الطلب','Price on request') }}</span>
+                                @endif
+                            </div>
+                            <div style="display:flex;gap:5px;align-items:center">
+                                @if($contactPhone)
+                                <a href="tel:{{ $waPhone }}" class="idx-btn-outline" title="{{ $tr('اتصال','Call') }}">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25z"/></svg>
+                                </a>
+                                @endif
+                                @if($waPhone)
+                                <a href="https://api.whatsapp.com/send?phone={{ $waPhone }}" target="_blank" class="idx-btn-wa" title="WhatsApp">
+                                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                                </a>
+                                @endif
+                                <a href="{{ route('properties.show', $property) }}" class="idx-btn-primary">
+                                    {{ $tr('التفاصيل','Details') }}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:11px;height:11px"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
+                                </a>
+                            </div>
                         </div>
                     </div>
-
                 </div>
                 @endforeach
             </div>

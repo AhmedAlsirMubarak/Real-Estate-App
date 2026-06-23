@@ -29,7 +29,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('اسم العقار (عربي)', 'Property Name (Arabic)') }} <span class="text-red-500">*</span></label>
                 <input type="text" name="name_ar" value="{{ old('name_ar', $property->name_ar) }}" required
-                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-300 outline-none @error('name_ar') border-red-400 @enderror">
+                       @class(['w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-300 outline-none', 'border-red-400' => $errors->has('name_ar'), 'border-gray-200' => !$errors->has('name_ar')])
                 @error('name_ar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 
@@ -74,7 +74,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('العنوان (عربي)', 'Address (Arabic)') }} <span class="text-red-500">*</span></label>
                 <input type="text" name="address_ar" value="{{ old('address_ar', $property->address_ar) }}" required
-                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-300 outline-none @error('address_ar') border-red-400 @enderror">
+                       @class(['w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-300 outline-none', 'border-red-400' => $errors->has('address_ar'), 'border-gray-200' => !$errors->has('address_ar')])
                 @error('address_ar')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 
