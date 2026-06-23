@@ -141,9 +141,10 @@
                             {{ $tr('الحقول المطلوبة *', 'Required Fields *') }}
                         </p>
                         <ul class="space-y-0.5 text-xs text-red-600">
-                            <li class="font-mono">property_code</li>
                             <li class="font-mono">name_ar</li>
+                            <li class="font-mono">name_en</li>
                             <li class="font-mono">monthly_fee_per_unit</li>
+                            <li class="font-mono">established_date</li>
                         </ul>
                     </div>
                     <div class="bg-gray-50 border border-gray-100 rounded-lg p-3">
@@ -151,21 +152,20 @@
                             {{ $tr('الحقول الاختيارية', 'Optional Fields') }}
                         </p>
                         <ul class="space-y-0.5 text-xs text-gray-500 columns-2">
-                            <li class="font-mono">name_en</li>
-                            <li class="font-mono">established_date</li>
+                            <li class="font-mono">property_code</li>
                             <li class="font-mono">status</li>
-                            <li class="font-mono">electricity_account_number</li>
-                            <li class="font-mono">water_account_number</li>
                             <li class="font-mono">description_ar</li>
                             <li class="font-mono">description_en</li>
+                            <li class="font-mono">electricity_account_number</li>
+                            <li class="font-mono">water_account_number</li>
                         </ul>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                     <div class="bg-indigo-50 rounded-lg p-2.5 text-xs">
-                        <p class="font-bold text-indigo-700 mb-1">property_code</p>
-                        <p class="text-indigo-600 leading-relaxed">{{ $tr('يجب أن يطابق رمز عقار موجود لا يملك جمعية بالفعل', 'Must match an existing property\'s code that doesn\'t already have an association') }}</p>
+                        <p class="font-bold text-indigo-700 mb-1">property_code <span class="font-normal">(optional)</span></p>
+                        <p class="text-indigo-600 leading-relaxed">{{ $tr('رمز العقار لربط الجمعية به. يمكن ربط أكثر من جمعية بنفس العقار.', 'Property code to link the association. A property may have multiple associations.') }}</p>
                     </div>
                     <div class="bg-amber-50 rounded-lg p-2.5 text-xs">
                         <p class="font-bold text-amber-700 mb-1">status <span class="font-normal">(optional)</span></p>
@@ -173,8 +173,9 @@
                         <p class="text-amber-500 mt-1">{{ $tr('يُعيَّن "active" إذا تُرك فارغاً', 'Defaults to "active" if blank') }}</p>
                     </div>
                     <div class="bg-purple-50 rounded-lg p-2.5 text-xs">
-                        <p class="font-bold text-purple-700 mb-1">established_date <span class="font-normal">(optional)</span></p>
+                        <p class="font-bold text-purple-700 mb-1">established_date <span class="font-normal text-red-600">*</span></p>
                         <p class="font-mono text-purple-600 leading-relaxed">YYYY-MM-DD</p>
+                        <p class="text-purple-500 mt-1">{{ $tr('مثال: 2024-01-15', 'e.g. 2024-01-15') }}</p>
                     </div>
                 </div>
             </div>

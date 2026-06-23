@@ -33,6 +33,7 @@ class SitemapController extends Controller
         ];
 
         Property::where('status', 'active')
+            ->where('is_hidden_from_public', false)
             ->select('id', 'updated_at')
             ->orderByDesc('updated_at')
             ->get()

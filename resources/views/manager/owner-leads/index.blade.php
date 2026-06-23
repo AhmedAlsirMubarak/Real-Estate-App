@@ -1,46 +1,43 @@
-﻿<x-app-layout>
+<x-app-layout>
 @php
     $isAr = app()->getLocale() === 'ar';
     $tr = fn (string $ar, string $en) => $isAr ? $ar : $en;
     $locale = $isAr ? 'ar' : 'en';
 @endphp
-<x-slot name="title">{{ $tr('العملاء والطلبات', 'Customers') }}</x-slot>
+<x-slot name="title">{{ $tr('الملاك', 'Owners') }}</x-slot>
 
 {{-- Bulk delete form (hidden, submitted by JS) --}}
-<form id="bulk-form" method="POST" action="{{ route('manager.customers.bulk-destroy') }}">
+<form id="bulk-form" method="POST" action="{{ route('manager.owner-leads.bulk-destroy') }}">
     @csrf @method('DELETE')
     <input type="hidden" name="ids" id="bulk-ids">
 </form>
 
 <div class="py-4">
-    {{-- Header --}}
     <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
         <div>
-            <h2 class="text-xl font-bold text-gray-800">{{ $tr('العملاء والطلبات', 'Customers & Requirements') }}</h2>
-            <p class="text-xs text-gray-500 mt-0.5">{{ $tr('سجل متطلبات العملاء الباحثين عن عقارات', 'Track property seekers and their requirements') }}</p>
+            <h2 class="text-xl font-bold text-gray-800">{{ $tr('الملاك', 'Owners') }}</h2>
+            <p class="text-xs text-gray-500 mt-0.5">{{ $tr('سجل بيانات الملاك الباحثين عن عقارات', 'Track property owners and their requirements') }}</p>
         </div>
         <div class="flex gap-2 flex-wrap items-center">
-            {{-- Bulk delete button (visible only when rows selected) --}}
             <button id="bulk-delete-btn" type="button" onclick="submitBulkDelete()"
                 class="hidden items-center gap-1.5 border border-red-300 text-red-700 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-lg text-sm font-medium">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 <span id="bulk-delete-label">{{ $tr('حذف المحدد', 'Delete selected') }}</span>
             </button>
-            <a href="{{ route('manager.customers.import.form') }}"
+            <a href="{{ route('manager.owner-leads.import.form') }}"
                class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                 {{ $tr('استيراد CSV', 'Import CSV') }}
             </a>
-            <a href="{{ route('manager.customers.export', request()->only('search', 'status', 'purpose', 'type')) }}"
+            <a href="{{ route('manager.owner-leads.export', request()->only('search', 'status', 'purpose')) }}"
                class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                {{ $tr('تصدير Excel', 'Export Excel') }}
+                {{ $tr('تصدير CSV', 'Export CSV') }}
             </a>
-
-            <a href="{{ route('manager.customers.create') }}"
+            <a href="{{ route('manager.owner-leads.create') }}"
                class="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                {{ $tr('إضافة عميل', 'Add Customer') }}
+                {{ $tr('إضافة مالك', 'Add Owner') }}
             </a>
         </div>
     </div>
@@ -49,8 +46,7 @@
     <div class="mb-4 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">{{ session('success') }}</div>
     @endif
 
-    {{-- Search & Filters --}}
-    <form method="GET" action="{{ route('manager.customers.index') }}"
+    <form method="GET" action="{{ route('manager.owner-leads.index') }}"
           class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-5 flex flex-wrap gap-3 items-end">
         <div class="flex-1 min-w-48">
             <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('بحث', 'Search') }}</label>
@@ -62,7 +58,7 @@
             <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('الحالة', 'Status') }}</label>
             <select name="status" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
                 <option value="">{{ $tr('الكل', 'All') }}</option>
-                @foreach(\App\Models\Customer::$statuses as $val => $labels)
+                @foreach(\App\Models\OwnerLead::$statuses as $val => $labels)
                 <option value="{{ $val }}" @selected($status === $val)>{{ $labels[$locale] }}</option>
                 @endforeach
             </select>
@@ -71,7 +67,7 @@
             <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('الغرض', 'Purpose') }}</label>
             <select name="purpose" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
                 <option value="">{{ $tr('الكل', 'All') }}</option>
-                @foreach(\App\Models\Customer::$purposes as $val => $labels)
+                @foreach(\App\Models\OwnerLead::$purposes as $val => $labels)
                 <option value="{{ $val }}" @selected($purpose === $val)>{{ $labels[$locale] }}</option>
                 @endforeach
             </select>
@@ -80,7 +76,7 @@
             <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('نوع العقار', 'Property Type') }}</label>
             <select name="type" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
                 <option value="">{{ $tr('الكل', 'All') }}</option>
-                @foreach(\App\Models\Customer::$propertyTypes as $val => $labels)
+                @foreach(\App\Models\OwnerLead::$propertyTypes as $val => $labels)
                 <option value="{{ $val }}" @selected($type === $val)>{{ $labels[$locale] }}</option>
                 @endforeach
             </select>
@@ -90,20 +86,19 @@
                 {{ $tr('بحث', 'Search') }}
             </button>
             @if($search || $status || $purpose || $type)
-            <a href="{{ route('manager.customers.index') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm transition">
+            <a href="{{ route('manager.owner-leads.index') }}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm transition">
                 {{ $tr('مسح', 'Clear') }}
             </a>
             @endif
         </div>
     </form>
 
-    {{-- Table --}}
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        @if($customers->isEmpty())
+        @if($ownerLeads->isEmpty())
         <div class="py-16 text-center">
-            <svg class="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            <p class="text-gray-400 text-sm">{{ $tr('لا يوجد عملاء بعد', 'No customers yet') }}</p>
-            <a href="{{ route('manager.customers.create') }}" class="inline-block mt-3 text-blue-600 hover:underline text-sm">{{ $tr('إضافة أول عميل', 'Add first customer') }}</a>
+            <svg class="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            <p class="text-gray-400 text-sm">{{ $tr('لا يوجد ملاك بعد', 'No owners yet') }}</p>
+            <a href="{{ route('manager.owner-leads.create') }}" class="inline-block mt-3 text-blue-600 hover:underline text-sm">{{ $tr('إضافة أول مالك', 'Add first owner') }}</a>
         </div>
         @else
         <div class="overflow-x-auto">
@@ -113,8 +108,8 @@
                         <th class="px-4 py-3 w-8">
                             <input type="checkbox" id="select-all" class="rounded border-gray-300 cursor-pointer" title="{{ $tr('تحديد الكل', 'Select all') }}">
                         </th>
-                        <th class="px-4 py-3 text-start font-semibold">{{ $tr('العميل', 'Customer') }}</th>
-                        <th class="px-4 py-3 text-start font-semibold">{{ $tr('الموقع المطلوب', 'Desired Location') }}</th>
+                        <th class="px-4 py-3 text-start font-semibold">{{ $tr('المالك', 'Owner') }}</th>
+                        <th class="px-4 py-3 text-start font-semibold">{{ $tr('الموقع', 'Location') }}</th>
                         <th class="px-4 py-3 text-start font-semibold">{{ $tr('المتطلبات', 'Requirements') }}</th>
                         <th class="px-4 py-3 text-start font-semibold">{{ $tr('الميزانية', 'Budget') }}</th>
                         <th class="px-4 py-3 text-start font-semibold">{{ $tr('الحالة', 'Status') }}</th>
@@ -122,80 +117,73 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50">
-                    @foreach($customers as $customer)
+                    @foreach($ownerLeads as $ownerLead)
                     <tr class="hover:bg-gray-50 transition">
                         <td class="px-4 py-3 w-8">
-                            <input type="checkbox" class="row-check rounded border-gray-300 cursor-pointer" value="{{ $customer->id }}">
+                            <input type="checkbox" class="row-check rounded border-gray-300 cursor-pointer" value="{{ $ownerLead->id }}">
                         </td>
-                        {{-- Customer info --}}
                         <td class="px-4 py-3">
-                            <div class="font-semibold text-gray-800">{{ $customer->name }}</div>
-                            @if($customer->mobile)
+                            <div class="font-semibold text-gray-800">{{ $ownerLead->name }}</div>
+                            @if($ownerLead->mobile)
                             <div class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                                {{ $customer->mobile }}
+                                {{ $ownerLead->mobile }}
                             </div>
                             @endif
-                            @if($customer->email)
-                            <div class="text-xs text-gray-400 mt-0.5">{{ $customer->email }}</div>
+                            @if($ownerLead->email)
+                            <div class="text-xs text-gray-400 mt-0.5">{{ $ownerLead->email }}</div>
                             @endif
                         </td>
-                        {{-- Location --}}
                         <td class="px-4 py-3">
-                            @if($customer->location)
+                            @if($ownerLead->location)
                             <div class="flex items-center gap-1 text-gray-700">
                                 <svg class="w-3.5 h-3.5 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                {{ $customer->locationLabel($locale) }}
+                                {{ $ownerLead->locationLabel($locale) }}
                             </div>
                             @else
                             <span class="text-gray-300">—</span>
                             @endif
                         </td>
-                        {{-- Requirements --}}
                         <td class="px-4 py-3">
                             <div class="flex flex-wrap gap-1">
                                 <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">
-                                    {{ $customer->typeLabel($locale) }}
+                                    {{ $ownerLead->typeLabel($locale) }}
                                 </span>
                                 <span class="inline-block bg-purple-50 text-purple-700 text-xs px-2 py-0.5 rounded-full font-medium">
-                                    {{ $customer->purposeLabel($locale) }}
+                                    {{ $ownerLead->purposeLabel($locale) }}
                                 </span>
-                                @if($customer->bedrooms)
+                                @if($ownerLead->bedrooms)
                                 <span class="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full">
-                                    {{ $customer->bedrooms }} {{ $tr('غرف', 'bed') }}
+                                    {{ $ownerLead->bedrooms }} {{ $tr('غرف', 'bed') }}
                                 </span>
                                 @endif
                             </div>
                         </td>
-                        {{-- Budget --}}
                         <td class="px-4 py-3 text-gray-700 text-xs">
-                            @if($customer->min_budget || $customer->max_budget)
+                            @if($ownerLead->min_budget || $ownerLead->max_budget)
                             <div>
-                                @if($customer->min_budget){{ number_format($customer->min_budget) }}@endif
-                                @if($customer->min_budget && $customer->max_budget) — @endif
-                                @if($customer->max_budget){{ number_format($customer->max_budget) }}@endif
+                                @if($ownerLead->min_budget){{ number_format($ownerLead->min_budget) }}@endif
+                                @if($ownerLead->min_budget && $ownerLead->max_budget) — @endif
+                                @if($ownerLead->max_budget){{ number_format($ownerLead->max_budget) }}@endif
                                 <span class="text-gray-400"> {{ $tr('ريال', 'OMR') }}</span>
                             </div>
                             @else
                             <span class="text-gray-300">—</span>
                             @endif
                         </td>
-                        {{-- Status --}}
                         <td class="px-4 py-3">
-                            <span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full {{ $customer->statusColor() }}">
-                                {{ $customer->statusLabel($locale) }}
+                            <span class="inline-block text-xs font-semibold px-2.5 py-1 rounded-full {{ $ownerLead->statusColor() }}">
+                                {{ $ownerLead->statusLabel($locale) }}
                             </span>
                         </td>
-                        {{-- Actions --}}
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-2">
-                                {{-- WhatsApp --}}
                                 @php
                                     $waMsg = $tr(
-                                        'مرحباً ' . $customer->name . '، لدينا عروض عقارية قد تناسب متطلباتك.',
-                                        'Hello ' . $customer->name . ', we have property offers that may match your requirements.'
+                                        'مرحباً ' . $ownerLead->name . '، لدينا عروض عقارية قد تناسب متطلباتك.',
+                                        'Hello ' . $ownerLead->name . ', we have property offers that may match your requirements.'
                                     );
-                                    $waUrl = $customer->whatsappUrl($waMsg);
+                                    $waUrl = $ownerLead->whatsappUrl($waMsg);
                                 @endphp
                                 @if($waUrl)
                                 <a href="{{ $waUrl }}" target="_blank" rel="noopener"
@@ -205,32 +193,29 @@
                                     {{ $tr('واتساب', 'WhatsApp') }}
                                 </a>
                                 @endif
-                                <a href="{{ route('manager.customers.show', $customer) }}"
+                                <a href="{{ route('manager.owner-leads.show', $ownerLead) }}"
                                    class="inline-flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium px-2.5 py-1.5 rounded-lg transition">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                     {{ $tr('عرض', 'Show') }}
                                 </a>
-                                <a href="{{ route('manager.customers.edit', $customer) }}"
+                                <a href="{{ route('manager.owner-leads.edit', $ownerLead) }}"
                                    class="inline-flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium px-2.5 py-1.5 rounded-lg transition">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     {{ $tr('تعديل', 'Edit') }}
                                 </a>
-                                <form method="POST" action="{{ route('manager.customers.destroy', $customer) }}"
-                                      onsubmit="return confirm('{{ $tr('حذف هذا العميل؟', 'Delete this customer?') }}')">
+                                <form method="POST" action="{{ route('manager.owner-leads.destroy', $ownerLead) }}"
+                                      onsubmit="return confirm('{{ $tr('حذف هذا المالك؟', 'Delete this owner?') }}')">
                                     @csrf @method('DELETE')
                                     <button type="submit"
                                             class="inline-flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-medium px-2.5 py-1.5 rounded-lg transition">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         {{ $tr('حذف', 'Delete') }}
                                     </button>
                                 </form>
                             </div>
                         </td>
                     </tr>
-                    @if($customer->notes)
+                    @if($ownerLead->notes)
                     <tr class="bg-amber-50/50">
                         <td colspan="7" class="px-4 py-2 text-xs text-gray-600 italic">
-                            <span class="font-semibold text-gray-500">{{ $tr('ملاحظات:', 'Notes:') }}</span> {{ $customer->notes }}
+                            <span class="font-semibold text-gray-500">{{ $tr('ملاحظات:', 'Notes:') }}</span> {{ $ownerLead->notes }}
                         </td>
                     </tr>
                     @endif
@@ -239,10 +224,9 @@
             </table>
         </div>
 
-        {{-- Pagination --}}
-        @if($customers->hasPages())
+        @if($ownerLeads->hasPages())
         <div class="px-4 py-3 border-t border-gray-100">
-            {{ $customers->links() }}
+            {{ $ownerLeads->links() }}
         </div>
         @endif
         @endif
@@ -255,7 +239,6 @@
     const bulkBtn   = document.getElementById('bulk-delete-btn');
     const bulkLabel = document.getElementById('bulk-delete-label');
     const bulkIds   = document.getElementById('bulk-ids');
-    const labelAr   = '{{ $tr("حذف المحدد", "Delete selected") }}';
 
     if (!selectAll) return;
 
@@ -268,7 +251,7 @@
         if (checked.length > 0) {
             bulkBtn.classList.remove('hidden');
             bulkBtn.classList.add('inline-flex');
-            bulkLabel.textContent = labelAr + ' (' + checked.length + ')';
+            bulkLabel.textContent = '{{ $tr("حذف المحدد", "Delete selected") }}' + ' (' + checked.length + ')';
         } else {
             bulkBtn.classList.add('hidden');
             bulkBtn.classList.remove('inline-flex');
@@ -291,8 +274,7 @@
         const ids = getChecked().map(cb => cb.value).join(',');
         if (!ids) return;
         const count = getChecked().length;
-        const msg = '{{ $tr("هل تريد حذف", "Delete") }} ' + count + ' {{ $tr("عميل؟ لا يمكن التراجع عن هذا.", "customer(s)? This cannot be undone.") }}';
-        if (!confirm(msg)) return;
+        if (!confirm('{{ $tr("هل تريد حذف", "Delete") }} ' + count + ' {{ $tr("مالك؟ لا يمكن التراجع عن هذا.", "owner(s)? This cannot be undone.") }}')) return;
         bulkIds.value = ids;
         document.getElementById('bulk-form').submit();
     };

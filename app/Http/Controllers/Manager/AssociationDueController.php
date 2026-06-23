@@ -11,6 +11,39 @@ use Illuminate\Http\Request;
 
 class AssociationDueController extends Controller
 {
+    public function associationInvoice(Request $request, Association $association)
+    {
+        $request->validate([
+            'period_month' => 'required|integer|between:1,12',
+            'period_year'  => 'required|integer|min:2020|max:2100',
+        ]);
+
+        $association->load(['property.units']);
+
+        $month     = (int) $request->input('period_month');
+        $year      = (int) $request->input('period_year');
+        $unitCount = $association->property?->units?->count() ?? 0;
+        $amount    = $association->monthly_fee_per_unit * max($unitCount, 1);
+        $dueDate   = Carbon::create($year, $month, 5);
+
+        // Persist the due so it appears in the dues table and can be marked paid/pending.
+        $due = AssociationDue::firstOrCreate(
+            [
+                'association_id' => $association->id,
+                'owner_id'       => null,
+                'period_month'   => $month,
+                'period_year'    => $year,
+            ],
+            [
+                'amount'   => $amount,
+                'due_date' => $dueDate,
+                'status'   => 'pending',
+            ]
+        );
+
+        return redirect()->route('manager.dues.invoice', $due);
+    }
+
     public function invoice(AssociationDue $due)
     {
         $due->load(['association.property.units', 'owner.user']);
@@ -98,9 +131,13 @@ class AssociationDueController extends Controller
             $owners = collect([$association->property->owner]);
         }
 
+        if ($owners->isEmpty()) {
+            return back()->withErrors(['owners' => __('No owners are linked to this property. Add owners to the property first.')]);
+        }
+
         $created = 0;
         foreach ($owners as $owner) {
-            $share = $owner->pivot->ownership_percentage ?? 100;
+            $share = $owner->pivot?->ownership_percentage ?? 100;
             $ownerAmount = round($amountPerOwner * ($share / 100), 2);
 
             $due = AssociationDue::firstOrCreate(
@@ -128,6 +165,12 @@ class AssociationDueController extends Controller
             'status'  => 'paid',
             'paid_at' => now(),
         ]);
+        return back()->with('success', __('Operation Successful'));
+    }
+
+    public function markPending(AssociationDue $due)
+    {
+        $due->update(['status' => 'pending', 'paid_at' => null]);
         return back()->with('success', __('Operation Successful'));
     }
 

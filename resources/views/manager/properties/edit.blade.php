@@ -1,4 +1,4 @@
-<x-app-layout>
+﻿<x-app-layout>
     @php
         $isAr = app()->getLocale() === 'ar';
         $tr = fn (string $ar, string $en) => $isAr ? $ar : $en;
@@ -51,6 +51,8 @@
                         <option value="farm" @selected($typeValue === 'farm')>{{ $tr('مزرعة', 'Farm') }}</option>
                         <option value="chalet" @selected($typeValue === 'chalet')>{{ $tr('شاليه', 'Chalet') }}</option>
                         <option value="land" @selected($typeValue === 'land')>{{ $tr('أرض', 'Land') }}</option>
+                        <option value="office" @selected($typeValue === 'office')>{{ $tr('مكتب', 'Office') }}</option>
+                        <option value="shop"   @selected($typeValue === 'shop')>{{ $tr('محل', 'Shop') }}</option>
                     </select>
                 </div>
                 <div>

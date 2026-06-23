@@ -25,44 +25,88 @@ class PropertyImport
 
     public function run(): void
     {
-        $spreadsheet = IOFactory::load($this->filePath);
-        $sheet       = $spreadsheet->getSheet(0);
+        $ext = strtolower(pathinfo($this->filePath, PATHINFO_EXTENSION));
 
-        $highestRow    = $sheet->getHighestDataRow();
-        $highestCol    = $sheet->getHighestDataColumn();
+        if ($ext === 'csv') {
+            $this->runCsv();
+        } else {
+            $this->runSpreadsheet();
+        }
+    }
 
-        if ($highestRow < 2) {
-            $this->warnings[] = "The file only has {$highestRow} row(s). Row 1 must be the header, with your data from row 2 onwards.";
-            return;
+    private function cleanHeader(string $h): string
+    {
+        // Remove asterisks, quotes, then strip any invisible/control/directional Unicode chars
+        $h = str_replace(['*', '"', "'"], '', $h);
+        $h = preg_replace('/[\x00-\x1F\x7F\xC2\xA0]|\xE2\x80[\x8B-\x8F\xAA-\xAE]/u', '', $h);
+        return trim($h);
+    }
+
+    private function runCsv(): void
+    {
+        $raw = file_get_contents($this->filePath);
+        if ($raw === false) {
+            throw new \RuntimeException('Cannot read file.');
         }
 
-        // Build header map: column letter => field name (from row 1)
-        $headers = [];
-        foreach ($sheet->getRowIterator(1, 1) as $row) {
-            foreach ($row->getCellIterator('A', $highestCol) as $cell) {
-                $val = trim((string) ($cell->getValue() ?? ''));
-                if ($val !== '') {
-                    $headers[$cell->getColumn()] = $val;
-                }
+        // Strip BOM and convert to UTF-8
+        if (str_starts_with($raw, "\xEF\xBB\xBF")) {
+            $raw = substr($raw, 3);
+        } elseif (str_starts_with($raw, "\xFF\xFE") || str_starts_with($raw, "\xFE\xFF")) {
+            $raw = mb_convert_encoding($raw, 'UTF-8', 'UTF-16');
+        }
+
+        if (!mb_check_encoding($raw, 'UTF-8')) {
+            $enc = mb_detect_encoding($raw, ['Windows-1256', 'ISO-8859-6', 'Windows-1252', 'ISO-8859-1'], true);
+            if ($enc) {
+                $raw = mb_convert_encoding($raw, 'UTF-8', $enc);
             }
         }
 
-        if (empty($headers)) {
-            $this->warnings[] = 'Row 1 is empty — cannot read column names. Make sure row 1 contains the field keys (name_ar, type, purpose, etc.).';
+        $lines = array_filter(
+            array_map('trim', explode("\n", str_replace(["\r\n", "\r"], "\n", $raw))),
+            fn($l) => $l !== ''
+        );
+
+        if (count($lines) < 2) {
+            $this->warnings[] = 'The file only has ' . count($lines) . ' row(s). Row 1 must be the header, with your data from row 2 onwards.';
             return;
         }
 
-        // Data starts at row 2 (row 1 is the header)
+        // Auto-detect delimiter: comma, semicolon, or tab
+        $firstLine = reset($lines);
+        $counts = [
+            ',' => substr_count($firstLine, ','),
+            ';' => substr_count($firstLine, ';'),
+            "\t" => substr_count($firstLine, "\t"),
+        ];
+        arsort($counts);
+        $delimiter = array_key_first($counts);
+
+        $parseLine = fn(string $line): array => str_getcsv($line, $delimiter, '"');
+
+        $headers = array_map(
+            fn($h) => $this->cleanHeader($h),
+            $parseLine(array_shift($lines))
+        );
+
+
+        if (empty(array_filter($headers))) {
+            $this->warnings[] = 'Row 1 is empty — cannot read column names.';
+            return;
+        }
+
         $dataRowCount = 0;
-        for ($rowNum = 2; $rowNum <= $highestRow; $rowNum++) {
-            $data = [];
-            foreach ($headers as $col => $field) {
-                $data[$field] = $sheet->getCell($col . $rowNum)->getFormattedValue();
+        $rowNum       = 1;
+        foreach ($lines as $line) {
+            $rowNum++;
+            $values = $parseLine($line);
+            $data   = [];
+            foreach ($headers as $i => $field) {
+                $data[$field] = $values[$i] ?? '';
             }
 
-            if ($this->isEmptyRow($data)) {
-                continue;
-            }
+            if ($this->isEmptyRow($data)) continue;
 
             $dataRowCount++;
             $errors = $this->validateRow($data, $rowNum);
@@ -72,8 +116,71 @@ class PropertyImport
                 continue;
             }
 
-            $this->createProperty($data);
-            $this->imported++;
+            try {
+                $this->createProperty($data);
+                $this->imported++;
+            } catch (\Throwable $e) {
+                $this->rowErrors[] = ['row' => $rowNum, 'field' => 'db', 'value' => '', 'error' => 'Database error: ' . $e->getMessage()];
+            }
+        }
+
+        if ($dataRowCount === 0) {
+            $this->warnings[] = 'No data rows found. Add your property data starting from row 2.';
+        }
+    }
+
+    private function runSpreadsheet(): void
+    {
+        $spreadsheet = IOFactory::load($this->filePath);
+        $sheet       = $spreadsheet->getSheet(0);
+
+        $highestRow = $sheet->getHighestDataRow();
+        $highestCol = $sheet->getHighestDataColumn();
+
+        if ($highestRow < 2) {
+            $this->warnings[] = "The file only has {$highestRow} row(s). Row 1 must be the header, with your data from row 2 onwards.";
+            return;
+        }
+
+        $headers = [];
+        foreach ($sheet->getRowIterator(1, 1) as $row) {
+            foreach ($row->getCellIterator('A', $highestCol) as $cell) {
+                $val = $this->cleanHeader((string) ($cell->getValue() ?? ''));
+                if ($val !== '') {
+                    $headers[$cell->getColumn()] = $val;
+                }
+            }
+        }
+
+        if (empty($headers)) {
+            $this->warnings[] = 'Row 1 is empty — cannot read column names.';
+            return;
+        }
+
+
+        $dataRowCount = 0;
+        for ($rowNum = 2; $rowNum <= $highestRow; $rowNum++) {
+            $data = [];
+            foreach ($headers as $col => $field) {
+                $data[$field] = $sheet->getCell($col . $rowNum)->getFormattedValue();
+            }
+
+            if ($this->isEmptyRow($data)) continue;
+
+            $dataRowCount++;
+            $errors = $this->validateRow($data, $rowNum);
+
+            if (!empty($errors)) {
+                $this->rowErrors = array_merge($this->rowErrors, $errors);
+                continue;
+            }
+
+            try {
+                $this->createProperty($data);
+                $this->imported++;
+            } catch (\Throwable $e) {
+                $this->rowErrors[] = ['row' => $rowNum, 'field' => 'db', 'value' => '', 'error' => 'Database error: ' . $e->getMessage()];
+            }
         }
 
         if ($dataRowCount === 0) {
@@ -100,23 +207,13 @@ class PropertyImport
     {
         $errors = [];
 
-        // name_ar — required
-        if ($this->get($data, 'name_ar') === '') {
-            $errors[] = [
-                'row'   => $rowNum,
-                'field' => 'name_ar',
-                'value' => '',
-                'error' => 'Required — Arabic property name is missing',
-            ];
-        }
-
-        // address_ar — required
-        if ($this->get($data, 'address_ar') === '') {
+        // address_ar — required (falls back to address_en)
+        if ($this->get($data, 'address_ar') === '' && $this->get($data, 'address_en') === '') {
             $errors[] = [
                 'row'   => $rowNum,
                 'field' => 'address_ar',
                 'value' => '',
-                'error' => 'Required — Arabic address is missing',
+                'error' => 'Required — Arabic or English address is missing',
             ];
         }
 
@@ -234,8 +331,8 @@ class PropertyImport
 
     private function createProperty(array $data): void
     {
-        $nameAr = $this->get($data, 'name_ar');
-        $addrAr = $this->get($data, 'address_ar');
+        $nameAr = $this->get($data, 'name_ar') ?: $this->get($data, 'name_en');
+        $addrAr = $this->get($data, 'address_ar') ?: $this->get($data, 'address_en');
         $cityAr = $this->get($data, 'city_ar') ?: null;
         $descAr = $this->get($data, 'description_ar') ?: null;
         $type   = $this->get($data, 'type');
@@ -247,9 +344,9 @@ class PropertyImport
 
         Property::create([
             'code'           => $this->generateCode($type),
-            'name_ar'        => $nameAr,
+            'name_ar'        => $nameAr ?: null,
             'name_en'        => $this->get($data, 'name_en') ?: null,
-            'name'           => $nameAr,
+            'name'           => $nameAr ?: $this->get($data, 'name_en'),
             'type'           => $type,
             'purpose'        => $this->get($data, 'purpose'),
             'section'        => $this->get($data, 'section'),

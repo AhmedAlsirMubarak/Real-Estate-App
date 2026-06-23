@@ -189,6 +189,18 @@ class PropertyController extends Controller
             ->with('success', 'تم تحديث العقار بنجاح');
     }
 
+    public function togglePublic(Property $property)
+    {
+        $property->update(['is_hidden_from_public' => !$property->is_hidden_from_public]);
+
+        $isAr = app()->getLocale() === 'ar';
+        $msg  = $property->is_hidden_from_public
+            ? ($isAr ? 'تم إخفاء العقار من الصفحة العامة' : 'Property hidden from public page')
+            : ($isAr ? 'العقار مرئي الآن في الصفحة العامة' : 'Property is now visible on public page');
+
+        return back()->with('success', $msg);
+    }
+
     private function saveImages(Request $request, Property $property): void
     {
         if (!$request->hasFile('images')) {
@@ -220,11 +232,12 @@ class PropertyController extends Controller
         $q = fn($v) => '"' . str_replace('"', '""', (string)($v ?? '')) . '"';
 
         $rows = [
-            ['name_ar', 'name_en', 'type', 'purpose', 'section', 'city_ar', 'city_en',
-             'address_ar', 'address_en', 'floors', 'total_area', 'bedrooms', 'bathrooms',
+            // Required fields marked with * — the importer strips the asterisk automatically
+            ['name_ar', 'name_en', 'type *', 'purpose *', 'section *', 'address_ar', 'address_en',
+             'city_ar', 'city_en', 'floors', 'total_area', 'bedrooms', 'bathrooms',
              'status', 'description_ar', 'description_en'],
             ['برج النخيل', 'Palm Tower', 'apartment_building', 'rent', 'management',
-             'الرياض', 'Riyadh', 'شارع الملك فهد', 'King Fahd Road',
+             'شارع الملك فهد', 'King Fahd Road', 'الرياض', 'Riyadh',
              '10', '5000', '', '', 'active', 'برج سكني حديث', 'Modern residential tower'],
         ];
 
@@ -463,7 +476,7 @@ class PropertyController extends Controller
             'code'        => 'nullable|string|max:50|unique:properties,code,' . ($property?->id ?? 'NULL'),
             'name_ar'     => 'required|string|max:255',
             'name_en'     => 'nullable|string|max:255',
-            'type'        => 'required|in:apartment_building,villa,farm,chalet,flat,land',
+            'type'        => 'required|in:apartment_building,villa,farm,chalet,flat,land,office,shop',
             'purpose'     => 'required|in:rent,sale,both,exclusive_rent,exclusive_sale',
             'section'     => 'required|in:hoa,management',
             'address_ar'  => 'required|string|max:500',
@@ -511,6 +524,8 @@ class PropertyController extends Controller
             'chalet'             => 'TH-C',
             'flat'               => 'TH-FL',
             'land'               => 'TH-L',
+            'office'             => 'TH-OF',
+            'shop'               => 'TH-SH',
             default              => 'TH',
         };
         do {

@@ -235,6 +235,12 @@
                         <span class="text-sm font-medium">{{ $tr('العملاء والطلبات', 'Customers') }}</span>
                     </a>
 
+                    <a href="{{ route('manager.owner-leads.index') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('manager.owner-leads.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('الملاك', 'Owners') }}</span>
+                    </a>
+
                     {{-- ===== INTERNAL COMPANY DEPARTMENTS ===== --}}
                     <div class="px-3 mt-4 mb-2">
                         <p class="text-xs text-yellow-400 font-semibold uppercase tracking-wider px-2 mb-1">{{ $tr('أقسام الشركة', 'Company Departments') }}</p>
@@ -483,6 +489,13 @@
                        class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('employee.customers.*') ? 'active' : '' }}">
                         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                         <span class="text-sm font-medium">{{ $tr('العملاء والطلبات', 'Customers') }}</span>
+                    </a>
+
+                    {{-- Owners --}}
+                    <a href="{{ route('employee.owner-leads.index') }}"
+                       class="sidebar-link flex items-center gap-3 px-4 py-3 hover:bg-blue-800 {{ request()->routeIs('employee.owner-leads.*') ? 'active' : '' }}">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                        <span class="text-sm font-medium">{{ $tr('الملاك', 'Owners') }}</span>
                     </a>
 
                     {{-- ===== PROPERTY MANAGEMENT ===== --}}

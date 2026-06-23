@@ -16,7 +16,8 @@ class AssociationController extends Controller
 {
     public function index()
     {
-        $associations = Association::with(['property.owners', 'dues', 'createdBy'])
+        $associations = Association::with(['property.owners', 'createdBy'])
+            ->withCount('dues')
             ->latest()
             ->paginate(15);
 
@@ -25,14 +26,14 @@ class AssociationController extends Controller
 
     public function create()
     {
-        $properties = Property::whereDoesntHave('association')->orderBy('name_ar')->get();
+        $properties = Property::orderBy('name_ar')->get();
         return view('manager.associations.create', compact('properties'));
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'property_id'                => 'required|exists:properties,id|unique:associations,property_id',
+            'property_id'                => 'required|exists:properties,id',
             'name_ar'                    => 'required|string|max:255',
             'name_en'                    => 'required|string|max:255',
             'established_date'           => 'nullable|date',
@@ -63,7 +64,8 @@ class AssociationController extends Controller
     public function show(Association $association)
     {
         $association->load([
-            'property.owners',
+            'property.owners.user',
+            'property.owner.user',
             'property.units',
             'dues' => fn ($q) => $q->latest('due_date')->limit(20),
             'dues.owner.user',
@@ -164,8 +166,9 @@ class AssociationController extends Controller
         $q = fn($v) => '"' . str_replace('"', '""', (string)($v ?? '')) . '"';
 
         $rows = [
-            ['property_code', 'name_ar', 'name_en', 'monthly_fee_per_unit', 'established_date',
-             'status', 'electricity_account_number', 'water_account_number', 'description_ar', 'description_en'],
+            // Headers: required fields first, then optional
+            ['property_code', 'name_ar *', 'name_en *', 'monthly_fee_per_unit *', 'established_date *',
+             'status', 'description_ar', 'description_en', 'electricity_account_number', 'water_account_number'],
             ['TH-V-001', 'جمعية ملاك برج النخيل', 'Palm Tower Owners Association', '50', '2024-01-15',
              'active', '', '', '', ''],
         ];

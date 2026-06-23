@@ -17,12 +17,13 @@
         </div>
         <div class="bg-white rounded-xl border border-gray-100 p-5">
             <h3 class="text-sm font-bold mb-3">{{ __('Owners Association') }}</h3>
-            @if($property->association)
-                <p class="text-sm">{{ $property->association->name }}</p>
-                <p class="text-xs text-gray-500 mt-1">{{ __('Monthly Fee per Unit') }}: {{ number_format($property->association->monthly_fee_per_unit, 2) }}</p>
-            @else
+            @forelse($property->associations as $assoc)
+                <p class="text-sm font-medium">{{ $assoc->name }}</p>
+                <p class="text-xs text-gray-500 mt-0.5">{{ __('Monthly Fee per Unit') }}: {{ number_format($assoc->monthly_fee_per_unit, 2) }}</p>
+                @if(!$loop->last)<hr class="my-2 border-gray-100">@endif
+            @empty
                 <p class="text-sm text-gray-400">—</p>
-            @endif
+            @endforelse
         </div>
     </div>
 

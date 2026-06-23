@@ -11,7 +11,8 @@ class PropertyController extends Controller
     public function index(Request $request)
     {
         $query = Property::with(['units' => fn($q) => $q->where('status', 'available')])
-            ->where('status', 'active');
+            ->where('status', 'active')
+            ->where('is_hidden_from_public', false);
 
         // Purpose filter
         if ($request->filled('purpose') && in_array($request->purpose, ['rent', 'sale', 'both'])) {
@@ -88,6 +89,7 @@ class PropertyController extends Controller
         $fallbackColumn = app()->getLocale() === 'en' ? 'city_ar' : 'city_en';
 
         $cities = Property::where('status', 'active')
+            ->where('is_hidden_from_public', false)
             ->where(function ($q) use ($cityColumn, $fallbackColumn) {
                 $q->whereNotNull($cityColumn)->orWhereNotNull($fallbackColumn)->orWhereNotNull('city');
             })
@@ -107,7 +109,7 @@ class PropertyController extends Controller
 
     public function show(Property $property)
     {
-        abort_if($property->status !== 'active', 404);
+        abort_if($property->status !== 'active' || $property->is_hidden_from_public, 404);
 
         $property->load(['images' => fn($q) => $q->orderByDesc('is_primary')->orderBy('sort_order')]);
         $property->loadCount([
@@ -128,6 +130,7 @@ class PropertyController extends Controller
 
         // Similar properties — same type, excluding current, max 4
         $similar = Property::where('status', 'active')
+            ->where('is_hidden_from_public', false)
             ->where('id', '!=', $property->id)
             ->where('type', $property->type)
             ->with(['images' => fn($q) => $q->orderByDesc('is_primary')->limit(1)])

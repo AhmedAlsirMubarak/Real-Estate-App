@@ -61,6 +61,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
 
     Route::resource('properties', Manager\PropertyController::class);
     Route::patch('properties/{property}/transfer', [Manager\PropertyController::class, 'transfer'])->name('properties.transfer');
+    Route::patch('properties/{property}/toggle-public', [Manager\PropertyController::class, 'togglePublic'])->name('properties.toggle-public');
 
     Route::get('external-properties/comprehensive-report', [Manager\ExternalPropertyReportController::class, 'create'])->name('external-properties.report.create');
     Route::post('external-properties/comprehensive-report', [Manager\ExternalPropertyReportController::class, 'generate'])->name('external-properties.report.generate');
@@ -142,6 +143,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::get('associations/export', [Manager\AssociationController::class, 'export'])->name('associations.export');
     Route::resource('associations', Manager\AssociationController::class);
     Route::post('associations/{association}/dues/generate', [Manager\AssociationDueController::class, 'generate'])->name('associations.dues.generate');
+    Route::post('associations/{association}/invoice-pdf', [Manager\AssociationDueController::class, 'associationInvoice'])->name('associations.invoice-pdf');
     Route::delete('associations/{association}/documents/{field}', [Manager\AssociationController::class, 'deleteDocument'])->name('associations.documents.delete');
     Route::post('associations/{association}/no-objection-pdf', [Manager\AssociationController::class, 'noObjectionPdf'])->name('associations.no-objection-pdf');
     Route::post('associations/{association}/no-objection-sale-pdf', [Manager\AssociationController::class, 'noSalePdf'])->name('associations.no-objection-sale-pdf');
@@ -156,6 +158,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::get('dues', [Manager\AssociationDueController::class, 'index'])->name('dues.index');
     Route::get('dues/{due}/invoice', [Manager\AssociationDueController::class, 'invoice'])->name('dues.invoice');
     Route::patch('dues/{due}/paid', [Manager\AssociationDueController::class, 'markPaid'])->name('dues.paid');
+    Route::patch('dues/{due}/pending', [Manager\AssociationDueController::class, 'markPending'])->name('dues.pending');
     Route::patch('dues/{due}/waived', [Manager\AssociationDueController::class, 'markWaived'])->name('dues.waived');
     Route::delete('dues/{due}', [Manager\AssociationDueController::class, 'destroy'])->name('dues.destroy');
 
@@ -187,7 +190,18 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     // Customers (leads / requirements)
     Route::delete('customers/bulk-destroy', [Manager\CustomerController::class, 'bulkDestroy'])->name('customers.bulk-destroy');
     Route::get('customers/export', [Manager\CustomerController::class, 'export'])->name('customers.export');
+    Route::get('customers/import', [Manager\CustomerController::class, 'importForm'])->name('customers.import.form');
+    Route::post('customers/import', [Manager\CustomerController::class, 'import'])->name('customers.import');
+    Route::get('customers/import/template', [Manager\CustomerController::class, 'downloadTemplate'])->name('customers.import.template');
     Route::resource('customers', Manager\CustomerController::class);
+
+    // Owner Leads
+    Route::delete('owner-leads/bulk-destroy', [Manager\OwnerLeadController::class, 'bulkDestroy'])->name('owner-leads.bulk-destroy');
+    Route::get('owner-leads/export', [Manager\OwnerLeadController::class, 'export'])->name('owner-leads.export');
+    Route::get('owner-leads/import', [Manager\OwnerLeadController::class, 'importForm'])->name('owner-leads.import.form');
+    Route::post('owner-leads/import', [Manager\OwnerLeadController::class, 'import'])->name('owner-leads.import');
+    Route::get('owner-leads/import/template', [Manager\OwnerLeadController::class, 'downloadTemplate'])->name('owner-leads.import.template');
+    Route::resource('owner-leads', Manager\OwnerLeadController::class);
 
     // Company Departments â€” HR (manager only)
     Route::resource('contracts', Manager\EmployeeContractController::class)->except(['show']);
@@ -290,6 +304,9 @@ Route::middleware(['auth', 'role:employee'])->prefix('employee')->name('employee
 
     Route::get('customers', [Employee\CustomerController::class, 'index'])->name('customers.index');
     Route::get('customers/export', [Employee\CustomerController::class, 'export'])->name('customers.export');
+    Route::get('customers/import', [Employee\CustomerController::class, 'importForm'])->name('customers.import.form');
+    Route::post('customers/import', [Employee\CustomerController::class, 'import'])->name('customers.import');
+    Route::get('customers/import/template', [Employee\CustomerController::class, 'downloadTemplate'])->name('customers.import.template');
     Route::get('customers/create', [Employee\CustomerController::class, 'create'])->name('customers.create');
     Route::post('customers', [Employee\CustomerController::class, 'store'])->name('customers.store');
     Route::delete('customers/{customer}', [Employee\CustomerController::class, 'destroy'])->name('customers.destroy');
@@ -297,6 +314,18 @@ Route::middleware(['auth', 'role:employee'])->prefix('employee')->name('employee
     Route::get('customers/{customer}/edit', [Employee\CustomerController::class, 'edit'])->name('customers.edit');
     Route::put('customers/{customer}', [Employee\CustomerController::class, 'update'])->name('customers.update');
     Route::patch('customers/{customer}/reply', [Employee\CustomerController::class, 'reply'])->name('customers.reply');
+
+    Route::get('owner-leads', [Employee\OwnerLeadController::class, 'index'])->name('owner-leads.index');
+    Route::get('owner-leads/export', [Employee\OwnerLeadController::class, 'export'])->name('owner-leads.export');
+    Route::get('owner-leads/import', [Employee\OwnerLeadController::class, 'importForm'])->name('owner-leads.import.form');
+    Route::post('owner-leads/import', [Employee\OwnerLeadController::class, 'import'])->name('owner-leads.import');
+    Route::get('owner-leads/import/template', [Employee\OwnerLeadController::class, 'downloadTemplate'])->name('owner-leads.import.template');
+    Route::get('owner-leads/create', [Employee\OwnerLeadController::class, 'create'])->name('owner-leads.create');
+    Route::post('owner-leads', [Employee\OwnerLeadController::class, 'store'])->name('owner-leads.store');
+    Route::delete('owner-leads/{ownerLead}', [Employee\OwnerLeadController::class, 'destroy'])->name('owner-leads.destroy');
+    Route::get('owner-leads/{ownerLead}', [Employee\OwnerLeadController::class, 'show'])->name('owner-leads.show');
+    Route::get('owner-leads/{ownerLead}/edit', [Employee\OwnerLeadController::class, 'edit'])->name('owner-leads.edit');
+    Route::put('owner-leads/{ownerLead}', [Employee\OwnerLeadController::class, 'update'])->name('owner-leads.update');
 });
 
 // Accountant routes

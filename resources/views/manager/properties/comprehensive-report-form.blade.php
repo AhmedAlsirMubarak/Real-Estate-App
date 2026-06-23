@@ -69,6 +69,8 @@
                 <option value="villa"              {{ old('type')==='villa'?'selected':'' }}>{{ $tr('فيلا','Villa') }}</option>
                 <option value="farm"               {{ old('type')==='farm'?'selected':'' }}>{{ $tr('مزرعة','Farm') }}</option>
                 <option value="chalet"             {{ old('type')==='chalet'?'selected':'' }}>{{ $tr('شاليه','Chalet') }}</option>
+                <option value="office"             {{ old('type')==='office'?'selected':'' }}>{{ $tr('مكتب','Office') }}</option>
+                <option value="shop"               {{ old('type')==='shop'?'selected':'' }}>{{ $tr('محل','Shop') }}</option>
             </select>
         </div>
 

@@ -39,7 +39,7 @@ class PropertyController extends Controller
             'code'                       => 'nullable|string|max:50|unique:properties,code',
             'name_ar'                    => 'required|string|max:255',
             'name_en'                    => 'nullable|string|max:255',
-            'type'                       => 'required|in:apartment_building,villa,farm,chalet,flat,land',
+            'type'                       => 'required|in:apartment_building,villa,farm,chalet,flat,land,office,shop',
             'purpose'                    => 'required|in:rent,sale,both',
             'section'                    => 'required|in:hoa,management,external',
             'address_ar'                 => 'required|string|max:500',
@@ -156,6 +156,8 @@ class PropertyController extends Controller
             'chalet'             => 'TH-C',
             'flat'               => 'TH-FL',
             'land'               => 'TH-L',
+            'office'             => 'TH-OF',
+            'shop'               => 'TH-SH',
             default              => 'TH',
         };
         do {

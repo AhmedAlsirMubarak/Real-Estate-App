@@ -145,11 +145,10 @@
                             {{ $tr('الحقول المطلوبة *', 'Required Fields *') }}
                         </p>
                         <ul class="space-y-0.5 text-xs text-red-600">
-                            <li class="font-mono">name_ar</li>
                             <li class="font-mono">type</li>
                             <li class="font-mono">purpose</li>
                             <li class="font-mono">section</li>
-                            <li class="font-mono">address_ar</li>
+                            <li class="font-mono">address_ar <span class="text-red-400 font-normal">or address_en</span></li>
                         </ul>
                     </div>
                     <div class="bg-gray-50 border border-gray-100 rounded-lg p-3">
@@ -157,6 +156,7 @@
                             {{ $tr('الحقول الاختيارية', 'Optional Fields') }}
                         </p>
                         <ul class="space-y-0.5 text-xs text-gray-500 columns-2">
+                            <li class="font-mono">name_ar</li>
                             <li class="font-mono">name_en</li>
                             <li class="font-mono">city_ar</li>
                             <li class="font-mono">city_en</li>

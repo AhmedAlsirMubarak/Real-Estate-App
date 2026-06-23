@@ -36,6 +36,7 @@ class Property extends Model
         'bedrooms',
         'bathrooms',
         'status',
+        'is_hidden_from_public',
         'electricity_account_number',
         'water_account_number',
         'latitude',
@@ -67,6 +68,11 @@ class Property extends Model
     public function association()
     {
         return $this->hasOne(Association::class);
+    }
+
+    public function associations()
+    {
+        return $this->hasMany(Association::class);
     }
 
     public function employee()
@@ -174,6 +180,8 @@ class Property extends Model
                 'chalet'             => 'Chalet',
                 'flat'               => 'Flat',
                 'land'               => 'Land',
+                'office'             => 'Office',
+                'shop'               => 'Shop',
                 default              => $this->type,
             };
         }
@@ -185,6 +193,8 @@ class Property extends Model
             'chalet'             => 'شاليه',
             'flat'               => 'شقة',
             'land'               => 'أرض',
+            'office'             => 'مكتب',
+            'shop'               => 'محل',
             default              => $this->type,
         };
     }

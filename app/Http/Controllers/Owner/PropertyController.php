@@ -36,7 +36,7 @@ class PropertyController extends Controller
         $isSharedOwner = $property->owners()->where('owners.id', $owner->id)->exists();
         abort_unless($isDirectOwner || $isSharedOwner, 403);
 
-        $property->load(['units', 'owners.user', 'association', 'employee']);
+        $property->load(['units', 'owners.user', 'associations', 'employee']);
 
         return view('owner.properties.show', compact('property', 'owner'));
     }

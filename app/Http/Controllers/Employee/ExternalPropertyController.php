@@ -206,7 +206,7 @@ class ExternalPropertyController extends Controller
             'code'        => 'nullable|string|max:50|unique:properties,code,' . ($property?->id ?? 'NULL'),
             'name_ar'     => 'required|string|max:255',
             'name_en'     => 'nullable|string|max:255',
-            'type'        => 'required|in:apartment_building,villa,farm,chalet,flat,land',
+            'type'        => 'required|in:apartment_building,villa,farm,chalet,flat,land,office,shop',
             'purpose'     => 'required|in:rent,sale,both,exclusive_rent,exclusive_sale',
             'address_ar'  => 'required|string|max:500',
             'address_en'  => 'nullable|string|max:500',
@@ -252,6 +252,8 @@ class ExternalPropertyController extends Controller
             'chalet'             => 'EX-C',
             'flat'               => 'EX-FL',
             'land'               => 'EX-L',
+            'office'             => 'EX-OF',
+            'shop'               => 'EX-SH',
             default              => 'EX',
         };
         do {

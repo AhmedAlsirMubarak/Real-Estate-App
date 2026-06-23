@@ -25,18 +25,21 @@ class HomeController extends Controller
             ])
             ->withCount('units')
             ->where('status', 'active')
+            ->where('is_hidden_from_public', false)
             ->latest()
             ->take(12)
             ->get();
 
         // Property counts per type for the types section
         $typeCounts = Property::where('status', 'active')
+            ->where('is_hidden_from_public', false)
             ->selectRaw('type, count(*) as count')
             ->groupBy('type')
             ->pluck('count', 'type');
 
         // Cities for location tabs — get both AR and EN names
         $cities = Property::where('status', 'active')
+            ->where('is_hidden_from_public', false)
             ->whereNotNull('city')
             ->select('city', 'city_ar', 'city_en')
             ->distinct()
@@ -55,6 +58,7 @@ class HomeController extends Controller
                 ])
                 ->withCount('units')
                 ->where('status', 'active')
+                ->where('is_hidden_from_public', false)
                 ->where('city', $cityObj->city)
                 ->latest()
                 ->take(8)
@@ -68,6 +72,7 @@ class HomeController extends Controller
             ])
             ->withCount('units')
             ->where('status', 'active')
+            ->where('is_hidden_from_public', false)
             ->latest()
             ->take(12)
             ->get();

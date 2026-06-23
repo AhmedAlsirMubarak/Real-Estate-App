@@ -2,6 +2,15 @@
     @php
         $isAr = app()->getLocale() === 'ar';
         $tr   = fn(string $ar, string $en) => $isAr ? $ar : $en;
+
+        // Owners can be linked two ways:
+        // 1. Many-to-many via property_owners pivot (owners())
+        // 2. Direct single FK via owner_id (owner())
+        // The generate-dues code handles both; the UI must too.
+        $pivotOwners = $association->property->owners;
+        $directOwner = $association->property->owner ?? null;
+        $hasAnyOwner = $pivotOwners->isNotEmpty() || $directOwner;
+        $ownersCount = $pivotOwners->isNotEmpty() ? $pivotOwners->count() : ($directOwner ? 1 : 0);
     @endphp
     <x-slot name="title">{{ $association->name }}</x-slot>
 
@@ -25,7 +34,7 @@
     </div>
 
     {{-- Info cards --}}
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="bg-white rounded-xl border border-gray-100 p-4">
             <p class="text-xs text-gray-500">{{ $tr('تاريخ التأسيس', 'Established Date') }}</p>
             <p class="text-base font-semibold text-gray-800 mt-1">{{ $association->established_date?->format('Y/m/d') ?? '—' }}</p>
@@ -33,10 +42,6 @@
         <div class="bg-white rounded-xl border border-gray-100 p-4">
             <p class="text-xs text-gray-500">{{ $tr('الرسوم الشهرية لكل وحدة', 'Monthly Fee per Unit') }}</p>
             <p class="text-base font-semibold text-gray-800 mt-1">{{ number_format($association->monthly_fee_per_unit, 2) }}</p>
-        </div>
-        <div class="bg-white rounded-xl border border-gray-100 p-4">
-            <p class="text-xs text-gray-500">{{ $tr('الملاك', 'Owners') }}</p>
-            <p class="text-base font-semibold text-gray-800 mt-1">{{ $association->property->owners->count() }}</p>
         </div>
         <div class="bg-white rounded-xl border border-gray-100 p-4">
             <p class="text-xs text-gray-500">{{ $tr('الحالة', 'Status') }}</p>
@@ -339,16 +344,20 @@
         @endif
     </div>
 
-    {{-- Generate dues --}}
+    {{-- Generate Invoice PDF --}}
     <div class="bg-white rounded-xl border border-gray-100 p-5 mb-6">
-        <h3 class="text-sm font-bold text-gray-800 mb-3">{{ $tr('إنشاء الرسوم الشهرية', 'Generate Monthly Dues') }}</h3>
-        <form method="POST" action="{{ route('manager.associations.dues.generate', $association) }}" class="flex flex-wrap gap-3 items-end">
+        <h3 class="text-sm font-bold text-gray-800 mb-3">{{ $tr('إنشاء فاتورة PDF', 'Generate Invoice PDF') }}</h3>
+        <form method="POST" action="{{ route('manager.associations.invoice-pdf', $association) }}" target="_blank" class="flex flex-wrap gap-3 items-end">
             @csrf
             <div>
                 <label class="block text-xs text-gray-600 mb-1">{{ $tr('الشهر', 'Month') }}</label>
                 <select name="period_month" class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                    @for($m=1;$m<=12;$m++)
-                    <option value="{{ $m }}" @selected($m === now()->month)>{{ $m }}</option>
+                    @php $monthNames = $isAr
+                        ? ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
+                        : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                    @endphp
+                    @for($m = 1; $m <= 12; $m++)
+                    <option value="{{ $m }}" @selected($m === now()->month)>{{ $monthNames[$m - 1] }}</option>
                     @endfor
                 </select>
             </div>
@@ -356,43 +365,129 @@
                 <label class="block text-xs text-gray-600 mb-1">{{ $tr('السنة', 'Year') }}</label>
                 <input type="number" name="period_year" value="{{ now()->year }}" min="2020" max="2100" class="border border-gray-200 rounded-lg px-3 py-2 text-sm w-24">
             </div>
-            <button class="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm">{{ $tr('إنشاء الرسوم الشهرية', 'Generate Monthly Dues') }}</button>
+            <button class="inline-flex items-center gap-2 bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                </svg>
+                {{ $tr('إنشاء فاتورة PDF', 'Generate Invoice PDF') }}
+            </button>
         </form>
     </div>
 
-    {{-- Owners --}}
-    <div class="bg-white rounded-xl border border-gray-100 p-5 mb-6">
-        <div class="flex justify-between items-center mb-3">
-            <h3 class="text-sm font-bold text-gray-800">{{ $tr('الملاك', 'Owners') }}</h3>
-            <a href="{{ route('manager.properties.owners.index', $association->property) }}" class="text-xs text-blue-700 hover:text-blue-900">{{ $tr('تعديل', 'Edit') }}</a>
+    {{-- Quick WhatsApp Invoice --}}
+    @php
+        $waMonthNamesAr = ['', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+        $waMonthNamesEn = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        $waAppName      = str_replace('_', ' ', ucwords(config('app.name'), '_'));
+        $waPropName     = addslashes($association->property?->name ?? '');
+        $waAssocName    = addslashes($association->name);
+        $waDefaultAmount = (float) $association->monthly_fee_per_unit;
+    @endphp
+    <div class="bg-white rounded-xl border border-gray-100 p-5 mb-6"
+         x-data="{
+            ownerName: '',
+            phone: '',
+            month: {{ now()->month }},
+            year: {{ now()->year }},
+            amount: {{ $waDefaultAmount }},
+            dueDate: '',
+            appName: '{{ $waAppName }}',
+            propName: '{{ $waPropName }}',
+            assocName: '{{ $waAssocName }}',
+            monthNamesAr: {{ json_encode($waMonthNamesAr) }},
+            monthNamesEn: {{ json_encode($waMonthNamesEn) }},
+            get periodLabelAr() { return (this.monthNamesAr[this.month] || '') + ' ' + this.year; },
+            get periodLabelEn() { return (this.monthNamesEn[this.month] || '') + ' ' + this.year; },
+            get formattedAmount() {
+                const n = parseFloat(this.amount || 0).toFixed(2);
+                return n + ' ر.ع / ' + n + ' OMR';
+            },
+            get formattedDueDate() {
+                if (!this.dueDate) return '—';
+                const d = new Date(this.dueDate);
+                const day = d.getDate().toString().padStart(2,'0');
+                return day + ' ' + (this.monthNamesAr[d.getMonth()+1] || '') + ' ' + d.getFullYear()
+                     + ' / ' + day + ' ' + (this.monthNamesEn[d.getMonth()+1] || '') + ' ' + d.getFullYear();
+            },
+            buildMessage() {
+                const amt = parseFloat(this.amount || 0).toFixed(2);
+                return 'السيد/ة ' + this.ownerName + '،\n\nتحية طيبة،\n\n📋 *إشعار فاتورة — رسوم جمعية الملاك*\n──────────────────\n• العقار: ' + this.propName + '\n• الجمعية: ' + this.assocName + '\n• الفترة: ' + this.periodLabelAr + '\n• المبلغ المستحق: *' + amt + ' ر.ع*\n• تاريخ الاستحقاق: ' + this.formattedDueDate + '\n──────────────────\nيُرجى سداد المبلغ قبل تاريخ الاستحقاق لتجنب أي رسوم إضافية.\n\n━━━━━━━━━━━━━━━━━━\n\nDear ' + this.ownerName + ',\n\n📋 *Invoice Notice — Owners\' Association Monthly Fee*\n──────────────────\n• Property: ' + this.propName + '\n• Association: ' + this.assocName + '\n• Period: ' + this.periodLabelEn + '\n• Amount Due: *' + amt + ' OMR*\n• Due Date: ' + this.formattedDueDate + '\n──────────────────\nPlease arrange payment before the due date.\n\n' + this.appName;
+            },
+            sendWhatsApp() {
+                let n = this.phone.replace(/[^0-9]/g, '');
+                if (n.startsWith('00')) n = n.slice(2);
+                else if (n.startsWith('0')) n = '968' + n.slice(1);
+                else if (!n.startsWith('968') && n.length <= 8) n = '968' + n;
+                window.open('https://api.whatsapp.com/send?phone=' + n + '&text=' + encodeURIComponent(this.buildMessage()), '_blank');
+            }
+         }">
+        <div class="flex items-center gap-2 mb-4">
+            <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                <svg class="w-4 h-4 text-green-700" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.999-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-gray-800">{{ $tr('إرسال فاتورة الرسوم الشهرية عبر واتساب', 'Send Monthly Fee Invoice via WhatsApp') }}</h3>
+                <p class="text-xs text-gray-400">{{ $tr('أرسل إشعار رسوم لأي مالك مباشرة — لا يلزم وجود سجل رسوم مسبق', 'Send a fee notice to any owner directly — no due record required') }}</p>
+            </div>
         </div>
-        <table class="w-full text-sm">
-            <thead class="text-xs text-gray-500 uppercase">
-                <tr>
-                    <th class="text-right py-2">{{ $tr('الاسم', 'Name') }}</th>
-                    <th class="text-right py-2">{{ $tr('نسبة الملكية', 'Ownership %') }}</th>
-                    <th class="text-right py-2">{{ $tr('الهاتف', 'Phone') }}</th>
-                    <th class="text-right py-2">{{ $tr('المالك الرئيسي', 'Primary Owner') }}</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @forelse($association->property->owners as $owner)
-                <tr>
-                    <td class="py-2">{{ $owner->user?->name ?? '—' }}</td>
-                    <td class="py-2">{{ $owner->pivot->ownership_percentage }}%</td>
-                    <td class="py-2 text-xs text-gray-600">{{ $owner->phone ?? '—' }}</td>
-                    <td class="py-2">{{ $owner->pivot->is_primary ? '✓' : '' }}</td>
-                </tr>
-                @empty
-                <tr><td colspan="4" class="py-4 text-center text-gray-400 text-xs">{{ $tr('لا توجد بيانات', 'No data available') }}</td></tr>
-                @endforelse
-            </tbody>
-        </table>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('اسم المالك', "Owner's Name") }} <span class="text-red-500">*</span></label>
+                <input type="text" x-model="ownerName" placeholder="{{ $tr('الاسم الكامل', 'Full name') }}"
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('رقم الهاتف (واتساب)', 'Phone (WhatsApp)') }} <span class="text-red-500">*</span></label>
+                <input type="text" x-model="phone" placeholder="+968 XXXX XXXX"
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('الشهر', 'Month') }}</label>
+                <select x-model.number="month" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
+                    @for($m = 1; $m <= 12; $m++)
+                    <option value="{{ $m }}" {{ $m === now()->month ? 'selected' : '' }}>{{ $waMonthNamesEn[$m] }}</option>
+                    @endfor
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('السنة', 'Year') }}</label>
+                <input type="number" x-model.number="year" min="2020" max="2100"
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('المبلغ', 'Amount') }} (OMR)</label>
+                <input type="number" x-model.number="amount" step="0.01" min="0"
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('تاريخ الاستحقاق', 'Due Date') }}</label>
+                <input type="date" x-model="dueDate"
+                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200">
+            </div>
+        </div>
+
+        <button @click="sendWhatsApp()" :disabled="!phone.trim() || !ownerName.trim()"
+                class="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1ebe5d] disabled:opacity-40 disabled:cursor-not-allowed text-white px-5 py-2 rounded-lg text-sm font-semibold transition shadow-sm">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.999-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+            </svg>
+            {{ $tr('إرسال عبر واتساب', 'Send via WhatsApp') }}
+        </button>
     </div>
 
     {{-- Recent dues --}}
     <div class="bg-white rounded-xl border border-gray-100 p-5 mb-6">
         <h3 class="text-sm font-bold text-gray-800 mb-3">{{ $tr('الرسوم', 'Dues') }}</h3>
+        @php
+            $currency = $isAr ? 'ر.ع' : 'OMR';
+            $appName  = str_replace('_', ' ', ucwords(config('app.name'), '_'));
+        @endphp
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead class="text-xs text-gray-500 uppercase">
@@ -407,21 +502,63 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($association->dues as $due)
+                    @php
+                        $dueOwnerName  = $due->owner?->user?->name ?? ($isAr ? 'المالك' : 'Owner');
+                        $dueOwnerPhone = $due->owner?->phone ?? $due->owner?->user?->phone ?? null;
+                        $invoiceNo     = '#INV-' . str_pad($due->id, 6, '0', STR_PAD_LEFT);
+                        $amountAr      = number_format($due->amount, 2) . ' ر.ع';
+                        $amountEn      = number_format($due->amount, 2) . ' OMR';
+                        $dueDateFmtAr  = $due->due_date->translatedFormat('d F Y');
+                        $dueDateFmtEn  = $due->due_date->format('d M Y');
+                        $periodLabelAr = $due->due_date->translatedFormat('F Y');
+                        $periodLabelEn = $due->due_date->format('M Y');
+                        $propName      = $association->property?->name ?? '';
+
+                        $waMsg = "السيد/ة {$dueOwnerName}،\n\nتحية طيبة،\n\n📋 *إشعار فاتورة — رسوم جمعية الملاك*\n──────────────────\n• رقم الفاتورة: {$invoiceNo}\n• العقار: {$propName}\n• الفترة: {$periodLabelAr}\n• المبلغ المستحق: *{$amountAr}*\n• تاريخ الاستحقاق: {$dueDateFmtAr}\n──────────────────\nيُرجى سداد المبلغ قبل تاريخ الاستحقاق لتجنب أي رسوم إضافية.\n\n━━━━━━━━━━━━━━━━━━\n\nDear {$dueOwnerName},\n\n📋 *Invoice Notice — Owners' Association Dues*\n──────────────────\n• Invoice No.: {$invoiceNo}\n• Property: {$propName}\n• Period: {$periodLabelEn}\n• Amount Due: *{$amountEn}*\n• Due Date: {$dueDateFmtEn}\n──────────────────\nPlease arrange payment before the due date.\n\n{$appName}";
+                    @endphp
                     <tr>
-                        <td class="py-2">{{ $due->owner?->user?->name ?? '—' }}</td>
+                        <td class="py-2">{{ $dueOwnerName }}</td>
                         <td class="py-2 text-xs">{{ $due->periodLabel() }}</td>
-                        <td class="py-2 font-semibold">{{ number_format($due->amount, 2) }}</td>
+                        <td class="py-2 font-semibold">{{ number_format($due->amount, 2) }} {{ $currency }}</td>
                         <td class="py-2"><span class="text-xs px-2 py-0.5 rounded-full
                             @if($due->status==='paid') bg-green-50 text-green-700
                             @elseif($due->status==='overdue') bg-red-50 text-red-700
                             @elseif($due->status==='waived') bg-gray-100 text-gray-600
                             @else bg-yellow-50 text-yellow-700 @endif">{{ $due->statusLabel() }}</span></td>
                         <td class="py-2 text-xs text-gray-600">{{ $due->due_date->format('Y/m/d') }}</td>
-                        <td class="py-2 text-xs flex gap-1 flex-wrap">
-                            @if($due->status !== 'paid')
-                            <form method="POST" action="{{ route('manager.dues.paid', $due) }}">@csrf @method('PATCH')<button class="text-green-700 hover:text-green-900">{{ $tr('تحديد كمدفوع', 'Mark as Paid') }}</button></form>
-                            @endif
-                            <x-whatsapp-button size="sm" :phone="$due->owner?->phone" :message="$tr('الرسوم', 'Dues').' '.$due->periodLabel().' — '.number_format($due->amount,2)" />
+                        <td class="py-2">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <a href="{{ route('manager.dues.invoice', $due) }}" target="_blank"
+                                   class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                                    </svg>
+                                    {{ $tr('فاتورة PDF', 'PDF Invoice') }}
+                                </a>
+                                @if($due->status !== 'paid')
+                                <form method="POST" action="{{ route('manager.dues.paid', $due) }}">
+                                    @csrf @method('PATCH')
+                                    <button class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-green-50 text-green-700 hover:bg-green-100 transition">
+                                        {{ $tr('مدفوع', 'Mark Paid') }}
+                                    </button>
+                                </form>
+                                @else
+                                <form method="POST" action="{{ route('manager.dues.pending', $due) }}">
+                                    @csrf @method('PATCH')
+                                    <button class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-yellow-50 text-yellow-700 hover:bg-yellow-100 transition">
+                                        {{ $tr('معلق', 'Mark Pending') }}
+                                    </button>
+                                </form>
+                                @endif
+                                <x-whatsapp-button size="sm" :phone="$dueOwnerPhone" :message="$waMsg" />
+                                <form method="POST" action="{{ route('manager.dues.destroy', $due) }}"
+                                      onsubmit="return confirm('{{ $tr('حذف هذا السجل؟', 'Delete this record?') }}')">
+                                    @csrf @method('DELETE')
+                                    <button class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition">
+                                        {{ $tr('حذف', 'Delete') }}
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty
