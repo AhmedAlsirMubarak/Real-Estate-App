@@ -66,16 +66,24 @@ class AssociationImport
             return;
         }
 
-        $parseLine = fn(string $line): array => str_getcsv($line, ',', '"');
+        // Auto-detect delimiter
+        $firstLine  = reset($lines);
+        $counts     = [',' => substr_count($firstLine, ','), ';' => substr_count($firstLine, ';'), "\t" => substr_count($firstLine, "\t")];
+        arsort($counts);
+        $delimiter  = array_key_first($counts);
+        $parseLine  = fn(string $line): array => str_getcsv($line, $delimiter, '"');
 
         $rawHeaders = $parseLine(array_shift($lines));
-        $headers    = array_map(
-            fn($h) => trim(str_replace('*', '', $h), " \t\"'"),
-            $rawHeaders
-        );
+        $headers    = array_map(fn($h) => $this->cleanHeader($h), $rawHeaders);
 
         if (empty(array_filter($headers))) {
             $this->warnings[] = 'Row 1 is empty — cannot read column names.';
+            return;
+        }
+
+        if (!in_array('property_code', $headers, true)) {
+            $found = implode(', ', array_filter($headers));
+            $this->warnings[] = 'Column "property_code" not found. Make sure you are using the import template. Columns found in your file: ' . $found;
             return;
         }
 
@@ -128,7 +136,7 @@ class AssociationImport
         $headers = [];
         foreach ($sheet->getRowIterator(1, 1) as $row) {
             foreach ($row->getCellIterator('A', $highestCol) as $cell) {
-                $val = trim(str_replace('*', '', (string) ($cell->getValue() ?? '')), " \t\n\r\0\x0B\"'");
+                $val = $this->cleanHeader((string) ($cell->getValue() ?? ''));
                 if ($val !== '') {
                     $headers[$cell->getColumn()] = $val;
                 }
@@ -137,6 +145,12 @@ class AssociationImport
 
         if (empty($headers)) {
             $this->warnings[] = 'Row 1 is empty — cannot read column names.';
+            return;
+        }
+
+        if (!in_array('property_code', $headers, true)) {
+            $found = implode(', ', array_filter($headers));
+            $this->warnings[] = 'Column "property_code" not found. Make sure you are using the import template. Columns found in your file: ' . $found;
             return;
         }
 
@@ -168,6 +182,13 @@ class AssociationImport
         if ($dataRowCount === 0) {
             $this->warnings[] = "No data found in rows 2–{$highestRow}. Add your association data starting from row 2.";
         }
+    }
+
+    private function cleanHeader(string $h): string
+    {
+        $h = str_replace(['*', '"', "'"], '', $h);
+        $h = preg_replace('/[\x00-\x1F\x7F\x{00A0}\x{FEFF}\x{200B}-\x{200F}\x{202A}-\x{202E}]/u', '', $h);
+        return trim($h);
     }
 
     private function isEmptyRow(array $data): bool

@@ -38,7 +38,7 @@ class PropertyImport
     {
         // Remove asterisks, quotes, then strip any invisible/control/directional Unicode chars
         $h = str_replace(['*', '"', "'"], '', $h);
-        $h = preg_replace('/[\x00-\x1F\x7F\xC2\xA0]|\xE2\x80[\x8B-\x8F\xAA-\xAE]/u', '', $h);
+        $h = preg_replace('/[\x00-\x1F\x7F\x{00A0}\x{FEFF}\x{200B}-\x{200F}\x{202A}-\x{202E}]/u', '', $h);
         return trim($h);
     }
 
