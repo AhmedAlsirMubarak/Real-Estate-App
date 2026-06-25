@@ -376,7 +376,10 @@ class PropertyImport
             'chalet'             => 'TH-C',
             default              => 'TH',
         };
-        $count = Property::where('type', $type)->count() + 1;
-        return sprintf('%s-%03d', $prefix, $count);
+        $n = Property::where('type', $type)->count() + 1;
+        do {
+            $code = sprintf('%s-%03d', $prefix, $n++);
+        } while (Property::where('code', $code)->exists());
+        return $code;
     }
 }

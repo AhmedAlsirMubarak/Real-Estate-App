@@ -81,11 +81,32 @@
         </div>
     </form>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" x-data="bulkSelect()">
+
+        {{-- Bulk action toolbar --}}
+        <div x-show="selected.length > 0" x-cloak
+             class="flex items-center gap-3 px-4 py-2.5 bg-red-50 border-b border-red-100">
+            <span class="text-sm font-medium text-red-700" x-text="selected.length + ' {{ $isAr ? 'محدد' : 'selected' }}'"></span>
+            <form method="POST" action="{{ route('manager.properties.bulk-destroy') }}" @submit.prevent="confirmBulk($el)">
+                @csrf @method('DELETE')
+                <input type="hidden" name="ids" x-bind:value="selected.join(',')">
+                <button type="submit"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    {{ $isAr ? 'حذف المحدد' : 'Delete Selected' }}
+                </button>
+            </form>
+            <button @click="clearAll()" class="text-xs text-red-500 hover:text-red-700 underline">{{ $isAr ? 'إلغاء التحديد' : 'Clear' }}</button>
+        </div>
+
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-600 text-xs uppercase">
                     <tr>
+                        <th class="px-4 py-3 w-8">
+                            <input type="checkbox" @change="toggleAll($event)" :checked="allSelected"
+                                   class="rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer">
+                        </th>
                         <th class="px-4 py-3 text-right">{{ $isAr ? 'الكود' : 'Code' }}</th>
                         <th class="px-4 py-3 text-right">{{ $isAr ? 'الاسم' : 'Name' }}</th>
                         <th class="px-4 py-3 text-right">{{ $isAr ? 'النوع' : 'Type' }}</th>
@@ -98,7 +119,11 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($properties as $property)
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50" :class="selected.includes({{ $property->id }}) ? 'bg-red-50' : ''">
+                        <td class="px-4 py-3 w-8">
+                            <input type="checkbox" :value="{{ $property->id }}" x-model="selected"
+                                   class="rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer">
+                        </td>
                         <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ $property->code }}</td>
                         <td class="px-4 py-3">
                             <div class="font-medium text-gray-800 flex items-center gap-1.5">
@@ -159,11 +184,32 @@
                         </td>
                     </tr>
                     @empty
-                    <tr><td colspan="8" class="text-center py-10 text-gray-400 text-sm">{{ $isAr ? 'لا توجد عقارات' : 'No properties found' }}</td></tr>
+                    <tr><td colspan="9" class="text-center py-10 text-gray-400 text-sm">{{ $isAr ? 'لا توجد عقارات' : 'No properties found' }}</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
         <div class="p-3 border-t border-gray-100">{{ $properties->links() }}</div>
     </div>
+
+<script>
+function bulkSelect() {
+    return {
+        selected: [],
+        get allSelected() {
+            const ids = [...document.querySelectorAll('input[type=checkbox][x-model=selected]')].map(el => parseInt(el.value));
+            return ids.length > 0 && ids.every(id => this.selected.includes(id));
+        },
+        toggleAll(e) {
+            const ids = [...document.querySelectorAll('input[type=checkbox][x-model=selected]')].map(el => parseInt(el.value));
+            this.selected = e.target.checked ? ids : [];
+        },
+        clearAll() { this.selected = []; },
+        confirmBulk(form) {
+            const msg = '{{ $isAr ? 'حذف' : 'Delete' }} ' + this.selected.length + ' {{ $isAr ? 'عقار؟ لا يمكن التراجع عن هذا الإجراء.' : 'properties? This cannot be undone.' }}';
+            if (confirm(msg)) form.submit();
+        },
+    }
+}
+</script>
 </x-app-layout>

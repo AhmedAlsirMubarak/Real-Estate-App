@@ -54,6 +54,7 @@ Route::middleware(['auth', 'role:manager'])->prefix('manager')->name('manager.')
     Route::post('properties/comprehensive-report', [Manager\BuildingComprehensiveReportController::class, 'generate'])->name('properties.report.generate');
     Route::get('properties/commissions', [Manager\PropertyController::class, 'managementCommissions'])->name('properties.commissions');
 
+    Route::delete('properties/bulk-destroy', [Manager\PropertyController::class, 'bulkDestroy'])->name('properties.bulk-destroy');
     Route::get('properties/export', [Manager\PropertyController::class, 'export'])->name('properties.export');
     Route::get('properties/import', [Manager\PropertyController::class, 'importForm'])->name('properties.import.form');
     Route::post('properties/import', [Manager\PropertyController::class, 'import'])->name('properties.import');

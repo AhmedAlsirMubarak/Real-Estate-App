@@ -459,6 +459,18 @@ class PropertyController extends Controller
             ->with('success', 'تم حذف العقار بنجاح');
     }
 
+    public function bulkDestroy(Request $request)
+    {
+        $ids = array_filter(array_map('intval', explode(',', $request->input('ids', ''))));
+        if (empty($ids)) {
+            return back()->with('error', app()->getLocale() === 'ar' ? 'لم يتم تحديد أي عقار' : 'No properties selected');
+        }
+        $count = Property::whereIn('id', $ids)->count();
+        Property::whereIn('id', $ids)->delete();
+        $isAr = app()->getLocale() === 'ar';
+        return back()->with('success', $isAr ? "تم حذف {$count} عقار" : "{$count} " . ($count === 1 ? 'property' : 'properties') . ' deleted');
+    }
+
     public function transfer(Request $request, Property $property)
     {
         $validated = $request->validate([
