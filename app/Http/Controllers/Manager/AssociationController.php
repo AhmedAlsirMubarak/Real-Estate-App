@@ -202,9 +202,14 @@ class AssociationController extends Controller
         $rows = [
             // Headers: required fields first, then optional
             ['property_code', 'name_ar *', 'name_en *', 'monthly_fee_per_unit *', 'established_date *',
-             'status', 'description_ar', 'description_en', 'electricity_account_number', 'water_account_number'],
+             'status', 'fee_frequency', 'phone_number',
+             'unit_number', 'unit_fees',
+             'description_ar', 'description_en', 'electricity_account_number', 'water_account_number'],
+            // Example row — unit_number as comma-separated, unit_fees as unit:fee pairs
             ['TH-V-001', 'جمعية ملاك برج النخيل', 'Palm Tower Owners Association', '50', '2024-01-15',
-             'active', '', '', '', ''],
+             'active', 'monthly', '',
+             '60,78', '60:50,78:75',
+             '', '', '', ''],
         ];
 
         $csv = "\xEF\xBB\xBF";

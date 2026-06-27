@@ -12,7 +12,8 @@ class AssociationImport
     public array $rowErrors = [];
     public array $warnings = [];
 
-    private const STATUSES = ['active', 'inactive'];
+    private const STATUSES        = ['active', 'inactive'];
+    private const FEE_FREQUENCIES = ['monthly', 'yearly'];
 
     private string $filePath;
 
@@ -291,6 +292,33 @@ class AssociationImport
             ];
         }
 
+        // fee_frequency — optional enum
+        $freq = $this->get($data, 'fee_frequency');
+        if ($freq !== '' && !in_array($freq, self::FEE_FREQUENCIES, true)) {
+            $errors[] = [
+                'row'   => $rowNum,
+                'field' => 'fee_frequency',
+                'value' => $freq,
+                'error' => 'Invalid value "' . $freq . '". Allowed: ' . implode(', ', self::FEE_FREQUENCIES),
+            ];
+        }
+
+        // unit_fees — optional, validate each value is numeric if provided
+        $unitFeesRaw = $this->get($data, 'unit_fees');
+        if ($unitFeesRaw !== '') {
+            foreach ($this->parseUnitFees($unitFeesRaw) as $unit => $fee) {
+                if (!is_numeric($fee) || (float) $fee < 0) {
+                    $errors[] = [
+                        'row'   => $rowNum,
+                        'field' => 'unit_fees',
+                        'value' => $unitFeesRaw,
+                        'error' => 'Invalid fee for unit "' . $unit . '" — must be a non-negative number',
+                    ];
+                    break;
+                }
+            }
+        }
+
         return $errors;
     }
 
@@ -300,20 +328,92 @@ class AssociationImport
         $property     = Property::where('code', $propertyCode)->first();
 
         $establishedDate = $this->get($data, 'established_date');
-        $status           = $this->get($data, 'status');
-        $nameAr           = $this->get($data, 'name_ar');
+        $status          = $this->get($data, 'status');
+        $freq            = $this->get($data, 'fee_frequency');
+        $unitNumberRaw   = $this->get($data, 'unit_number');
+        $unitFeesRaw     = $this->get($data, 'unit_fees');
+        $phoneNumber     = $this->get($data, 'phone_number') ?: null;
+
+        // unit_number: accept "60,78" or JSON ["60","78"]
+        $unitNumbers = $this->parseUnitNumbers($unitNumberRaw);
+
+        // unit_fees: accept "60:150,78:200" or JSON {"60":150,"78":200}
+        $unitFees = $this->parseUnitFees($unitFeesRaw);
 
         Association::create([
             'property_id'                => $property->id,
-            'name_ar'                    => $nameAr,
+            'name_ar'                    => $this->get($data, 'name_ar'),
             'name_en'                    => $this->get($data, 'name_en'),
             'established_date'           => date('Y-m-d', strtotime($establishedDate)),
             'monthly_fee_per_unit'       => (float) $this->get($data, 'monthly_fee_per_unit'),
+            'fee_frequency'              => $freq !== '' ? $freq : 'monthly',
             'description_ar'             => $this->get($data, 'description_ar') ?: null,
             'description_en'             => $this->get($data, 'description_en') ?: null,
             'status'                     => $status !== '' ? $status : 'active',
+            'phone_number'               => $phoneNumber,
+            'unit_number'                => $unitNumbers ?: null,
+            'unit_fees'                  => $unitFees ?: null,
             'electricity_account_number' => $this->get($data, 'electricity_account_number') ?: null,
             'water_account_number'       => $this->get($data, 'water_account_number') ?: null,
         ]);
+    }
+
+    /**
+     * Parse unit numbers from a comma-separated string or JSON array.
+     * "60,78,80"  →  ["60","78","80"]
+     * '["60","78"]'  →  ["60","78"]
+     */
+    private function parseUnitNumbers(string $raw): array
+    {
+        $raw = trim($raw);
+        if ($raw === '') return [];
+
+        // Try JSON first
+        if (str_starts_with($raw, '[')) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                return array_values(array_filter(array_map('trim', array_map('strval', $decoded))));
+            }
+        }
+
+        // Comma-separated
+        return array_values(array_filter(array_map('trim', explode(',', $raw))));
+    }
+
+    /**
+     * Parse unit fees from a "unit:fee,unit:fee" string or JSON object.
+     * "60:150,78:200"     →  ["60" => 150.0, "78" => 200.0]
+     * '{"60":150,"78":200}'  →  ["60" => 150.0, "78" => 200.0]
+     */
+    private function parseUnitFees(string $raw): array
+    {
+        $raw = trim($raw);
+        if ($raw === '') return [];
+
+        // Try JSON first
+        if (str_starts_with($raw, '{')) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $result = [];
+                foreach ($decoded as $unit => $fee) {
+                    $result[(string) $unit] = (float) $fee;
+                }
+                return $result;
+            }
+        }
+
+        // "unit:fee,unit:fee" format
+        $result = [];
+        foreach (explode(',', $raw) as $pair) {
+            $parts = explode(':', trim($pair), 2);
+            if (count($parts) === 2) {
+                $unit = trim($parts[0]);
+                $fee  = trim($parts[1]);
+                if ($unit !== '' && is_numeric($fee)) {
+                    $result[$unit] = (float) $fee;
+                }
+            }
+        }
+        return $result;
     }
 }

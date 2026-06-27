@@ -91,7 +91,12 @@ class HoaComprehensiveReportController extends Controller
             ' . e($reportTitle) . ' — الصفحة {PAGENO} من {nbpg}
         </div>');
 
+        // Large reports (many associations) can exceed the default pcre.backtrack_limit.
+        // Temporarily raise it for this request only.
+        $prevBacktrack = (int) ini_get('pcre.backtrack_limit');
+        ini_set('pcre.backtrack_limit', max($prevBacktrack, 10_000_000));
         $mpdf->WriteHTML($html);
+        ini_set('pcre.backtrack_limit', $prevBacktrack);
 
         $slug     = $slug ?? 'hoa';
         $filename = 'hoa-report-' . $slug . '-' . $from->format('Y-m') . '-to-' . $to->format('Y-m') . '.pdf';
