@@ -14,7 +14,8 @@ class UnitController extends Controller
     use StoresUploadedFiles;
     public function create(Property $property)
     {
-        return view('manager.units.create', compact('property'));
+        $owners = $property->section === 'hoa' ? $property->owners()->with('user')->get() : collect();
+        return view('manager.units.create', compact('property', 'owners'));
     }
 
     public function store(Request $request, Property $property)
@@ -75,7 +76,8 @@ class UnitController extends Controller
     public function edit(Property $property, Unit $unit)
     {
         $unit->load('images');
-        return view('manager.units.edit', compact('property', 'unit'));
+        $owners = $property->section === 'hoa' ? $property->owners()->with('user')->get() : collect();
+        return view('manager.units.edit', compact('property', 'unit', 'owners'));
     }
 
     public function update(Request $request, Property $property, Unit $unit)
@@ -97,6 +99,7 @@ class UnitController extends Controller
     private function validated(Request $request, Property $property, bool $updating = false): array
     {
         $rules = [
+            'owner_id'     => 'nullable|exists:owners,id',
             'unit_number'  => 'nullable|string|max:50',
             'floor'        => 'nullable|integer|min:0',
             'type'         => 'required|in:apartment,shop,office,studio,villa_unit,farm_unit,chalet_unit',

@@ -16,11 +16,15 @@ class Association extends Model
         'name_en',
         'established_date',
         'monthly_fee_per_unit',
+        'fee_frequency',
         'description_ar',
         'description_en',
         'status',
         'electricity_account_number',
         'water_account_number',
+        'unit_number',
+        'unit_fees',
+        'phone_number',
         'no_objection_certificate_path',
         'sketch_path',
         'association_certificate_path',
@@ -31,6 +35,8 @@ class Association extends Model
     protected $casts = [
         'established_date'     => 'date',
         'monthly_fee_per_unit' => 'decimal:2',
+        'unit_number'          => 'array',
+        'unit_fees'            => 'array',
     ];
 
     public function property()

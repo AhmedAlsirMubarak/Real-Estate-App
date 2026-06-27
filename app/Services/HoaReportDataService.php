@@ -14,18 +14,52 @@ class HoaReportDataService
 {
     public function collectMultiple(array $associationIds, Carbon $from, Carbon $to): array
     {
+        // Bulk-load all associations in one query instead of N individual findOrFail calls.
+        $associations = Association::with(['property'])
+            ->whereIn('id', $associationIds)
+            ->orderBy('id')
+            ->get()
+            ->keyBy('id');
+
         $allData = [];
         foreach ($associationIds as $id) {
-            $assoc     = Association::with(['property', 'meetings'])->findOrFail($id);
-            $allData[] = $this->collect($assoc, $from, $to);
+            if ($assoc = $associations->get($id)) {
+                $allData[] = $this->collect($assoc, $from, $to);
+            }
         }
 
         $isMulti = count($allData) > 1;
 
-        $totalDues     = (float) collect($allData)->sum('totalDues');
-        $paidDues      = (float) collect($allData)->sum('paidDues');
-        $unpaidDues    = (float) collect($allData)->sum('unpaidDues');
-        $totalExpenses = (float) collect($allData)->sum('totalExpenses');
+        $totalDues  = (float) collect($allData)->sum('totalDues');
+        $paidDues   = (float) collect($allData)->sum('paidDues');
+        $unpaidDues = (float) collect($allData)->sum('unpaidDues');
+        $waivedDues = (float) collect($allData)->sum('waivedDues');
+
+        // Deduplicate expenses by property — multiple associations for the same property
+        // each carry the full property expense list, so sum only once per property.
+        $seenExpensePropIds = [];
+        $totalExpenses      = 0.0;
+        foreach ($allData as $d) {
+            $pid = $d['property']?->id;
+            if ($pid === null || ! in_array($pid, $seenExpensePropIds, true)) {
+                $totalExpenses += $d['totalExpenses'];
+                if ($pid !== null) {
+                    $seenExpensePropIds[] = $pid;
+                }
+            }
+        }
+
+        // Deduplicate units across associations that share the same property
+        $allUnits  = collect($allData)->flatMap(fn($d) => $d['units'])->unique('id');
+        $allOwners = collect($allData)->flatMap(fn($d) => $d['owners'])->unique('id');
+
+        // Each association = one owner; fall back to association count when pivot table is empty
+        $ownersCount = $allOwners->isNotEmpty()
+            ? $allOwners->count()
+            : count($allData);
+
+        // Exclude waived dues from collection rate denominator (consistent with per-association rate)
+        $collectibleTotal = $totalDues - $waivedDues;
 
         $aggregate = [
             'count'          => count($allData),
@@ -34,10 +68,10 @@ class HoaReportDataService
             'unpaidDues'     => $unpaidDues,
             'totalExpenses'  => $totalExpenses,
             'netBalance'     => $paidDues - $totalExpenses,
-            'collectionRate' => $totalDues > 0 ? round($paidDues / $totalDues * 100, 1) : 0,
-            'totalUnits'     => (int) collect($allData)->sum('totalUnits'),
-            'occupiedUnits'  => (int) collect($allData)->sum('occupiedUnits'),
-            'ownersCount'    => (int) collect($allData)->sum('ownersCount'),
+            'collectionRate' => $collectibleTotal > 0 ? round($paidDues / $collectibleTotal * 100, 1) : 0,
+            'totalUnits'     => $allUnits->count(),
+            'occupiedUnits'  => $allUnits->whereIn('status', ['rented', 'sold'])->count(),
+            'ownersCount'    => $ownersCount,
         ];
 
         return [
@@ -59,8 +93,21 @@ class HoaReportDataService
         $association->property?->units->each(fn ($u) => $u->activeRentalContract?->contract_file);
 
         $property = $association->property;
-        $units    = $property?->units ?? collect();
-        $owners   = $property?->owners ?? collect();
+        $allPropertyUnits = $property?->units ?? collect();
+
+        // Scope units to only those assigned to this association
+        $assignedUnitNums = array_filter((array) ($association->unit_number ?? []));
+        $units = $assignedUnitNums
+            ? $allPropertyUnits->filter(fn ($u) => in_array($u->unit_number ?? '#'.$u->id, $assignedUnitNums))->values()
+            : $allPropertyUnits;
+
+        $owners = $property?->owners ?? collect();
+
+        // All sibling associations for the same property (needed for property-level KPIs in Sections 1–2).
+        // Loading here avoids an N+1 DB query per association in the Blade template.
+        $propertySiblings = $property
+            ? Association::where('property_id', $property->id)->orderBy('id')->get()
+            : collect();
 
         // ── Dues in reporting period ──────────────────────────────────────────
         $dues = AssociationDue::where('association_id', $association->id)
@@ -88,7 +135,7 @@ class HoaReportDataService
             $expenses = Expense::where('expensable_type', Property::class)
                 ->where('expensable_id', $property->id)
                 ->whereBetween('expense_date', [$from->toDateString(), $to->toDateString()])
-                ->with('invoices')
+                ->with(['invoices', 'paidByUser'])
                 ->orderBy('expense_date')
                 ->get();
         }
@@ -127,7 +174,13 @@ class HoaReportDataService
         $overdueDues    = (float) $dues->where('status', 'overdue')->sum('amount');
         $totalExpenses  = (float) $expenses->sum('amount');
         $netBalance     = $paidDues - $totalExpenses;
-        $collectionRate = $totalDues > 0 ? round($paidDues / $totalDues * 100, 1) : 0;
+        // Exclude waived dues from the denominator — waived are not "uncollected",
+        // so they should not drag the rate down.
+        $collectibleDues = $totalDues - $waivedDues;
+        $collectionRate  = $collectibleDues > 0 ? round($paidDues / $collectibleDues * 100, 1) : 0;
+
+        // All-time outstanding total (used in Section 3 to show cumulative balance)
+        $allTimeOutstanding = (float) $allOutstanding->sum('amount');
 
         // ── Unit occupancy ────────────────────────────────────────────────────
         $totalUnits    = $units->count();
@@ -253,16 +306,18 @@ class HoaReportDataService
         // ── Expense by category ───────────────────────────────────────────────
         $expensesByCategory = $expenses->groupBy('category');
 
-        $ownersCount = $owners->count();
+        // Each Association represents exactly one owner in this system.
+        $ownersCount = $owners->isNotEmpty() ? $owners->count() : 1;
 
         return compact(
             'association', 'property', 'units', 'owners', 'ownersCount',
+            'propertySiblings',
             'totalUnits', 'occupiedUnits', 'vacantUnits',
             'dues', 'allDues', 'allOutstanding',
             'expenses', 'expensesByCategory',
             'maintenance', 'meetings',
             'totalDues', 'paidDues', 'unpaidDues', 'waivedDues', 'overdueDues',
-            'totalExpenses', 'netBalance', 'collectionRate',
+            'totalExpenses', 'netBalance', 'collectionRate', 'allTimeOutstanding',
             'aging', 'ownerStatements', 'unitFeeMap', 'monthlyTrends',
             'commissionInvoices', 'totalCommissions'
         );

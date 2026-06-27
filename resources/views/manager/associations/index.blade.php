@@ -63,8 +63,8 @@
                         </th>
                         <th class="px-4 py-3 text-right">{{ $tr('الاسم', 'Name') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('العقار', 'Property') }}</th>
-                        <th class="px-4 py-3 text-right">{{ $tr('الملاك', 'Owners') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('الرسوم الشهرية لكل وحدة', 'Monthly Fee per Unit') }}</th>
+                        <th class="px-4 py-3 text-right">{{ $tr('رقم الوحدة', 'Unit No.') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('الحالة', 'Status') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('أنشئ بواسطة', 'Created By') }}</th>
                         <th class="px-4 py-3 text-right">{{ $tr('إجراءات', 'Actions') }}</th>
@@ -78,8 +78,24 @@
                         </td>
                         <td class="px-4 py-3 font-medium text-gray-800">{{ $assoc->name }}</td>
                         <td class="px-4 py-3 text-gray-600">{{ $assoc->property->name ?? '—' }}</td>
-                        <td class="px-4 py-3 text-gray-600">{{ $assoc->property?->owners?->count() ?? 0 }}</td>
                         <td class="px-4 py-3 text-gray-700">{{ number_format($assoc->monthly_fee_per_unit, 2) }}</td>
+                        <td class="px-4 py-3 text-gray-600">
+                            @php $unitNumbers = array_filter((array)($assoc->unit_number ?? [])); @endphp
+                            @if(!empty($unitNumbers))
+                                <div class="flex flex-wrap gap-1">
+                                @foreach($unitNumbers as $uNum)
+                                    <span class="inline-flex items-center gap-1 bg-blue-50 border border-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                                        {{ $uNum }}
+                                    </span>
+                                @endforeach
+                                </div>
+                                @if(count($unitNumbers) > 1)
+                                    <span class="text-xs text-gray-400 mt-0.5 block">{{ count($unitNumbers) }} {{ $tr('وحدات', 'units') }}</span>
+                                @endif
+                            @else
+                                —
+                            @endif
+                        </td>
                         <td class="px-4 py-3">
                             <span class="inline-flex px-2 py-0.5 rounded-full text-xs
                                 {{ $assoc->status === 'active' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600' }}">

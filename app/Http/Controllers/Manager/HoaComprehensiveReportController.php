@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
 use App\Models\Association;
+use App\Models\Property;
 use App\Services\HoaReportDataService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -15,21 +16,23 @@ class HoaComprehensiveReportController extends Controller
 {
     public function create(Request $request)
     {
-        $associations = Association::with('property')->orderBy('name_ar')->get();
-        $selectedId   = $request->input('association_id');
+        $properties = Property::whereHas('associations')->orderBy('name')->get();
+        $selectedId = $request->input('property_id');
 
-        return view('manager.associations.comprehensive-report-form', compact('associations', 'selectedId'));
+        return view('manager.associations.comprehensive-report-form', compact('properties', 'selectedId'));
     }
 
     public function generate(Request $request, HoaReportDataService $service)
     {
+        $validPropertyIds = Property::whereHas('associations')->pluck('id')->map(fn($id) => (string) $id)->all();
+
         $validated = $request->validate([
-            'association_id' => ['required', Rule::in(array_merge(['all'], Association::pluck('id')->map(fn($id) => (string)$id)->all()))],
-            'from'           => 'required|date',
-            'to'             => 'required|date|after_or_equal:from',
-            'sections'       => 'nullable|array',
-            'sections.*'     => 'string',
-            'locale'         => 'nullable|in:ar,en',
+            'property_id' => ['required', Rule::in(array_merge(['all'], $validPropertyIds))],
+            'from'        => 'required|date',
+            'to'          => 'required|date|after_or_equal:from',
+            'sections'    => 'nullable|array',
+            'sections.*'  => 'string',
+            'locale'      => 'nullable|in:ar,en',
         ]);
 
         $from     = Carbon::parse($validated['from'])->startOfDay();
@@ -37,17 +40,17 @@ class HoaComprehensiveReportController extends Controller
         $sections = $validated['sections'] ?? $this->allSections();
         $locale   = $validated['locale'] ?? 'ar';
 
-        $isAll = $validated['association_id'] === 'all';
+        $isAll = $validated['property_id'] === 'all';
 
         if ($isAll) {
             $associationIds = Association::pluck('id')->all();
-            $reportTitle    = $locale === 'ar' ? 'جميع الجمعيات' : 'All Associations';
+            $reportTitle    = $locale === 'ar' ? 'جميع العقارات' : 'All Properties';
+            $slug           = 'all-properties';
         } else {
-            $associationIds = [(int) $validated['association_id']];
-            $assocObj       = Association::findOrFail($validated['association_id']);
-            $reportTitle    = $locale === 'ar'
-                ? ($assocObj->name_ar ?? $assocObj->name_en ?? 'HOA')
-                : ($assocObj->name_en ?? $assocObj->name_ar ?? 'HOA');
+            $propertyObj    = Property::with('associations')->findOrFail($validated['property_id']);
+            $associationIds = $propertyObj->associations->pluck('id')->all();
+            $reportTitle    = $propertyObj->name;
+            $slug           = preg_replace('/[\s\/]+/', '-', $propertyObj->name);
         }
 
         $data = $service->collectMultiple($associationIds, $from, $to);
@@ -90,7 +93,7 @@ class HoaComprehensiveReportController extends Controller
 
         $mpdf->WriteHTML($html);
 
-        $slug     = preg_replace('/[\s\/]+/', '-', $isAll ? 'all-associations' : ($assocObj->name_en ?? 'hoa'));
+        $slug     = $slug ?? 'hoa';
         $filename = 'hoa-report-' . $slug . '-' . $from->format('Y-m') . '-to-' . $to->format('Y-m') . '.pdf';
 
         // ── Save mPDF output to temp file, then merge physical attachments via FPDI ──
@@ -109,13 +112,19 @@ class HoaComprehensiveReportController extends Controller
                 $fpdi->useTemplate($tpl);
             }
 
-            // Append physical files for every association in the report
+            // Append physical files for every association in the report.
+            // Expense files and commission invoices are property-level queries, so track
+            // seen IDs/property-IDs to avoid duplicating pages when associations share a property.
+            $appendedExpenseIds  = [];
+            $appendedCommPropIds = [];
+
             foreach ($data['associations_data'] as $assocData) {
                 $assoc    = $assocData['association'];
                 $expenses = $assocData['expenses'];
                 $units    = $assocData['units'];
+                $propId   = $assocData['property']?->id;
 
-                // 1. Rental contracts
+                // 1. Rental contracts (scoped to this association's units — no duplication risk)
                 foreach ($units as $unit) {
                     $contract = $unit->activeRentalContract;
                     if (! $contract?->contract_file) continue;
@@ -125,8 +134,13 @@ class HoaComprehensiveReportController extends Controller
                     $this->appendFile($fpdi, $abs, $label);
                 }
 
-                // 2. Expense invoices (multi-invoice + legacy single receipt)
+                // 2. Expense invoices — deduplicate by expense ID (property-level, shared across associations)
                 foreach ($expenses as $expense) {
+                    if (in_array($expense->id, $appendedExpenseIds, true)) {
+                        continue;
+                    }
+                    $appendedExpenseIds[] = $expense->id;
+
                     foreach ($expense->invoices as $inv) {
                         $abs   = storage_path('app/public/' . $inv->file_path);
                         $label = 'Invoice — ' . ($expense->title ?? 'Expense')
@@ -141,7 +155,7 @@ class HoaComprehensiveReportController extends Controller
                     }
                 }
 
-                // 3. Association documents (certificate, sketch, personal IDs, etc.)
+                // 3. Association documents (per-association — no duplication risk)
                 $assocDocs = [
                     'No Objection Certificate'       => $assoc->no_objection_certificate_path,
                     'Sketch'                          => $assoc->sketch_path,
@@ -154,21 +168,26 @@ class HoaComprehensiveReportController extends Controller
                     $this->appendFile($fpdi, storage_path('app/public/' . $relPath), $label);
                 }
 
-                // 4. Commission invoice PDFs
-                foreach ($assocData['commissionInvoices'] as $cinv) {
-                    if (! $cinv->file_path) continue;
-                    $this->appendFile($fpdi, storage_path('app/public/' . $cinv->file_path),
-                        'Commission Invoice — ' . $cinv->invoice_number . ' (' . $cinv->recipient_name . ')');
+                // 4. Commission invoice PDFs — deduplicate by property (property-level query)
+                if ($propId === null || ! in_array($propId, $appendedCommPropIds, true)) {
+                    foreach ($assocData['commissionInvoices'] as $cinv) {
+                        if (! $cinv->file_path) continue;
+                        $this->appendFile($fpdi, storage_path('app/public/' . $cinv->file_path),
+                            'Commission Invoice — ' . $cinv->invoice_number . ' (' . $cinv->recipient_name . ')');
+                    }
+                    if ($propId !== null) {
+                        $appendedCommPropIds[] = $propId;
+                    }
                 }
 
-                // 6. Generated NOC certificates (rental)
+                // 5. Generated NOC certificates (rental — per-association)
                 foreach ($assoc->noObjectionCertificates as $noc) {
                     if (! $noc->file_path) continue;
                     $this->appendFile($fpdi, storage_path('app/' . $noc->file_path),
                         'NOC Rental — ' . $noc->ref_number);
                 }
 
-                // 7. Generated NOC certificates (sale)
+                // 6. Generated NOC certificates (sale — per-association)
                 foreach ($assoc->noObjectionSaleCertificates as $noc) {
                     if (! $noc->file_path) continue;
                     $this->appendFile($fpdi, storage_path('app/' . $noc->file_path),

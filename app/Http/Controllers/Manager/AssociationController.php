@@ -16,7 +16,7 @@ class AssociationController extends Controller
 {
     public function index()
     {
-        $associations = Association::with(['property.owners', 'createdBy'])
+        $associations = Association::with(['property.owners', 'property.units.owner.user', 'createdBy'])
             ->withCount('dues')
             ->latest()
             ->paginate(15);
@@ -26,8 +26,9 @@ class AssociationController extends Controller
 
     public function create()
     {
-        $properties = Property::orderBy('name_ar')->get();
-        return view('manager.associations.create', compact('properties'));
+        $properties = Property::with('units.owner.user')->orderBy('name_ar')->get();
+        $unitsMap   = $this->buildUnitsMap($properties);
+        return view('manager.associations.create', compact('properties', 'unitsMap'));
     }
 
     public function store(Request $request)
@@ -38,11 +39,17 @@ class AssociationController extends Controller
             'name_en'                    => 'required|string|max:255',
             'established_date'           => 'nullable|date',
             'monthly_fee_per_unit'       => 'required|numeric|min:0',
+            'fee_frequency'              => 'required|in:monthly,yearly',
             'description_ar'             => 'nullable|string',
             'description_en'             => 'nullable|string',
             'status'                     => 'required|in:active,inactive',
             'electricity_account_number' => 'nullable|string|max:100',
             'water_account_number'       => 'nullable|string|max:100',
+            'unit_number'                => 'nullable|array',
+            'unit_number.*'              => 'string',
+            'unit_fees'                  => 'nullable|array',
+            'unit_fees.*'                => 'nullable|numeric|min:0',
+            'phone_number'               => 'nullable|string|max:50',
             'no_objection_certificate'   => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'sketch'                     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'association_certificate'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
@@ -50,14 +57,24 @@ class AssociationController extends Controller
             'manager_id'                 => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
 
-        $association = Association::create(array_filter($data, fn ($k) => !in_array($k, [
-            'no_objection_certificate', 'sketch', 'association_certificate', 'personal_id', 'manager_id',
-        ]), ARRAY_FILTER_USE_KEY));
+        // Only keep fees for the selected units
+        $selectedUnits = $data['unit_number'] ?? [];
+        $rawFees = $request->input('unit_fees', []);
+        $data['unit_fees'] = $selectedUnits
+            ? array_intersect_key($rawFees, array_flip($selectedUnits))
+            : null;
+
+        $association = Association::create(array_merge(
+            array_filter($data, fn ($k) => !in_array($k, [
+                'no_objection_certificate', 'sketch', 'association_certificate', 'personal_id', 'manager_id',
+            ]), ARRAY_FILTER_USE_KEY),
+            ['created_by' => auth()->id()]
+        ));
 
         $this->handleDocumentUploads($request, $association);
 
         return redirect()
-            ->route('manager.associations.show', $association)
+            ->route('manager.associations.index')
             ->with('success', __('Created Successfully'));
     }
 
@@ -79,27 +96,44 @@ class AssociationController extends Controller
 
     public function edit(Association $association)
     {
-        return view('manager.associations.edit', compact('association'));
+        $association->load('property.units.owner.user');
+        $properties = Property::with('units.owner.user')->orderBy('name_ar')->get();
+        $unitsMap   = $this->buildUnitsMap($properties, $association->id);
+        return view('manager.associations.edit', compact('association', 'properties', 'unitsMap'));
     }
 
     public function update(Request $request, Association $association)
     {
         $data = $request->validate([
+            'property_id'                => 'required|exists:properties,id',
             'name_ar'                    => 'required|string|max:255',
             'name_en'                    => 'required|string|max:255',
             'established_date'           => 'nullable|date',
             'monthly_fee_per_unit'       => 'required|numeric|min:0',
+            'fee_frequency'              => 'required|in:monthly,yearly',
             'description_ar'             => 'nullable|string',
             'description_en'             => 'nullable|string',
             'status'                     => 'required|in:active,inactive',
             'electricity_account_number' => 'nullable|string|max:100',
             'water_account_number'       => 'nullable|string|max:100',
+            'unit_number'                => 'nullable|array',
+            'unit_number.*'              => 'string',
+            'unit_fees'                  => 'nullable|array',
+            'unit_fees.*'                => 'nullable|numeric|min:0',
+            'phone_number'               => 'nullable|string|max:50',
             'no_objection_certificate'   => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'sketch'                     => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'association_certificate'    => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'personal_id'                => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'manager_id'                 => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
+
+        // Only keep fees for the selected units
+        $selectedUnits = $data['unit_number'] ?? [];
+        $rawFees = $request->input('unit_fees', []);
+        $data['unit_fees'] = $selectedUnits
+            ? array_intersect_key($rawFees, array_flip($selectedUnits))
+            : null;
 
         $association->update(array_filter($data, fn ($k) => !in_array($k, [
             'no_objection_certificate', 'sketch', 'association_certificate', 'personal_id', 'manager_id',
@@ -108,7 +142,7 @@ class AssociationController extends Controller
         $this->handleDocumentUploads($request, $association);
 
         return redirect()
-            ->route('manager.associations.show', $association)
+            ->route('manager.associations.index')
             ->with('success', __('Updated Successfully'));
     }
 
@@ -691,5 +725,28 @@ class AssociationController extends Controller
         if ($updates) {
             $association->update($updates);
         }
+    }
+
+    private function buildUnitsMap(\Illuminate\Support\Collection $properties, ?int $excludeAssociationId = null): \Illuminate\Support\Collection
+    {
+        // Collect all unit labels already claimed by other associations, grouped by property_id
+        $takenQuery = Association::whereNotNull('unit_number');
+        if ($excludeAssociationId) {
+            $takenQuery->where('id', '!=', $excludeAssociationId);
+        }
+
+        $takenByProperty = $takenQuery->get(['property_id', 'unit_number'])
+            ->groupBy('property_id')
+            ->map(fn($rows) => $rows->flatMap(fn($a) => (array) $a->unit_number)->unique()->values()->all());
+
+        return $properties->mapWithKeys(fn($p) => [
+            $p->id => $p->units
+                ->filter(fn($u) => ! in_array($u->unit_number ?? '#'.$u->id, $takenByProperty[$p->id] ?? []))
+                ->map(fn($u) => [
+                    'id'    => $u->id,
+                    'label' => $u->unit_number ?? '#'.$u->id,
+                    'owner' => $u->owner?->user?->name ?? '',
+                ])->values(),
+        ]);
     }
 }

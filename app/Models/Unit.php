@@ -11,6 +11,7 @@ class Unit extends Model
 
     protected $fillable = [
         'property_id',
+        'owner_id',
         'unit_number',
         'floor',
         'type',
@@ -33,6 +34,11 @@ class Unit extends Model
     public function property()
     {
         return $this->belongsTo(Property::class);
+    }
+
+    public function owner()
+    {
+        return $this->belongsTo(Owner::class);
     }
 
     public function rentalContracts()

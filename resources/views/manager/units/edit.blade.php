@@ -13,6 +13,21 @@
             <h2 class="text-lg font-bold text-gray-800 mb-1">تعديل وحدة {{ $unit->unit_number ?? '#' . $unit->id }}</h2>
             <p class="text-xs text-gray-500 mb-3">في: <strong>{{ $property->name }}</strong></p>
 
+            @if($owners->isNotEmpty())
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">المالك (جمعية الملاك) <span class="text-red-500">*</span></label>
+                <select name="owner_id" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                    <option value="">-- اختر المالك --</option>
+                    @foreach($owners as $owner)
+                    <option value="{{ $owner->id }}" @selected(old('owner_id', $unit->owner_id) == $owner->id)>
+                        {{ $owner->user?->name ?? 'مالك #'.$owner->id }}
+                    </option>
+                    @endforeach
+                </select>
+                @error('owner_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+            </div>
+            @endif
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">رقم الوحدة</label>

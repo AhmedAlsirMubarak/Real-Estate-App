@@ -123,8 +123,8 @@ body  { font-family: dejavusans, sans-serif; font-size: 9pt; color: #1e293b; dir
     <table class="cover-meta" cellspacing="0">
         @if($isMulti)
         <tr>
-            <td class="cover-lbl">{{ $tr('عدد الجمعيات','Associations') }}</td>
-            <td class="cover-val">{{ $agg['count'] }} {{ $tr('جمعية','associations') }}</td>
+            <td class="cover-lbl">{{ $tr('عدد الملاك','Owners') }}</td>
+            <td class="cover-val">{{ $agg['ownersCount'] }}</td>
         </tr>
         <tr>
             <td class="cover-lbl">{{ $tr('إجمالي الوحدات','Total Units') }}</td>
@@ -159,10 +159,10 @@ body  { font-family: dejavusans, sans-serif; font-size: 9pt; color: #1e293b; dir
 $aggCollColor = $agg['collectionRate'] >= 90 ? 'kpi-green' : ($agg['collectionRate'] >= 70 ? 'kpi-amber' : 'kpi-red');
 $aggCollVColor= $agg['collectionRate'] >= 90 ? 'v-green'   : ($agg['collectionRate'] >= 70 ? 'v-amber'   : 'v-red');
 @endphp
-<div class="sec-title">{{ $tr('الملخص الموحد لجميع الجمعيات','Combined Summary — All Associations') }}</div>
+<div class="sec-title">{{ $tr('الملخص الموحد لجميع العقارات','Combined Summary — All Properties') }}</div>
 <table class="kpi-row">
 <tr>
-    <td class="kpi kpi-gray" style="width:15%;"><div class="kpi-lbl">{{ $tr('عدد الجمعيات','Associations') }}</div><div class="kpi-val v-gray">{{ $agg['count'] }}</div></td>
+    <td class="kpi kpi-gray" style="width:15%;"><div class="kpi-lbl">{{ $tr('عدد الملاك','Owners') }}</div><div class="kpi-val v-gray">{{ $agg['ownersCount'] }}</div></td>
     <td width="4"></td>
     <td class="kpi kpi-gray" style="width:15%;"><div class="kpi-lbl">{{ $tr('إجمالي الوحدات','Total Units') }}</div><div class="kpi-val v-gray">{{ $agg['totalUnits'] }}</div></td>
     <td width="4"></td>
@@ -210,7 +210,7 @@ $aggCollVColor= $agg['collectionRate'] >= 90 ? 'v-green'   : ($agg['collectionRa
             <td class="bold">{{ $isAr ? ($ad['association']->name_ar ?? $ad['association']->name_en) : ($ad['association']->name_en ?? $ad['association']->name_ar) }}</td>
             <td class="sm">{{ $ad['property']?->name ?? '—' }}</td>
             <td class="center">{{ $ad['totalUnits'] }}</td>
-            <td class="center">{{ $ad['owners']->count() }}</td>
+            <td class="center">{{ $ad['ownersCount'] }}</td>
             <td>{{ number_format($ad['totalDues']) }}</td>
             <td class="pos">{{ number_format($ad['paidDues']) }}</td>
             <td class="{{ $ad['unpaidDues']>0?'neg':'muted' }}">{{ number_format($ad['unpaidDues']) }}</td>
@@ -259,17 +259,83 @@ $waivedDues     = $loopData['waivedDues'];
 $overdueDues    = $loopData['overdueDues'];
 $totalExpenses  = $loopData['totalExpenses'];
 $netBalance     = $loopData['netBalance'];
-$collRate       = $loopData['collectionRate'];
-$aging          = $loopData['aging'];
+$collRate           = $loopData['collectionRate'];
+$allTimeOutstanding = $loopData['allTimeOutstanding'];
+$aging              = $loopData['aging'];
 $ownerStmts         = $loopData['ownerStatements'];
 $unitFeeMap         = $loopData['unitFeeMap'];
 $trends             = $loopData['monthlyTrends'];
 $commissionInvoices = $loopData['commissionInvoices'];
 $totalCommissions   = $loopData['totalCommissions'];
-$ownersCount    = $owners->count();
+$ownersCount    = $loopData['ownersCount']; // already computed with unit-fallback in data service
 $tenantsCount   = $units->filter(fn($u) => $u->activeRentalContract)->count();
 $assocName      = $isAr ? ($assoc->name_ar ?? $assoc->name_en ?? '—') : ($assoc->name_en ?? $assoc->name_ar ?? '—');
 $propName       = $property?->name ?? '—';
+$assignedUnitNums = array_filter((array)($assoc->unit_number ?? []));
+$displayUnits   = $assignedUnitNums
+    ? $units->filter(fn($u) => in_array($u->unit_number ?? '#'.$u->id, $assignedUnitNums))
+    : $units;
+
+// Property-level totals (for info box): preloaded by the data service to avoid N+1
+$propertySiblings      = $loopData['propertySiblings'];
+$propertyOwnersCount   = $propertySiblings->count();
+$propertyUnitsCount    = $propertySiblings->flatMap(fn($a) => array_filter((array)($a->unit_number ?? [])))->unique()->count()
+    ?: $totalUnits;
+$propertyTenantsCount  = $property ? $property->units->filter(fn($u) => $u->activeRentalContract)->count() : 0;
+$propertyOccupiedUnits = $property ? $property->units->whereIn('status', ['rented', 'sold'])->count() : 0;
+$propertyVacantUnits   = $property ? $property->units->where('status', 'available')->count() : 0;
+
+// When no formal Owner records exist, each Association represents one owner.
+// Build a fake owner object and fallback data so all report sections can render.
+if ($owners->isEmpty()) {
+    $fakeUser  = (object)['name' => $assocName, 'phone' => $assoc->phone_number];
+    $fakeOwner = (object)[
+        'id'          => 'assoc_'.$assoc->id,
+        'user'        => $fakeUser,
+        'national_id' => null,
+        'phone'       => $assoc->phone_number,
+        'pivot'       => (object)['ownership_percentage' => 100],
+    ];
+
+    // Build ownerStatements fallback from all dues (owner_id=null → this association)
+    if (empty($ownerStmts)) {
+        $runBal = 0.0; $txns = [];
+        foreach ($allDues->sortBy('due_date') as $d) {
+            $runBal += (float)$d->amount;
+            $txns[] = ['date'=>$d->due_date,'description'=>'اشتراك — '.$d->periodLabel(),'debit'=>(float)$d->amount,'credit'=>0,'balance'=>$runBal,'status'=>$d->status,'type'=>'charge'];
+            if (in_array($d->status,['paid','waived']) && $d->paid_at) {
+                $runBal -= (float)$d->amount;
+                $txns[] = ['date'=>$d->paid_at,'description'=>$d->status==='waived'?'إعفاء':'دفعة مستلمة','debit'=>0,'credit'=>(float)$d->amount,'balance'=>$runBal,'status'=>'credit','type'=>'credit'];
+            }
+        }
+        $ownerStmts = ['assoc_'.$assoc->id => [
+            'owner'        => $fakeOwner,
+            'transactions' => collect($txns)->sortBy('date')->values(),
+            'total_due'    => (float)$dues->sum('amount'),
+            'total_paid'   => (float)$dues->where('status','paid')->sum('amount'),
+            'outstanding'  => (float)$dues->whereIn('status',['pending','overdue'])->sum('amount'),
+            'balance'      => $runBal,
+            'all_total'    => (float)$allDues->sum('amount'),
+            'all_paid'     => (float)$allDues->where('status','paid')->sum('amount'),
+            'payment_pct'  => $allDues->sum('amount') > 0 ? round($allDues->where('status','paid')->sum('amount')/$allDues->sum('amount')*100,1) : 0,
+        ]];
+    }
+
+    // Build unitFeeMap fallback
+    if (empty($unitFeeMap)) {
+        $unitFeeMap = ['assoc_'.$assoc->id => [
+            'owner'       => $fakeOwner,
+            'total_due'   => (float)$dues->sum('amount'),
+            'total_paid'  => (float)$dues->where('status','paid')->sum('amount'),
+            'outstanding' => (float)$dues->whereIn('status',['pending','overdue'])->sum('amount'),
+            'pct'         => $dues->sum('amount') > 0 ? round($dues->where('status','paid')->sum('amount')/$dues->sum('amount')*100,1) : 0,
+            'has_overdue' => $dues->where('status','overdue')->count() > 0,
+            'share_pct'   => 100,
+        ]];
+    }
+}
+// Helper: resolve owner name from a due (falls back to association name)
+$ownerLabel = fn($due) => $due->owner?->user?->name ?? $assocName;
 @endphp
 
 {{-- Association heading (shown in multi mode only) --}}
@@ -288,7 +354,7 @@ $propName       = $property?->name ?? '—';
 
 @php
 $unitFee    = (float) $assoc->monthly_fee_per_unit;
-$expectedMo = $unitFee * $totalUnits;
+$expectedMo = $unitFee * $propertyUnitsCount;
 $collRateColor = $collRate >= 90 ? 'kpi-green' : ($collRate >= 70 ? 'kpi-amber' : 'kpi-red');
 $collRateVColor= $collRate >= 90 ? 'v-green'   : ($collRate >= 70 ? 'v-amber'   : 'v-red');
 @endphp
@@ -297,37 +363,37 @@ $collRateVColor= $collRate >= 90 ? 'v-green'   : ($collRate >= 70 ? 'v-amber'   
 <tr>
     <td class="kpi kpi-gray" style="width:14%;">
         <div class="kpi-lbl">{{ $tr('إجمالي الوحدات','Total Units') }}</div>
-        <div class="kpi-val v-gray">{{ $totalUnits }}</div>
+        <div class="kpi-val v-gray">{{ $propertyUnitsCount }}</div>
         <div class="kpi-unit">{{ $tr('وحدة','units') }}</div>
     </td>
     <td width="4"></td>
     <td class="kpi kpi-teal" style="width:14%;">
         <div class="kpi-lbl">{{ $tr('الوحدات المشغولة','Occupied') }}</div>
-        <div class="kpi-val v-teal">{{ $occupiedUnits }}</div>
-        <div class="kpi-unit">{{ $totalUnits>0 ? round($occupiedUnits/$totalUnits*100).'%' : '—' }}</div>
+        <div class="kpi-val v-teal">{{ $propertyOccupiedUnits }}</div>
+        <div class="kpi-unit">{{ $propertyUnitsCount>0 ? round($propertyOccupiedUnits/$propertyUnitsCount*100).'%' : '—' }}</div>
     </td>
     <td width="4"></td>
     <td class="kpi kpi-amber" style="width:14%;">
         <div class="kpi-lbl">{{ $tr('الوحدات الشاغرة','Vacant') }}</div>
-        <div class="kpi-val v-amber">{{ $vacantUnits }}</div>
+        <div class="kpi-val v-amber">{{ $propertyVacantUnits }}</div>
         <div class="kpi-unit">{{ $tr('وحدة','units') }}</div>
     </td>
     <td width="4"></td>
     <td class="kpi kpi-gray" style="width:14%;">
         <div class="kpi-lbl">{{ $tr('عدد الملاك','Owners') }}</div>
-        <div class="kpi-val v-gray">{{ $ownersCount }}</div>
+        <div class="kpi-val v-gray">{{ $propertyOwnersCount }}</div>
         <div class="kpi-unit">{{ $tr('مالك','owners') }}</div>
     </td>
     <td width="4"></td>
     <td class="kpi kpi-blue" style="width:14%;">
-        <div class="kpi-lbl">{{ $tr('الرسوم الشهرية/وحدة','Monthly Fee/Unit') }}</div>
+        <div class="kpi-lbl">{{ $assoc->fee_frequency === 'yearly' ? $tr('الرسوم السنوية/وحدة','Yearly Fee/Unit') : $tr('الرسوم الشهرية/وحدة','Monthly Fee/Unit') }}</div>
         <div class="kpi-val v-blue">{{ $fmtN($unitFee) }}</div>
         <div class="kpi-unit">{{ $cur }}</div>
     </td>
     <td width="4"></td>
     <td class="kpi kpi-violet" style="width:14%;">
         <div class="kpi-lbl">{{ $tr('عدد المستأجرين','Tenants') }}</div>
-        <div class="kpi-val v-violet">{{ $tenantsCount }}</div>
+        <div class="kpi-val v-violet">{{ $propertyTenantsCount }}</div>
         <div class="kpi-unit">{{ $tr('مستأجر','tenants') }}</div>
     </td>
 </tr>
@@ -435,12 +501,6 @@ $collRateVColor= $collRate >= 90 ? 'v-green'   : ($collRate >= 70 ? 'v-amber'   
 <div class="sec-title">2. {{ $tr('معلومات الجمعية','Association Information') }}</div>
 <table class="info-grid">
     <tr>
-        <td class="lbl">{{ $tr('اسم الجمعية (عربي)','Association Name (AR)') }}</td>
-        <td class="val">{{ $assoc->name_ar ?? '—' }}</td>
-        <td class="lbl">{{ $tr('اسم الجمعية (إنجليزي)','Association Name (EN)') }}</td>
-        <td class="val">{{ $assoc->name_en ?? '—' }}</td>
-    </tr>
-    <tr>
         <td class="lbl">{{ $tr('العقار','Property') }}</td>
         <td class="val">{{ $property?->name ?? '—' }}</td>
         <td class="lbl">{{ $tr('نوع العقار','Property Type') }}</td>
@@ -461,27 +521,34 @@ $collRateVColor= $collRate >= 90 ? 'v-green'   : ($collRate >= 70 ? 'v-amber'   
         </td>
     </tr>
     <tr>
-        <td class="lbl">{{ $tr('الرسوم الشهرية/وحدة','Monthly Fee/Unit') }}</td>
+        <td class="lbl">{{ $assoc->fee_frequency === 'yearly' ? $tr('الرسوم السنوية/وحدة','Yearly Fee/Unit') : $tr('الرسوم الشهرية/وحدة','Monthly Fee/Unit') }}</td>
         <td class="val bold v-blue">{{ $fmt($assoc->monthly_fee_per_unit) }} {{ $cur }}</td>
         <td class="lbl">{{ $tr('عدد الوحدات','Total Units') }}</td>
-        <td class="val bold">{{ $totalUnits }}</td>
+        <td class="val bold">{{ $propertyUnitsCount }}</td>
     </tr>
     <tr>
         <td class="lbl">{{ $tr('عدد الملاك','Owners Count') }}</td>
-        <td class="val bold">{{ $ownersCount }}</td>
+        <td class="val bold">{{ $propertyOwnersCount }}</td>
         <td class="lbl">{{ $tr('عدد المستأجرين','Tenants Count') }}</td>
-        <td class="val bold">{{ $tenantsCount }}</td>
+        <td class="val bold">{{ $propertyTenantsCount }}</td>
     </tr>
+    @if($assignedUnitNums)
+    <tr>
+        <td class="lbl">{{ $tr('الوحدات المخصصة','Assigned Units') }}</td>
+        <td class="val" colspan="3">{{ implode($isAr ? '، ' : ', ', $assignedUnitNums) }}</td>
+    </tr>
+    @endif
     <tr>
         <td class="lbl">{{ $tr('حساب الكهرباء','Electricity Acct.') }}</td>
         <td class="val">{{ $assoc->electricity_account_number ?? '—' }}</td>
         <td class="lbl">{{ $tr('حساب الماء','Water Acct.') }}</td>
         <td class="val">{{ $assoc->water_account_number ?? '—' }}</td>
     </tr>
-    @if($assoc->description)
+    @php $assocDesc = $isAr ? ($assoc->description_ar ?? $assoc->description_en) : ($assoc->description_en ?? $assoc->description_ar); @endphp
+    @if($assocDesc)
     <tr>
         <td class="lbl">{{ $tr('الوصف','Description') }}</td>
-        <td class="val" colspan="3">{{ $assoc->description }}</td>
+        <td class="val" colspan="3">{{ $assocDesc }}</td>
     </tr>
     @endif
 </table>
@@ -513,10 +580,36 @@ $collRateVColor= $collRate >= 90 ? 'v-green'   : ($collRate >= 70 ? 'v-amber'   
         @endforeach
     </tbody>
 </table>
+@else
+{{-- Fallback: each Association for this property represents one owner --}}
+@if($propertySiblings->count())
+<div class="sub-title">{{ $tr('قائمة الملاك','Owners List') }}</div>
+<table class="tbl">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>{{ $tr('اسم المالك','Owner Name') }}</th>
+            <th>{{ $tr('الهاتف','Phone') }}</th>
+            <th>{{ $tr('الوحدات','Units') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($propertySiblings as $i => $sa)
+        @php $saUnits = array_filter((array)($sa->unit_number ?? [])); @endphp
+        <tr>
+            <td class="muted sm">{{ $i + 1 }}</td>
+            <td class="bold">{{ $isAr ? ($sa->name_ar ?? $sa->name_en ?? '—') : ($sa->name_en ?? $sa->name_ar ?? '—') }}</td>
+            <td class="sm">{{ $sa->phone_number ?? '—' }}</td>
+            <td class="sm">{{ $saUnits ? implode($isAr ? '، ' : ', ', $saUnits) : '—' }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+</table>
+@endif
 @endif
 
 {{-- Units summary --}}
-@if($units->count())
+@if($displayUnits->count())
 <div class="sub-title">{{ $tr('ملخص الوحدات','Units Summary') }}</div>
 <table class="tbl">
     <thead>
@@ -531,7 +624,7 @@ $collRateVColor= $collRate >= 90 ? 'v-green'   : ($collRate >= 70 ? 'v-amber'   
         </tr>
     </thead>
     <tbody>
-        @foreach($units->sortBy('unit_number') as $unit)
+        @foreach($displayUnits->sortBy('unit_number') as $unit)
         @php
             $uc = $unit->activeRentalContract;
             $sbg = match($unit->status){'rented'=>'bg-blue','sold'=>'bg-green','available'=>'bg-gray','maintenance'=>'bg-amber',default=>'bg-gray'};
@@ -560,31 +653,37 @@ $collRateVColor= $collRate >= 90 ? 'v-green'   : ($collRate >= 70 ? 'v-amber'   
 
 <table class="info-grid" style="margin-bottom:12px;">
     <tr>
-        <td class="lbl">{{ $tr('إجمالي الاشتراكات المستحقة','Total Dues Expected') }}</td>
+        <td class="lbl">{{ $tr('إجمالي الاشتراكات في الفترة','Total Dues in Period') }}</td>
         <td class="val bold v-blue">{{ $fmt($totalDues) }} {{ $cur }}</td>
-        <td class="lbl">{{ $tr('إجمالي الاشتراكات المحصّلة','Total Collected') }}</td>
+        <td class="lbl">{{ $tr('إجمالي المحصّل في الفترة','Total Collected in Period') }}</td>
         <td class="val bold pos">{{ $fmt($paidDues) }} {{ $cur }}</td>
     </tr>
     <tr>
-        <td class="lbl">{{ $tr('إجمالي المبالغ غير المحصّلة','Total Outstanding') }}</td>
+        <td class="lbl">{{ $tr('غير محصّل في الفترة (معلق + متأخر)','Outstanding in Period (Pending + Overdue)') }}</td>
         <td class="val bold neg">{{ $fmt($unpaidDues) }} {{ $cur }}</td>
-        <td class="lbl">{{ $tr('المبالغ المتأخرة','Overdue Amount') }}</td>
+        <td class="lbl">{{ $tr('المبالغ المتأخرة في الفترة','Overdue in Period') }}</td>
         <td class="val bold neg">{{ $fmt($overdueDues) }} {{ $cur }}</td>
     </tr>
     <tr>
-        <td class="lbl">{{ $tr('المبالغ المعفاة','Waived Amount') }}</td>
+        <td class="lbl">{{ $tr('إجمالي الرصيد المتراكم غير المحصّل','Total Cumulative Outstanding Balance') }}</td>
+        <td class="val bold neg" style="font-size:9.5pt;">{{ $fmt($allTimeOutstanding) }} {{ $cur }}</td>
+        <td class="lbl">{{ $tr('المبالغ المعفاة في الفترة','Waived in Period') }}</td>
         <td class="val">{{ $fmt($waivedDues) }} {{ $cur }}</td>
-        <td class="lbl">{{ $tr('نسبة التحصيل','Collection Rate') }}</td>
-        <td class="val bold {{ $collRate>=90?'v-green':($collRate>=70?'v-amber':'v-red') }}">{{ $collRate }}%</td>
     </tr>
     <tr>
-        <td class="lbl">{{ $tr('إجمالي المصروفات','Total Expenses') }}</td>
-        <td class="val bold neg">{{ $fmt($totalExpenses) }} {{ $cur }}</td>
+        <td class="lbl">{{ $tr('نسبة التحصيل (باستثناء المعفى)','Collection Rate (excl. Waived)') }}</td>
+        <td class="val bold {{ $collRate>=90?'v-green':($collRate>=70?'v-amber':'v-red') }}">{{ $collRate }}%</td>
         <td class="lbl">{{ $tr('صافي الرصيد (محصّل − مصروفات)','Net Balance (Collected − Expenses)') }}</td>
         <td class="val bold {{ $netBalance>=0?'pos':'neg' }}">
             {{ $fmt($netBalance) }} {{ $cur }}
             — {{ $netBalance>=0?$tr('فائض','Surplus'):$tr('عجز','Deficit') }}
         </td>
+    </tr>
+    <tr>
+        <td class="lbl">{{ $tr('إجمالي المصروفات','Total Expenses') }}</td>
+        <td class="val bold neg">{{ $fmt($totalExpenses) }} {{ $cur }}</td>
+        <td class="lbl"></td>
+        <td class="val"></td>
     </tr>
 </table>
 
@@ -656,26 +755,20 @@ $collRateVColor= $collRate >= 90 ? 'v-green'   : ($collRate >= 70 ? 'v-amber'   
         </tr>
     </thead>
     <tbody>
-        @php $prevOwner = null; $ownerSubTotal = 0; @endphp
-        @foreach($dues->sortBy(['owner_id','due_date']) as $due)
         @php
-            $ownerName = $due->owner?->user?->name ?? '—';
-            $dbg = match($due->status){'paid'=>'bg-green','overdue'=>'bg-red','waived'=>'bg-teal',default=>'bg-amber'};
-            if ($prevOwner !== null && $prevOwner !== $due->owner_id) {
-                // subtotal row handled below
-            }
+            $prevOwner   = 'INIT'; // sentinel so first iteration never triggers subtotal
+            $ownerGroups = $dues->groupBy(fn($d) => $d->owner_id ?? 'assoc_'.$assoc->id);
         @endphp
-        @if($prevOwner !== null && $prevOwner !== $due->owner_id)
-        <tr class="tr-sub">
-            <td colspan="3" class="bold sm">{{ $tr('مجموع','Subtotal') }} — {{ $dues->where('owner_id',$prevOwner)->first()?->owner?->user?->name }}</td>
-            <td class="bold">{{ $fmt($dues->where('owner_id',$prevOwner)->sum('amount')) }}</td>
-            <td class="pos bold">{{ $fmt($dues->where('owner_id',$prevOwner)->where('status','paid')->sum('amount')) }}</td>
-            <td colspan="3"></td>
-        </tr>
-        @endif
-        @php $prevOwner = $due->owner_id; @endphp
+        @foreach($ownerGroups as $groupKey => $groupDues)
+        @php
+            $groupOwnerName = $ownerLabel($groupDues->first());
+        @endphp
+        @foreach($groupDues->sortBy('due_date') as $due)
+        @php
+            $dbg = match($due->status){'paid'=>'bg-green','overdue'=>'bg-red','waived'=>'bg-teal',default=>'bg-amber'};
+        @endphp
         <tr class="{{ $due->status==='overdue'?'overdue-row':'' }}">
-            <td class="bold">{{ $ownerName }}</td>
+            <td class="bold">{{ $groupOwnerName }}</td>
             <td>{{ $due->periodLabel() }}</td>
             <td class="sm nowrap">{{ $due->due_date?->format('Y/m/d') ?? '—' }}</td>
             <td class="bold">{{ $fmt($due->amount) }}</td>
@@ -687,15 +780,16 @@ $collRateVColor= $collRate >= 90 ? 'v-green'   : ($collRate >= 70 ? 'v-amber'   
             <td class="sm muted">{{ mb_substr($due->notes ?? '', 0, 40) }}</td>
         </tr>
         @endforeach
-        {{-- Last owner subtotal --}}
-        @if($prevOwner)
+        {{-- Per-owner subtotal (only shown when there are multiple owner groups) --}}
+        @if($ownerGroups->count() > 1)
         <tr class="tr-sub">
-            <td colspan="3" class="bold sm">{{ $tr('مجموع','Subtotal') }} — {{ $dues->where('owner_id',$prevOwner)->first()?->owner?->user?->name }}</td>
-            <td class="bold">{{ $fmt($dues->where('owner_id',$prevOwner)->sum('amount')) }}</td>
-            <td class="pos bold">{{ $fmt($dues->where('owner_id',$prevOwner)->where('status','paid')->sum('amount')) }}</td>
+            <td colspan="3" class="bold sm">{{ $tr('مجموع','Subtotal') }} — {{ $groupOwnerName }}</td>
+            <td class="bold">{{ $fmt($groupDues->sum('amount')) }}</td>
+            <td class="pos bold">{{ $fmt($groupDues->where('status','paid')->sum('amount')) }}</td>
             <td colspan="3"></td>
         </tr>
         @endif
+        @endforeach
         <tr class="tr-total">
             <td colspan="3">{{ $tr('الإجمالي الكلي','Grand Total') }}</td>
             <td>{{ $fmt($totalDues) }} {{ $cur }}</td>
@@ -725,11 +819,14 @@ $collRateVColor= $collRate >= 90 ? 'v-green'   : ($collRate >= 70 ? 'v-amber'   
 @endphp
 
 <div class="sub-title">
-    {{ $ow->user?->name ?? '—' }}
+    {{ $ow->user?->name ?? $assocName }}
     <span class="sm muted">
-        — {{ $tr('الهوية:','ID:') }} {{ $ow->national_id ?? '—' }}
-        &bull; {{ $tr('الهاتف:','Phone:') }} {{ $ow->phone ?? $ow->user?->phone ?? '—' }}
-        &bull; {{ $tr('نسبة الملكية:','Ownership:') }} {{ $ow->pivot->ownership_percentage ?? '—' }}%
+        @if($ow->national_id ?? null)— {{ $tr('الهوية:','ID:') }} {{ $ow->national_id }} @endif
+        @php $owPhone = $ow->phone ?? $ow->user?->phone ?? null; @endphp
+        @if($owPhone)&bull; {{ $tr('الهاتف:','Phone:') }} {{ $owPhone }} @endif
+        @if(($ow->pivot->ownership_percentage ?? null) && $ow->pivot->ownership_percentage != 100)
+            &bull; {{ $tr('نسبة الملكية:','Ownership:') }} {{ $ow->pivot->ownership_percentage }}%
+        @endif
     </span>
 </div>
 
@@ -831,14 +928,17 @@ $agingTotal = $allOutstanding->sum('amount');
 @endphp
 
 <table class="kpi-row">
+<tr>
 @foreach($agingTotals as $key => $ag)
 @php $agAmt = (float) $ag['dues']->sum('amount'); $agPct = $agingTotal>0 ? round($agAmt/$agingTotal*100) : 0; @endphp
-<tr><td class="kpi {{ $ag['color'] }}" style="padding:8px;">
+<td class="kpi {{ $ag['color'] }}" style="padding:8px; width:18%;">
     <div class="kpi-lbl">{{ $tr($ag['label_ar'],$ag['label_en']) }}</div>
     <div class="kpi-val {{ $ag['vcolor'] }}" style="font-size:11pt;">{{ $fmt($agAmt) }}</div>
     <div class="kpi-unit">{{ $ag['dues']->count() }} {{ $tr('اشتراك','dues') }} — {{ $agPct }}%</div>
-</td></tr>
+</td>
+@if(!$loop->last)<td width="4"></td>@endif
 @endforeach
+</tr>
 </table>
 
 @if($allOutstanding->count())
@@ -865,7 +965,7 @@ $agingTotal = $allOutstanding->sum('amount');
                     : $tr('أكثر من 90','Over 90'))));
         @endphp
         <tr class="{{ $daysLate>30?'overdue-row':'' }}">
-            <td class="bold">{{ $od->owner?->user?->name ?? '—' }}</td>
+            <td class="bold">{{ $ownerLabel($od) }}</td>
             <td>{{ $od->periodLabel() }}</td>
             <td class="sm nowrap">{{ $od->due_date?->format('Y/m/d') ?? '—' }}</td>
             <td class="neg bold">{{ $fmt($od->amount) }} {{ $cur }}</td>
@@ -912,7 +1012,7 @@ $agingTotal = $allOutstanding->sum('amount');
             $pctColor = $row['pct']>=100?'bg-green':($row['pct']>=70?'bg-amber':($row['has_overdue']?'bg-red':'bg-amber'));
         @endphp
         <tr class="{{ $row['has_overdue']?'overdue-row':'' }}">
-            <td class="bold">{{ $row['owner']->user?->name ?? '—' }}</td>
+            <td class="bold">{{ $row['owner']->user?->name ?? $assocName }}</td>
             <td class="center">{{ $row['share_pct'] ?? '—' }}%</td>
             <td class="nowrap">{{ $fmt($feeForOwner) }} {{ $cur }}</td>
             <td class="bold">{{ $fmt($row['total_due']) }} {{ $cur }}</td>

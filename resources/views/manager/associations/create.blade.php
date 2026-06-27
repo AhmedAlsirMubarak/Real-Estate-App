@@ -10,12 +10,20 @@
         <a href="{{ route('manager.associations.index') }}" class="text-sm text-gray-600 hover:text-gray-900">{{ $tr('رجوع', 'Back') }}</a>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-3xl">
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 max-w-3xl"
+         x-data="{
+            propertyId: '{{ old('property_id') }}',
+            unitsMap: {{ $unitsMap->toJson() }},
+            selected: {{ json_encode(old('unit_number', [])) }},
+            defaultFee: {{ old('monthly_fee_per_unit', 0) }},
+            get units() { return this.unitsMap[this.propertyId] ?? []; }
+         }">
         <form method="POST" action="{{ route('manager.associations.store') }}" enctype="multipart/form-data" class="space-y-4">
             @csrf
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('العقار', 'Property') }}</label>
-                <select name="property_id" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                <select name="property_id" required x-model="propertyId" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                     <option value="">--</option>
                     @foreach($properties as $p)
                     <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->code }})</option>
@@ -41,8 +49,16 @@
                     <input type="date" name="established_date" value="{{ old('established_date') }}" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الرسوم الشهرية لكل وحدة', 'Monthly Fee per Unit') }}</label>
-                    <input type="number" step="0.01" name="monthly_fee_per_unit" value="{{ old('monthly_fee_per_unit', 0) }}" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الرسوم لكل وحدة', 'Fee per Unit') }}</label>
+                    <div class="flex gap-2">
+                        <input type="number" step="0.01" name="monthly_fee_per_unit" value="{{ old('monthly_fee_per_unit', 0) }}" required
+                               @input="defaultFee = $event.target.value"
+                               class="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                        <select name="fee_frequency" class="border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                            <option value="monthly" @selected(old('fee_frequency') !== 'yearly')>{{ $tr('شهري', 'Monthly') }}</option>
+                            <option value="yearly" @selected(old('fee_frequency') === 'yearly')>{{ $tr('سنوي', 'Yearly') }}</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -54,6 +70,42 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('الوصف', 'Description') }} (EN)</label>
                     <textarea name="description_en" rows="3" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">{{ old('description_en') }}</textarea>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('رقم الوحدة', 'Unit Number') }}</label>
+                    <div class="border border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50 min-h-[60px]">
+                        <template x-if="units.length === 0">
+                            <p class="text-xs text-gray-400">{{ $tr('اختر العقار أولاً', 'Select a property first') }}</p>
+                        </template>
+                        <template x-for="u in units" :key="u.id">
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" :id="'unit_'+u.id" name="unit_number[]" :value="u.label"
+                                       :checked="{{ json_encode(old('unit_number', [])) }}.includes(u.label)"
+                                       x-model="selected"
+                                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <label :for="'unit_'+u.id" class="text-sm text-gray-700 flex-1 cursor-pointer"
+                                       x-text="u.owner ? u.label + ' — ' + u.owner : u.label"></label>
+                                <template x-if="selected.includes(u.label)">
+                                    <input type="number" step="0.01" min="0"
+                                           :name="'unit_fees[' + u.label + ']'"
+                                           :value="{{ json_encode(old('unit_fees', [])) }}[u.label] ?? defaultFee"
+                                           class="w-28 border border-gray-200 rounded px-2 py-1 text-sm text-right"
+                                           :placeholder="defaultFee">
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                    @error('unit_number')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ $tr('رقم الهاتف', 'Phone Number') }}</label>
+                    <input type="text" name="phone_number" value="{{ old('phone_number') }}"
+                           placeholder="{{ $tr('اختياري', 'Optional') }}"
+                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                    @error('phone_number')<p class="text-red-600 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
 

@@ -40,7 +40,9 @@
             <p class="text-base font-semibold text-gray-800 mt-1">{{ $association->established_date?->format('Y/m/d') ?? '—' }}</p>
         </div>
         <div class="bg-white rounded-xl border border-gray-100 p-4">
-            <p class="text-xs text-gray-500">{{ $tr('الرسوم الشهرية لكل وحدة', 'Monthly Fee per Unit') }}</p>
+            <p class="text-xs text-gray-500">
+                {{ $association->fee_frequency === 'yearly' ? $tr('الرسوم السنوية لكل وحدة', 'Yearly Fee per Unit') : $tr('الرسوم الشهرية لكل وحدة', 'Monthly Fee per Unit') }}
+            </p>
             <p class="text-base font-semibold text-gray-800 mt-1">{{ number_format($association->monthly_fee_per_unit, 2) }}</p>
         </div>
         <div class="bg-white rounded-xl border border-gray-100 p-4">
@@ -347,7 +349,7 @@
     {{-- Generate Invoice PDF --}}
     <div class="bg-white rounded-xl border border-gray-100 p-5 mb-6">
         <h3 class="text-sm font-bold text-gray-800 mb-3">{{ $tr('إنشاء فاتورة PDF', 'Generate Invoice PDF') }}</h3>
-        <form method="POST" action="{{ route('manager.associations.invoice-pdf', $association) }}" target="_blank" class="flex flex-wrap gap-3 items-end">
+        <form method="POST" action="{{ route('manager.associations.invoice-pdf', $association) }}" class="flex flex-wrap gap-3 items-end">
             @csrf
             <div>
                 <label class="block text-xs text-gray-600 mb-1">{{ $tr('الشهر', 'Month') }}</label>
@@ -374,113 +376,6 @@
         </form>
     </div>
 
-    {{-- Quick WhatsApp Invoice --}}
-    @php
-        $waMonthNamesAr = ['', 'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-        $waMonthNamesEn = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        $waAppName      = str_replace('_', ' ', ucwords(config('app.name'), '_'));
-        $waPropName     = addslashes($association->property?->name ?? '');
-        $waAssocName    = addslashes($association->name);
-        $waDefaultAmount = (float) $association->monthly_fee_per_unit;
-    @endphp
-    <div class="bg-white rounded-xl border border-gray-100 p-5 mb-6"
-         x-data="{
-            ownerName: '',
-            phone: '',
-            month: {{ now()->month }},
-            year: {{ now()->year }},
-            amount: {{ $waDefaultAmount }},
-            dueDate: '',
-            appName: '{{ $waAppName }}',
-            propName: '{{ $waPropName }}',
-            assocName: '{{ $waAssocName }}',
-            monthNamesAr: {{ json_encode($waMonthNamesAr) }},
-            monthNamesEn: {{ json_encode($waMonthNamesEn) }},
-            get periodLabelAr() { return (this.monthNamesAr[this.month] || '') + ' ' + this.year; },
-            get periodLabelEn() { return (this.monthNamesEn[this.month] || '') + ' ' + this.year; },
-            get formattedAmount() {
-                const n = parseFloat(this.amount || 0).toFixed(2);
-                return n + ' ر.ع / ' + n + ' OMR';
-            },
-            get formattedDueDate() {
-                if (!this.dueDate) return '—';
-                const d = new Date(this.dueDate);
-                const day = d.getDate().toString().padStart(2,'0');
-                return day + ' ' + (this.monthNamesAr[d.getMonth()+1] || '') + ' ' + d.getFullYear()
-                     + ' / ' + day + ' ' + (this.monthNamesEn[d.getMonth()+1] || '') + ' ' + d.getFullYear();
-            },
-            buildMessage() {
-                const amt = parseFloat(this.amount || 0).toFixed(2);
-                return 'السيد/ة ' + this.ownerName + '،\n\nتحية طيبة،\n\n📋 *إشعار فاتورة — رسوم جمعية الملاك*\n──────────────────\n• العقار: ' + this.propName + '\n• الجمعية: ' + this.assocName + '\n• الفترة: ' + this.periodLabelAr + '\n• المبلغ المستحق: *' + amt + ' ر.ع*\n• تاريخ الاستحقاق: ' + this.formattedDueDate + '\n──────────────────\nيُرجى سداد المبلغ قبل تاريخ الاستحقاق لتجنب أي رسوم إضافية.\n\n━━━━━━━━━━━━━━━━━━\n\nDear ' + this.ownerName + ',\n\n📋 *Invoice Notice — Owners\' Association Monthly Fee*\n──────────────────\n• Property: ' + this.propName + '\n• Association: ' + this.assocName + '\n• Period: ' + this.periodLabelEn + '\n• Amount Due: *' + amt + ' OMR*\n• Due Date: ' + this.formattedDueDate + '\n──────────────────\nPlease arrange payment before the due date.\n\n' + this.appName;
-            },
-            sendWhatsApp() {
-                let n = this.phone.replace(/[^0-9]/g, '');
-                if (n.startsWith('00')) n = n.slice(2);
-                else if (n.startsWith('0')) n = '968' + n.slice(1);
-                else if (!n.startsWith('968') && n.length <= 8) n = '968' + n;
-                window.open('https://api.whatsapp.com/send?phone=' + n + '&text=' + encodeURIComponent(this.buildMessage()), '_blank');
-            }
-         }">
-        <div class="flex items-center gap-2 mb-4">
-            <div class="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-                <svg class="w-4 h-4 text-green-700" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.999-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                </svg>
-            </div>
-            <div>
-                <h3 class="text-sm font-bold text-gray-800">{{ $tr('إرسال فاتورة الرسوم الشهرية عبر واتساب', 'Send Monthly Fee Invoice via WhatsApp') }}</h3>
-                <p class="text-xs text-gray-400">{{ $tr('أرسل إشعار رسوم لأي مالك مباشرة — لا يلزم وجود سجل رسوم مسبق', 'Send a fee notice to any owner directly — no due record required') }}</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('اسم المالك', "Owner's Name") }} <span class="text-red-500">*</span></label>
-                <input type="text" x-model="ownerName" placeholder="{{ $tr('الاسم الكامل', 'Full name') }}"
-                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('رقم الهاتف (واتساب)', 'Phone (WhatsApp)') }} <span class="text-red-500">*</span></label>
-                <input type="text" x-model="phone" placeholder="+968 XXXX XXXX"
-                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('الشهر', 'Month') }}</label>
-                <select x-model.number="month" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none">
-                    @for($m = 1; $m <= 12; $m++)
-                    <option value="{{ $m }}" {{ $m === now()->month ? 'selected' : '' }}>{{ $waMonthNamesEn[$m] }}</option>
-                    @endfor
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('السنة', 'Year') }}</label>
-                <input type="number" x-model.number="year" min="2020" max="2100"
-                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200">
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('المبلغ', 'Amount') }} (OMR)</label>
-                <input type="number" x-model.number="amount" step="0.01" min="0"
-                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">{{ $tr('تاريخ الاستحقاق', 'Due Date') }}</label>
-                <input type="date" x-model="dueDate"
-                       class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200">
-            </div>
-        </div>
-
-        <button @click="sendWhatsApp()" :disabled="!phone.trim() || !ownerName.trim()"
-                class="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1ebe5d] disabled:opacity-40 disabled:cursor-not-allowed text-white px-5 py-2 rounded-lg text-sm font-semibold transition shadow-sm">
-            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.999-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-            </svg>
-            {{ $tr('إرسال عبر واتساب', 'Send via WhatsApp') }}
-        </button>
-    </div>
-
     {{-- Recent dues --}}
     <div class="bg-white rounded-xl border border-gray-100 p-5 mb-6">
         <h3 class="text-sm font-bold text-gray-800 mb-3">{{ $tr('الرسوم', 'Dues') }}</h3>
@@ -504,7 +399,7 @@
                     @forelse($association->dues as $due)
                     @php
                         $dueOwnerName  = $due->owner?->user?->name ?? ($isAr ? 'المالك' : 'Owner');
-                        $dueOwnerPhone = $due->owner?->phone ?? $due->owner?->user?->phone ?? null;
+                        $dueOwnerPhone = $due->owner?->phone ?? $due->owner?->user?->phone ?? $association->phone_number ?? null;
                         $invoiceNo     = '#INV-' . str_pad($due->id, 6, '0', STR_PAD_LEFT);
                         $amountAr      = number_format($due->amount, 2) . ' ر.ع';
                         $amountEn      = number_format($due->amount, 2) . ' OMR';

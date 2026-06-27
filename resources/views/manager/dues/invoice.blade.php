@@ -208,20 +208,48 @@
         </tr>
     </thead>
     <tbody>
-        <tr>
-            <td>
-                <div class="item-title">{{ $t("Owners' Association Dues", 'اشتراكات جمعية الملاك') }}</div>
-                @if($associationName)
-                    <div class="item-sub">{{ $associationName }}</div>
-                @endif
-            </td>
-            <td>{{ $due->periodLabel() }}</td>
-            <td>
-                {{ $unitCount }}
-                <span class="unit-lbl">{{ $t($unitCount === 1 ? 'unit' : 'units', $unitCount === 1 ? 'وحدة' : 'وحدات') }}</span>
-            </td>
-            <td class="col-end">{{ number_format($due->amount, 2) }} {{ $currency }}</td>
-        </tr>
+        @php
+            $feeLabel = ($feeFrequency ?? 'monthly') === 'yearly' ? $t('Yearly Fee', 'رسوم سنوية') : $t('Monthly Fee', 'رسوم شهرية');
+            $hasPerUnitFees = count($unitNumbers) > 1 && !empty($unitFees);
+            $uniqueFeeCount = $hasPerUnitFees ? count(array_unique(array_map(fn($u) => $unitFees[$u] ?? $defaultFee, $unitNumbers))) : 1;
+            $showBreakdown  = $hasPerUnitFees && $uniqueFeeCount > 1;
+        @endphp
+        @if($showBreakdown)
+            @foreach($unitNumbers as $uNum)
+                @php $uFee = (float) ($unitFees[$uNum] ?? $defaultFee); @endphp
+                <tr>
+                    <td>
+                        <div class="item-title">{{ $t("Owners' Association Dues", 'اشتراكات جمعية الملاك') }}</div>
+                        @if($associationName)
+                            <div class="item-sub">{{ $associationName }}</div>
+                        @endif
+                        <div class="item-sub">{{ $feeLabel }}</div>
+                    </td>
+                    <td>{{ $due->periodLabel() }}</td>
+                    <td>
+                        {{ $uNum }}
+                        <span class="unit-lbl">{{ $t('unit', 'وحدة') }}</span>
+                    </td>
+                    <td class="col-end">{{ number_format($uFee, 2) }} {{ $currency }}</td>
+                </tr>
+            @endforeach
+        @else
+            <tr>
+                <td>
+                    <div class="item-title">{{ $t("Owners' Association Dues", 'اشتراكات جمعية الملاك') }}</div>
+                    @if($associationName)
+                        <div class="item-sub">{{ $associationName }}</div>
+                    @endif
+                    <div class="item-sub">{{ $feeLabel }}</div>
+                </td>
+                <td>{{ $due->periodLabel() }}</td>
+                <td>
+                    {{ $unitCount }}
+                    <span class="unit-lbl">{{ $t($unitCount === 1 ? 'unit' : 'units', $unitCount === 1 ? 'وحدة' : 'وحدات') }}</span>
+                </td>
+                <td class="col-end">{{ number_format($due->amount, 2) }} {{ $currency }}</td>
+            </tr>
+        @endif
     </tbody>
 </table>
 

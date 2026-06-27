@@ -60,8 +60,11 @@
                     @forelse($dues as $due)
                     @php
                         $propertyName = $due->association?->property?->name ?? '—';
-                        $ownerName    = $due->owner?->user?->name ?? '—';
-                        $ownerPhone   = $due->owner?->phone ?? $due->owner?->user?->phone ?? null;
+                        $ownerName    = $due->owner?->user?->name
+                            ?? ($isAr
+                                ? ($due->association?->name_ar ?? $due->association?->name_en ?? '—')
+                                : ($due->association?->name_en ?? $due->association?->name_ar ?? '—'));
+                        $ownerPhone   = $due->owner?->phone ?? $due->owner?->user?->phone ?? $due->association?->phone_number ?? null;
 
                         // Professional WhatsApp message
                         $invoiceNo   = '#INV-' . str_pad($due->id, 6, '0', STR_PAD_LEFT);

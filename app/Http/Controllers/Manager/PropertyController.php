@@ -78,7 +78,7 @@ class PropertyController extends Controller
 
         $this->saveImages($request, $property);
 
-        return redirect()->route('manager.properties.edit', $property)
+        return redirect()->route('manager.properties.index')
             ->with('success', 'تم إضافة العقار بنجاح');
     }
 

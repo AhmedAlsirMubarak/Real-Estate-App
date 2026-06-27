@@ -44,23 +44,22 @@
     </div>
     <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
 
-        {{-- Association --}}
+        {{-- Property --}}
         <div class="md:col-span-2">
             <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                {{ $tr('جمعية الملاك','Owners Association') }} <span class="text-red-500">*</span>
+                {{ $tr('العقار','Property') }} <span class="text-red-500">*</span>
             </label>
-            <select name="association_id" required
+            <select name="property_id" required
                     class="w-full rounded-xl border-gray-200 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm px-4 py-2.5">
-                <option value="">{{ $tr('— اختر الجمعية —','— Select Association —') }}</option>
-                <option value="all" {{ old('association_id', $selectedId) === 'all' ? 'selected' : '' }}
+                <option value="">{{ $tr('— اختر العقار —','— Select Property —') }}</option>
+                <option value="all" {{ old('property_id', $selectedId) === 'all' ? 'selected' : '' }}
                         class="font-semibold text-teal-700">
-                    ★ {{ $tr('جميع الجمعيات (تقرير موحد)','All Associations (Combined Report)') }}
+                    ★ {{ $tr('جميع العقارات (تقرير موحد)','All Properties (Combined Report)') }}
                 </option>
                 <option disabled>──────────────────────────</option>
-                @foreach($associations as $assoc)
-                <option value="{{ $assoc->id }}" {{ old('association_id', $selectedId) == $assoc->id ? 'selected' : '' }}>
-                    {{ $assoc->name_ar ?? $assoc->name_en }}
-                    @if($assoc->property) — {{ $assoc->property->name }} @endif
+                @foreach($properties as $prop)
+                <option value="{{ $prop->id }}" {{ old('property_id', $selectedId) == $prop->id ? 'selected' : '' }}>
+                    {{ $prop->name }}
                 </option>
                 @endforeach
             </select>

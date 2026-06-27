@@ -18,12 +18,13 @@ class AssociationDueController extends Controller
             'period_year'  => 'required|integer|min:2020|max:2100',
         ]);
 
-        $association->load(['property.units']);
-
-        $month     = (int) $request->input('period_month');
-        $year      = (int) $request->input('period_year');
-        $unitCount = $association->property?->units?->count() ?? 0;
-        $amount    = $association->monthly_fee_per_unit * max($unitCount, 1);
+        $month       = (int) $request->input('period_month');
+        $year        = (int) $request->input('period_year');
+        $unitNumbers = array_filter((array) ($association->unit_number ?? []));
+        $unitFees    = (array) ($association->unit_fees ?? []);
+        $amount      = $unitNumbers
+            ? array_sum(array_map(fn($u) => (float) ($unitFees[$u] ?? $association->monthly_fee_per_unit), $unitNumbers))
+            : (float) $association->monthly_fee_per_unit;
         $dueDate   = Carbon::create($year, $month, 5);
 
         // Persist the due so it appears in the dues table and can be marked paid/pending.
@@ -41,7 +42,12 @@ class AssociationDueController extends Controller
             ]
         );
 
-        return redirect()->route('manager.dues.invoice', $due);
+        $isAr = app()->getLocale() === 'ar';
+        $msg  = $due->wasRecentlyCreated
+            ? ($isAr ? 'تمت إضافة الفاتورة إلى الاستحقاقات' : 'Invoice added to dues')
+            : ($isAr ? 'الفاتورة موجودة بالفعل في الاستحقاقات' : 'Invoice already exists in dues');
+
+        return redirect()->route('manager.associations.show', $association)->with('success', $msg);
     }
 
     public function invoice(AssociationDue $due)
@@ -50,17 +56,24 @@ class AssociationDueController extends Controller
 
         $isAr            = app()->getLocale() === 'ar';
         $currency        = 'OMR';
-        $ownerName       = $due->owner?->user?->name ?? ($isAr ? 'المالك' : 'Owner');
-        $ownerPhone      = $due->owner?->phone ?? $due->owner?->user?->phone ?? null;
+        $ownerName       = $due->owner?->user?->name
+            ?? ($isAr
+                ? ($due->association?->name_ar ?? $due->association?->name_en ?? 'المالك')
+                : ($due->association?->name_en ?? $due->association?->name_ar ?? 'Owner'));
+        $ownerPhone      = $due->owner?->phone ?? $due->owner?->user?->phone ?? $due->association?->phone_number ?? null;
         $propertyName    = $due->association?->property?->name ?? ($isAr ? 'العقار' : 'Property');
         $associationName = $isAr
             ? ($due->association?->name_ar ?? $due->association?->name_en ?? '')
             : ($due->association?->name_en ?? $due->association?->name_ar ?? '');
-        $unitCount       = $due->association?->property?->units?->count() ?? 0;
+        $unitNumbers     = array_values(array_filter((array) ($due->association?->unit_number ?? [])));
+        $unitCount       = count($unitNumbers) ?: 1;
+        $unitFees        = (array) ($due->association?->unit_fees ?? []);
+        $defaultFee      = (float) ($due->association?->monthly_fee_per_unit ?? $due->amount);
+        $feeFrequency    = $due->association?->fee_frequency ?? 'monthly';
 
         $html = view('manager.dues.invoice', compact(
             'due', 'currency', 'ownerName', 'ownerPhone',
-            'propertyName', 'associationName', 'unitCount'
+            'propertyName', 'associationName', 'unitCount', 'unitNumbers', 'unitFees', 'defaultFee', 'feeFrequency'
         ))->render();
 
         $tempDir = storage_path('app/mpdf');
@@ -123,8 +136,8 @@ class AssociationDueController extends Controller
 
         $month = (int) $request->input('period_month');
         $year  = (int) $request->input('period_year');
-        $unitCount = $association->property->units()->count();
-        $amountPerOwner = $association->monthly_fee_per_unit * max($unitCount, 1);
+        $unitCount = count(array_filter((array) ($association->unit_number ?? []))) ?: 1;
+        $amountPerOwner = $association->monthly_fee_per_unit * $unitCount;
 
         $owners = $association->property->owners;
         if ($owners->isEmpty() && $association->property->owner_id) {
